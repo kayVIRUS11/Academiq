@@ -10,13 +10,12 @@ import { CourseList } from '@/components/courses/course-list';
 export default function CoursesPage() {
   const [courses, setCourses] = useState<Course[]>(mockCourses);
 
-  const handleAddCourse = (newCourse: Omit<Course, 'id' | 'color'>) => {
+  const handleAddCourse = (newCourse: Omit<Course, 'id'>) => {
     setCourses(prev => [
       ...prev,
       {
         ...newCourse,
         id: (prev.length + 1).toString(),
-        color: 'bg-gray-200', // Color is not used in the new table layout
       },
     ]);
   };

@@ -1,9 +1,11 @@
 import { Course, Goal, Note, Task, TimetableEntry, StudySession } from './types';
 
 export const mockCourses: Course[] = [
-  { id: '1', name: 'Advanced Calculus', courseCode: 'MATH301', instructor: 'Dr. Evelyn Reed', color: 'bg-blue-200' },
-  { id: '2', name: 'Quantum Physics', courseCode: 'PHYS402', instructor: 'Dr. Alistair Finch', color: 'bg-purple-200' },
-  { id: '3', name: 'Organic Chemistry', courseCode: 'CHEM203', instructor: 'Dr. Lena Petrova', color: 'bg-green-200' },
+  { id: '1', name: 'Advanced Calculus', courseCode: 'MATH301', instructor: 'Dr. Evelyn Reed', color: '#3b82f6' },
+  { id: '2', name: 'Quantum Physics', courseCode: 'PHYS402', instructor: 'Dr. Alistair Finch', color: '#8b5cf6' },
+  { id: '3', name: 'Organic Chemistry', courseCode: 'CHEM203', instructor: 'Dr. Lena Petrova', color: '#10b981' },
+  { id: '4', name: 'History of Art', courseCode: 'ART200', instructor: 'Prof. Eleanor Vance', color: '#f97316' },
+  { id: '5', name: 'Introduction to AI', courseCode: 'CS50', instructor: 'Dr. Ben Carter', color: '#ef4444' },
 ];
 
 export const mockTasks: Task[] = [
@@ -72,22 +74,13 @@ export const mockNotes: Note[] = [
 
 
 export const mockTimetable: TimetableEntry[] = [
-    {
-        id: '1',
-        courseId: '1',
-        day: new Date().toLocaleDateString('en-US', { weekday: 'long' }) as TimetableEntry['day'],
-        startTime: '09:00',
-        endTime: '10:30',
-        location: 'Room 301'
-    },
-    {
-        id: '2',
-        courseId: '2',
-        day: new Date().toLocaleDateString('en-US', { weekday: 'long' }) as TimetableEntry['day'],
-        startTime: '11:00',
-        endTime: '12:30',
-        location: 'Physics Lab'
-    }
+    { id: '1', courseId: '1', day: 'Monday', startTime: '09:00', endTime: '10:30', location: 'Room 301' },
+    { id: '2', courseId: '2', day: 'Monday', startTime: '11:00', endTime: '12:30', location: 'Physics Lab' },
+    { id: '3', courseId: '3', day: 'Tuesday', startTime: '14:00', endTime: '16:00', location: 'Chem Lab A' },
+    { id: '4', courseId: '4', day: 'Wednesday', startTime: '10:00', endTime: '11:30', location: 'Art Studio 2' },
+    { id: '5', courseId: '1', day: 'Wednesday', startTime: '13:00', endTime: '14:30', location: 'Room 301' },
+    { id: '6', courseId: '5', day: 'Thursday', startTime: '15:00', endTime: '17:00', location: 'CS Hub' },
+    { id: '7', courseId: '2', day: 'Friday', startTime: '09:00', endTime: '10:00', location: 'Lecture Hall B' },
 ]
 
 export const mockWeeklyStudyData = [

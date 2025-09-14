@@ -11,18 +11,19 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet';
 import { Plus } from 'lucide-react';
-import { CourseForm } from './course-form';
-import { Course } from '@/lib/types';
+import { TimetableEntryForm } from './timetable-entry-form';
+import { TimetableEntry, Course } from '@/lib/types';
 
-type AddCourseProps = {
-  onAddCourse: (course: Omit<Course, 'id'>) => void;
+type AddTimetableEntryProps = {
+  courses: Course[];
+  onAddEntry: (entry: Omit<TimetableEntry, 'id'>) => void;
 };
 
-export function AddCourse({ onAddCourse }: AddCourseProps) {
+export function AddTimetableEntry({ courses, onAddEntry }: AddTimetableEntryProps) {
   const [open, setOpen] = useState(false);
 
-  const handleSubmit = (values: Omit<Course, 'id'>) => {
-    onAddCourse(values);
+  const handleSubmit = (values: any) => {
+    onAddEntry(values);
     setOpen(false);
   };
 
@@ -31,18 +32,22 @@ export function AddCourse({ onAddCourse }: AddCourseProps) {
       <SheetTrigger asChild>
         <Button>
           <Plus className="mr-2" />
-          Add Course
+          Add Class
         </Button>
       </SheetTrigger>
       <SheetContent>
         <SheetHeader>
-          <SheetTitle>Add a New Course</SheetTitle>
+          <SheetTitle>Add a New Class to Timetable</SheetTitle>
           <SheetDescription>
-            Enter the details for your new course.
+            Enter the details for your new class session.
           </SheetDescription>
         </SheetHeader>
         <div className="py-4">
-          <CourseForm onSubmit={handleSubmit} submitButtonText="Add Course" />
+          <TimetableEntryForm
+            courses={courses}
+            onSubmit={handleSubmit}
+            submitButtonText="Add to Timetable"
+          />
         </div>
       </SheetContent>
     </Sheet>

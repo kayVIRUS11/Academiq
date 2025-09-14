@@ -39,7 +39,7 @@ export function NoteList({ notes, selectedNoteId, onSelectNote, courses }: NoteL
                 {formatDistanceToNow(new Date(note.createdAt), { addSuffix: true })}
               </span>
               {course && (
-                <span className="text-xs font-medium px-2 py-0.5 rounded-full" style={{backgroundColor: course.color}}>
+                <span className="text-xs font-medium px-2 py-0.5 rounded-full text-white" style={{backgroundColor: course.color}}>
                   {course.name}
                 </span>
               )}

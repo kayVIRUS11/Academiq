@@ -29,7 +29,7 @@ export function TodaysSchedule() {
                                 <span className="font-semibold text-sm">{entry.startTime}</span>
                                 <span className="text-xs text-muted-foreground">{entry.endTime}</span>
                             </div>
-                            <div className="h-full w-1 rounded-full" style={{ backgroundColor: `hsl(var(--primary))` }} />
+                            <div className="h-full w-1 rounded-full" style={{ backgroundColor: course?.color }} />
                             <div>
                                 <h4 className="font-semibold text-sm">{course?.name}</h4>
                                 <p className="text-xs text-muted-foreground">{entry.location}</p>
