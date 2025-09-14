@@ -19,7 +19,7 @@ const SummarizeUploadedFileInputSchema = z.object({
 export type SummarizeUploadedFileInput = z.infer<typeof SummarizeUploadedFileInputSchema>;
 
 const SummarizeUploadedFileOutputSchema = z.object({
-  summary: z.string().describe('Concise summary of the file content.'),
+  summary: z.string().describe('A structured study guide summary of the file content in Markdown format.'),
 });
 
 export type SummarizeUploadedFileOutput = z.infer<typeof SummarizeUploadedFileOutputSchema>;
@@ -32,7 +32,20 @@ const summarizeUploadedFilePrompt = ai.definePrompt({
   name: 'summarizeUploadedFilePrompt',
   input: {schema: SummarizeUploadedFileInputSchema},
   output: {schema: SummarizeUploadedFileOutputSchema},
-  prompt: `You are an expert summarizer. Please provide a concise summary of the following document content, no more than 3 paragraphs.\n\nDocument Type: {{{fileType}}}\nContent: {{{fileContent}}}`,
+  prompt: `You are an academic assistant for university students. 
+Your task is to summarize the uploaded document into a structured, easy-to-use study guide.
+
+Rules:
+- Use clear, simple language (avoid jargon unless explained).
+- Break content into **Headings, Subheadings, and Bullet Points**.
+- Highlight key definitions, formulas, examples, and important concepts.
+- Provide a short "Key Takeaways" section at the end.
+- If the document is very long, create a **chapter-by-chapter or section-by-section summary**.
+- Prioritize what would be most useful for students revising for exams.
+- The output should be a single string formatted as Markdown.
+
+Document Type: {{{fileType}}}
+Content: {{{fileContent}}}`,
 });
 
 const summarizeUploadedFileFlow = ai.defineFlow({

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Loader2, Sparkles, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { summarizeUploadedFile } from '@/ai/flows/summarize-uploaded-file';
@@ -173,10 +173,10 @@ export function FileSummarizer() {
 
       {summary && (
         <div className="mt-8">
-          <h3 className="text-2xl font-bold mb-4 font-headline">Summary</h3>
+          <h3 className="text-2xl font-bold mb-4 font-headline">Study Guide</h3>
           <Card>
             <CardContent className="p-6">
-              <p className="whitespace-pre-wrap">{summary}</p>
+              <div className="prose prose-sm max-w-none whitespace-pre-wrap">{summary}</div>
             </CardContent>
           </Card>
         </div>
