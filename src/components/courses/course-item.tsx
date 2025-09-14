@@ -52,12 +52,12 @@ export function CourseItem({ course, onUpdate, onDelete }: CourseItemProps) {
               </DropdownMenuTrigger>
               <DropdownMenuContent>
                 <DropdownMenuItem onSelect={() => setIsEditing(true)}>
-                  <Edit className="mr-2" />
-                  Edit
+                  <Edit className="mr-2 h-4 w-4" />
+                  <span>Edit</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem onSelect={() => setIsDeleteDialogOpen(true)} className="text-destructive">
-                  <Trash className="mr-2" />
-                  Delete
+                  <Trash className="mr-2 h-4 w-4" />
+                  <span>Delete</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
