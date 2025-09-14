@@ -15,7 +15,7 @@ export type Goal = {
 };
 
 export type Course = {
-  id: string;
+  id:string;
   name: string;
   courseCode: string;
   instructor?: string;
@@ -53,3 +53,9 @@ export type StudySession = {
   duration: number; // in minutes
   notes?: string;
 };
+
+export type DailyActivity = {
+    time: string;
+    activity: string;
+    completed: boolean;
+}

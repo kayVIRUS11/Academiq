@@ -2,25 +2,24 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, Sparkles } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '@/components/ui/textarea';
 import { generateDailyPlan } from '@/ai/flows/generate-daily-plan';
 import { mockTasks, mockTimetable } from '@/lib/mock-data';
-import { marked } from 'marked';
+import { useRouter } from 'next/navigation';
+import { useDailyActivities } from '../../daily-activities/activities-context';
 
 export function DailyPlannerForm() {
   const [description, setDescription] = useState('');
-  const [plan, setPlan] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const router = useRouter();
+  const { setActivities } = useDailyActivities();
 
   const handleGeneratePlan = async () => {
     setIsLoading(true);
-    setPlan('');
     try {
-      // Format timetable and tasks into strings for the AI
       const timetableString = mockTimetable.map(
           (entry) =>
             `${entry.day}: ${entry.startTime}-${entry.endTime} - ${entry.courseId} at ${entry.location}`
@@ -37,11 +36,15 @@ export function DailyPlannerForm() {
         desiredDayDescription: description,
       });
 
-      setPlan(result.dailyPlan);
+      setActivities(result.dailyPlan.map(item => ({ ...item, completed: false })));
+      
       toast({
         title: 'Plan Generated!',
         description: 'Your personalized daily plan is ready.',
       });
+
+      router.push('/daily-activities');
+
     } catch (error) {
       console.error('Error generating plan:', error);
       toast({
@@ -52,12 +55,6 @@ export function DailyPlannerForm() {
     } finally {
       setIsLoading(false);
     }
-  };
-  
-  const getRenderedPlan = () => {
-    if (!plan) return null;
-    const rawMarkup = marked.parse(plan);
-    return { __html: rawMarkup as string };
   };
 
   return (
@@ -78,21 +75,10 @@ export function DailyPlannerForm() {
         ) : (
           <>
             <Sparkles className="mr-2 h-4 w-4" />
-            Generate Plan
+            Generate & View Plan
           </>
         )}
       </Button>
-
-      {plan && (
-        <div className="mt-8">
-            <h3 className="text-2xl font-bold mb-4 font-headline">Your Personalized Plan</h3>
-            <Card>
-                <CardContent className="p-6">
-                    <div className="prose max-w-none prose-sm" dangerouslySetInnerHTML={getRenderedPlan()!} />
-                </CardContent>
-            </Card>
-        </div>
-      )}
     </div>
   );
 }

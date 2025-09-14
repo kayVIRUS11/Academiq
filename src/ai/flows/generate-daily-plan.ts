@@ -21,7 +21,10 @@ const GenerateDailyPlanInputSchema = z.object({
 export type GenerateDailyPlanInput = z.infer<typeof GenerateDailyPlanInputSchema>;
 
 const GenerateDailyPlanOutputSchema = z.object({
-  dailyPlan: z.string().describe('A detailed hour-by-hour daily plan.'),
+  dailyPlan: z.array(z.object({
+    time: z.string().describe('The time for the activity, e.g., "09:00 - 10:30".'),
+    activity: z.string().describe('The description of the activity.'),
+  })).describe('A detailed list of activities for the day.'),
 });
 export type GenerateDailyPlanOutput = z.infer<typeof GenerateDailyPlanOutputSchema>;
 
@@ -41,7 +44,8 @@ const prompt = ai.definePrompt({
   Tasks: {{{tasks}}}
   Desired Day Description: {{{desiredDayDescription}}}
 
-  Daily Plan:`,
+  Generate the output as a structured list of activities with a time and description for each.
+  `,
 });
 
 const generateDailyPlanFlow = ai.defineFlow(
