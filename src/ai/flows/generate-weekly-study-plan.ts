@@ -32,13 +32,13 @@ const TimetableEntrySchema = z.object({
 });
 
 
-export const GenerateWeeklyStudyPlanInputSchema = z.object({
+const GenerateWeeklyStudyPlanInputSchema = z.object({
   courses: z.array(CourseSchema).describe('The list of all courses the student is taking.'),
   timetable: z.array(TimetableEntrySchema).describe("The student's fixed class timetable for the week."),
 });
 export type GenerateWeeklyStudyPlanInput = z.infer<typeof GenerateWeeklyStudyPlanInputSchema>;
 
-export const GenerateWeeklyStudyPlanOutputSchema = z.object({
+const GenerateWeeklyStudyPlanOutputSchema = z.object({
   weeklyPlan: z.array(z.object({
       day: z.string(),
       time: z.string().describe("Suggested time slot, e.g., '15:00 - 17:00'"),
