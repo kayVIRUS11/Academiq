@@ -1,9 +1,10 @@
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Settings, Download, Upload } from "lucide-react";
+import { Settings, Download, Upload, Palette } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { UserDataSummary } from "@/components/settings/user-data-summary";
 import { LogoutButton } from "@/components/settings/logout-button";
+import { ThemeToggle } from "@/components/settings/theme-toggle";
 
 export default function SettingsPage() {
   return (
@@ -16,6 +17,16 @@ export default function SettingsPage() {
         </div>
         
         <UserDataSummary />
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2"><Palette /> Appearance</CardTitle>
+          <CardDescription>Customize the look and feel of the application.</CardDescription>
+        </CardHeader>
+        <CardContent>
+            <ThemeToggle />
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
