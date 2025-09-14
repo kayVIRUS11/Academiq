@@ -11,6 +11,7 @@ import {
   Target,
   Timer,
   Donut,
+  ChevronDown,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -21,11 +22,18 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 
 import { useSidebar } from './ui/sidebar';
 import { Logo } from './logo';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
+import { Button } from './ui/button';
+import { useState } from 'react';
 
 const navItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
@@ -37,30 +45,35 @@ const navItems = [
   { href: '/timetable', icon: Calendar, label: 'Timetable' },
 ];
 
+const aiTools = [
+  { href: '/ai-tools/daily-planner', label: 'Daily Planner' },
+  { href: '/ai-tools/file-summarizer', label: 'File Summarizer' },
+  { href: '/ai-tools/flashcards', label: 'Flashcard Generator' },
+  { href: '/ai-tools/study-guide', label: 'Study Guide Generator' },
+];
+
 export function SidebarNav() {
   const pathname = usePathname();
   const { setOpen } = useSidebar();
   const isMobile = useIsMobile();
+  const [isAiToolsOpen, setIsAiToolsOpen] = useState(pathname.startsWith('/ai-tools'));
 
   const handleLinkClick = () => {
-    setOpen(false);
+    if (isMobile) {
+        setOpen(false);
+    }
   };
 
   const NavLink = ({
     href,
     icon: Icon,
     label,
-    isMobile,
   }: {
     href: string;
     icon: React.ElementType;
     label: string;
-    isMobile: boolean;
   }) => {
-    const isActive =
-      href === '/ai-tools'
-        ? pathname.startsWith(href)
-        : pathname === href;
+    const isActive = pathname === href;
 
     if (isMobile) {
       return (
@@ -105,13 +118,45 @@ export function SidebarNav() {
   if (isMobile) {
     return (
       <nav className="grid gap-6 text-lg font-medium">
-        <Logo />
+        <Logo className="mb-4" />
         {navItems.map((item) => (
-          <NavLink {...item} isMobile={isMobile} key={item.href} />
+          <NavLink {...item} key={item.href} />
         ))}
+        
+        <Collapsible open={isAiToolsOpen} onOpenChange={setIsAiToolsOpen}>
+          <CollapsibleTrigger className="w-full">
+            <div className={cn(
+                "flex items-center justify-between gap-4 px-2.5",
+                pathname.startsWith('/ai-tools') ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'
+            )}>
+              <div className="flex items-center gap-4">
+                <Sparkles className="h-5 w-5" />
+                AI Tools
+              </div>
+              <ChevronDown className={cn("h-5 w-5 transition-transform", isAiToolsOpen && "rotate-180")} />
+            </div>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <div className="grid gap-4 pl-11 pt-4">
+              {aiTools.map((tool) => (
+                <Link
+                  key={tool.href}
+                  href={tool.href}
+                  onClick={handleLinkClick}
+                  className={cn(
+                    'text-muted-foreground hover:text-foreground',
+                    pathname === tool.href && 'text-foreground'
+                  )}
+                >
+                  {tool.label}
+                </Link>
+              ))}
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
+
         <div className="mt-auto grid gap-6">
-            <NavLink href="/ai-tools" icon={Sparkles} label="AI Tools" isMobile={isMobile} />
-            <NavLink href="/settings" icon={Settings} label="Settings" isMobile={isMobile} />
+            <NavLink href="/settings" icon={Settings} label="Settings" />
         </div>
       </nav>
     );
@@ -128,12 +173,12 @@ export function SidebarNav() {
           <span className="sr-only">Academiq</span>
         </Link>
         {navItems.map((item) => (
-          <NavLink {...item} isMobile={isMobile} key={item.href} />
+          <NavLink {...item} key={item.href} />
         ))}
       </nav>
       <nav className="mt-auto flex flex-col items-center gap-4 px-2 sm:py-5">
-        <NavLink href="/ai-tools" icon={Sparkles} label="AI Tools" isMobile={isMobile} />
-        <NavLink href="/settings" icon={Settings} label="Settings" isMobile={isMobile} />
+        <NavLink href="/ai-tools" icon={Sparkles} label="AI Tools" />
+        <NavLink href="/settings" icon={Settings} label="Settings" />
       </nav>
     </TooltipProvider>
   );
