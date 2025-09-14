@@ -1,11 +1,11 @@
 import { Course, Goal, Note, Task, TimetableEntry, StudySession } from './types';
 
 export const mockCourses: Course[] = [
-  { id: '1', name: 'Advanced Calculus', courseCode: 'MATH301', instructor: 'Dr. Evelyn Reed', color: '#3b82f6' },
-  { id: '2', name: 'Quantum Physics', courseCode: 'PHYS402', instructor: 'Dr. Alistair Finch', color: '#8b5cf6' },
-  { id: '3', name: 'Organic Chemistry', courseCode: 'CHEM203', instructor: 'Dr. Lena Petrova', color: '#10b981' },
-  { id: '4', name: 'History of Art', courseCode: 'ART200', instructor: 'Prof. Eleanor Vance', color: '#f97316' },
-  { id: '5', name: 'Introduction to AI', courseCode: 'CS50', instructor: 'Dr. Ben Carter', color: '#ef4444' },
+  { id: '1', name: 'Advanced Calculus', courseCode: 'MATH301', instructor: 'Dr. Evelyn Reed', color: '#3b82f6', units: 4 },
+  { id: '2', name: 'Quantum Physics', courseCode: 'PHYS402', instructor: 'Dr. Alistair Finch', color: '#8b5cf6', units: 4 },
+  { id: '3', name: 'Organic Chemistry', courseCode: 'CHEM203', instructor: 'Dr. Lena Petrova', color: '#10b981', units: 3 },
+  { id: '4', name: 'History of Art', courseCode: 'ART200', instructor: 'Prof. Eleanor Vance', color: '#f97316', units: 2 },
+  { id: '5', name: 'Introduction to AI', courseCode: 'CS50', instructor: 'Dr. Ben Carter', color: '#ef4444', units: 3 },
 ];
 
 export const mockTasks: Task[] = [

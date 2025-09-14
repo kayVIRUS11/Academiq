@@ -20,6 +20,7 @@ const courseFormSchema = z.object({
   courseCode: z.string().min(3, { message: 'Course code must be at least 3 characters.' }),
   instructor: z.string().optional(),
   color: z.string().optional(),
+  units: z.coerce.number().min(0, { message: 'Units must be a positive number.' }),
 });
 
 type CourseFormValues = z.infer<typeof courseFormSchema>;
@@ -47,6 +48,7 @@ export function CourseForm({
       courseCode: defaultValues?.courseCode ?? '',
       instructor: defaultValues?.instructor ?? '',
       color: defaultValues?.color ?? colors[0],
+      units: defaultValues?.units ?? 3,
     },
   });
 
@@ -66,19 +68,34 @@ export function CourseForm({
             </FormItem>
           )}
         />
-        <FormField
-          control={form.control}
-          name="courseCode"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Course Code</FormLabel>
-              <FormControl>
-                <Input placeholder="e.g., PHYS101" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <div className="grid grid-cols-2 gap-4">
+            <FormField
+            control={form.control}
+            name="courseCode"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>Course Code</FormLabel>
+                <FormControl>
+                    <Input placeholder="e.g., PHYS101" {...field} />
+                </FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+            <FormField
+            control={form.control}
+            name="units"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>Course Units</FormLabel>
+                <FormControl>
+                    <Input type="number" placeholder="e.g., 3" {...field} />
+                </FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+        </div>
         <FormField
           control={form.control}
           name="instructor"

@@ -20,6 +20,7 @@ export type Course = {
   courseCode: string;
   instructor?: string;
   color: string;
+  units: number;
 };
 
 export type Note = {

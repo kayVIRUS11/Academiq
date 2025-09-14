@@ -1,16 +1,32 @@
 'use client';
 
 import { useState } from 'react';
-import { Timer } from 'lucide-react';
-import { mockStudySessions, mockCourses } from '@/lib/mock-data';
-import { StudySession } from '@/lib/types';
+import { Timer, BrainCircuit, Loader2 } from 'lucide-react';
+import { mockStudySessions, mockCourses, mockTimetable } from '@/lib/mock-data';
+import { StudySession, TimetableEntry } from '@/lib/types';
 import { AddStudySession } from '@/components/study-tracker/add-study-session';
 import { StudySessionList } from '@/components/study-tracker/study-session-list';
 import { Course } from '@/lib/types';
+import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
+import { useToast } from '@/hooks/use-toast';
+import { generateWeeklyStudyPlan, GenerateWeeklyStudyPlanOutput } from '@/ai/flows/generate-weekly-study-plan';
 
 export default function StudyTrackerPage() {
   const [sessions, setSessions] = useState<StudySession[]>(mockStudySessions);
   const [courses] = useState<Course[]>(mockCourses);
+  const [timetable] = useState<TimetableEntry[]>(mockTimetable);
+
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generatedPlan, setGeneratedPlan] = useState<GenerateWeeklyStudyPlanOutput['weeklyPlan'] | null>(null);
+  const [isPlanDialogOpen, setIsPlanDialogOpen] = useState(false);
+  const { toast } = useToast();
 
   const handleAddSession = (newSessionData: Omit<StudySession, 'id'>) => {
     setSessions(prev => [
@@ -30,6 +46,26 @@ export default function StudyTrackerPage() {
     setSessions(prev => prev.filter(s => s.id !== sessionId));
   };
 
+  const handleGeneratePlan = async () => {
+    setIsGenerating(true);
+    try {
+      const result = await generateWeeklyStudyPlan({
+        courses,
+        timetable,
+      });
+      setGeneratedPlan(result.weeklyPlan);
+      setIsPlanDialogOpen(true);
+      toast({ title: 'Study Plan Generated!', description: 'Review your suggested weekly study schedule.' });
+    } catch (error) {
+      console.error("Failed to generate weekly study plan:", error);
+      toast({ title: 'Generation Failed', description: 'Could not generate the plan. Please try again.', variant: 'destructive' });
+    } finally {
+      setIsGenerating(false);
+    }
+  }
+
+  const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -37,7 +73,13 @@ export default function StudyTrackerPage() {
           <Timer className="w-8 h-8" />
           Study Tracker
         </h1>
-        <AddStudySession courses={courses} onAddSession={handleAddSession} />
+        <div className='flex gap-2'>
+            <Button variant="outline" onClick={handleGeneratePlan} disabled={isGenerating}>
+                {isGenerating ? <Loader2 className="mr-2 animate-spin" /> : <BrainCircuit className="mr-2" />}
+                {isGenerating ? 'Generating...' : 'AI Weekly Study Plan'}
+            </Button>
+            <AddStudySession courses={courses} onAddSession={handleAddSession} />
+        </div>
       </div>
 
       <StudySessionList
@@ -46,6 +88,34 @@ export default function StudyTrackerPage() {
         onUpdateSession={handleUpdateSession}
         onDeleteSession={handleDeleteSession}
       />
+
+      <Dialog open={isPlanDialogOpen} onOpenChange={setIsPlanDialogOpen}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>Your AI-Generated Weekly Study Plan</DialogTitle>
+            <DialogDescription>
+                Use this as a guide to plan your study sessions. This plan is based on your course units and free time.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-[60vh] overflow-y-auto p-1">
+            {daysOfWeek.map(day => (
+                <div key={day} className="p-4 rounded-lg bg-secondary/50 space-y-3">
+                    <h3 className="font-bold text-lg">{day}</h3>
+                    {generatedPlan?.filter(p => p.day === day).map((planItem, index) => (
+                        <div key={index} className="p-3 rounded-md bg-background shadow-sm">
+                            <p className="font-semibold text-sm">{planItem.time}</p>
+                            <p className="text-sm text-primary font-medium">{planItem.course}</p>
+                            <p className="text-xs text-muted-foreground">{planItem.activity}</p>
+                        </div>
+                    ))}
+                    {generatedPlan?.filter(p => p.day === day).length === 0 && (
+                        <p className="text-sm text-muted-foreground italic">No study sessions suggested.</p>
+                    )}
+                </div>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
