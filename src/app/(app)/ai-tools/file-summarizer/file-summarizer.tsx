@@ -8,8 +8,12 @@ import { useToast } from '@/hooks/use-toast';
 import { summarizeUploadedFile } from '@/ai/flows/summarize-uploaded-file';
 import { FileUploader } from './file-uploader';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import PDFExtract from 'pdf-extract';
+import * as pdfjsLib from 'pdfjs-dist';
 import JSZip from 'jszip';
+
+// Required by pdfjs-dist
+pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
+
 
 export function FileSummarizer() {
   const [file, setFile] = useState<File | null>(null);
@@ -54,6 +58,23 @@ export function FileSummarizer() {
     }
   };
 
+  const extractTextFromPdf = async (file: File): Promise<string> => {
+    const arrayBuffer = await file.arrayBuffer();
+    try {
+      const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
+      let fullText = '';
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const textContent = await page.getTextContent();
+        fullText += textContent.items.map(item => ('str' in item ? item.str : '')).join(' ') + '\n';
+      }
+      return fullText;
+    } catch (e) {
+      console.error("Error parsing PDF", e);
+      throw new Error("Could not extract text from PDF. It may be an image-based PDF, encrypted, or corrupted.");
+    }
+  };
+
 
   const handleSummarize = async () => {
     if (!file) {
@@ -76,20 +97,7 @@ export function FileSummarizer() {
             fileContent = await file.text();
             fileType = 'txt';
         } else if (file.type === 'application/pdf' || fileType === 'pdf') {
-          try {
-            const buffer = await file.arrayBuffer();
-            const pdfExtract = new PDFExtract();
-            const data = await new Promise<any>((resolve, reject) => {
-              pdfExtract.extractBuffer(Buffer.from(buffer), {}, (err, data) => {
-                if (err) return reject(err);
-                resolve(data);
-              });
-            });
-            fileContent = data.pages.map((page: any) => page.content.map((item: any) => item.str).join(' ')).join('\n');
-          } catch(e) {
-             console.error("Error parsing PDF", e);
-             throw new Error("Could not extract text from PDF. It may be an image-based PDF or corrupted.");
-          }
+          fileContent = await extractTextFromPdf(file);
           fileType = 'pdf';
         } else if (file.type === 'application/vnd.openxmlformats-officedocument.presentationml.presentation' || fileType === 'pptx') {
             fileContent = await extractTextFromPptx(file);
@@ -142,7 +150,7 @@ export function FileSummarizer() {
         <AlertCircle className="h-4 w-4" />
         <AlertTitle>Supported File Types</AlertTitle>
         <AlertDescription>
-          You can upload <strong>.txt</strong>, <strong>.pdf</strong>, and <strong>.pptx</strong> files for summarization. Note: Image-based PDFs are not supported.
+          You can upload <strong>.txt</strong>, <strong>.pdf</strong>, and <strong>.pptx</strong> files for summarization. Note: Image-based or encrypted PDFs are not supported.
         </AlertDescription>
       </Alert>
 
