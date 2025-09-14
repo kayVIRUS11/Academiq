@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { TimetableEntry, Course } from '@/lib/types';
 import { EditTimetableEntry } from './edit-timetable-entry';
+import { cn } from '@/lib/utils';
 
 type TimetableViewProps = {
   entries: TimetableEntry[];
@@ -39,11 +40,21 @@ export function TimetableView({ entries, courses, onUpdateEntry, onDeleteEntry }
   return (
     <>
       <div className="border rounded-lg bg-card text-card-foreground p-4 overflow-x-auto">
-        <div className="grid grid-cols-[auto_1fr_1fr_1fr_1fr_1fr] min-w-[800px]">
+        <div className="grid grid-cols-[auto_repeat(5,_1fr)] min-w-[800px]">
+          {/* Top-left empty cell */}
+          <div className="border-b"></div>
+
+          {/* Day headers */}
+          {days.map(day => (
+            <div key={day} className="text-center font-semibold py-2 border-b border-l">
+              <h3>{day}</h3>
+            </div>
+          ))}
+
           {/* Time column */}
-          <div className="text-xs text-muted-foreground">
+          <div className="text-xs text-muted-foreground row-start-2">
             {timeSlots.map(time => (
-              <div key={time} className="h-16 flex items-start -mt-2">
+              <div key={time} className="h-16 flex items-start -mt-2 pr-2">
                 {time}
               </div>
             ))}
@@ -51,8 +62,7 @@ export function TimetableView({ entries, courses, onUpdateEntry, onDeleteEntry }
 
           {/* Day columns */}
           {days.map(day => (
-            <div key={day} className="relative border-l">
-              <h3 className="text-center font-semibold py-2 border-b">{day}</h3>
+            <div key={day} className="relative border-l row-start-2">
               <div className="relative h-[calc(11*4rem)]">
                 {/* Grid lines */}
                 {timeSlots.slice(1).map(time => (
@@ -68,7 +78,10 @@ export function TimetableView({ entries, courses, onUpdateEntry, onDeleteEntry }
                         <button
                             key={entry.id}
                             onClick={() => setSelectedEntry(entry)}
-                            className="absolute w-full text-left p-2 rounded-lg text-white overflow-hidden transition-shadow hover:shadow-lg"
+                            className={cn(
+                                "absolute w-full text-left p-2 rounded-lg text-white overflow-hidden transition-shadow hover:shadow-lg",
+                                "opacity-80 border"
+                            )}
                             style={getEntryStyle(entry)}
                         >
                             <p className="font-bold text-xs leading-tight">{course?.name}</p>
