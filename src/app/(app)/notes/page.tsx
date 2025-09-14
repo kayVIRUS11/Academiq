@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Note } from '@/lib/types';
 import { NoteList } from '@/components/notes/note-list';
 import { NoteEditor } from '@/components/notes/note-editor';
-import { Plus, NotebookText, Trash2, FilePlus, BrainCircuit, Sparkles, ArrowLeft } from 'lucide-react';
+import { Plus, NotebookText, Trash2, FilePlus, BrainCircuit, Sparkles, ArrowLeft, Blocks } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
@@ -14,6 +14,9 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 import { mockCourses } from '@/lib/mock-data';
 import { useNotes } from './notes-context';
+import { useFlashcards } from '../ai-tools/flashcards/flashcards-context';
+import { generateFlashcards } from '@/ai/flows/generate-flashcards';
+import { useRouter } from 'next/navigation';
 
 export default function NotesPage() {
     const { 
@@ -25,9 +28,12 @@ export default function NotesPage() {
     } = useNotes();
   const [isDeleting, setIsDeleting] = useState(false);
   const [isSummarizing, setIsSummarizing] = useState(false);
+  const [isGeneratingFlashcards, setIsGeneratingFlashcards] = useState(false);
   
   const { toast } = useToast();
   const isMobile = useIsMobile();
+  const router = useRouter();
+  const { setFlashcards } = useFlashcards();
 
   const selectedNote = notes.find(note => note.id === selectedNoteId) || null;
 
@@ -96,6 +102,27 @@ export default function NotesPage() {
     }
   }
 
+  const handleGenerateFlashcards = async () => {
+    if (!selectedNote || !selectedNote.content?.trim()) {
+        toast({ title: 'Cannot Generate Flashcards', description: 'The note is empty.', variant: 'destructive'});
+        return;
+    }
+    setIsGeneratingFlashcards(true);
+    try {
+        const result = await generateFlashcards({ notes: selectedNote.content });
+        setFlashcards(result.flashcards);
+        toast({
+            title: 'Flashcards Generated!',
+            description: `Navigating to flashcards page to view your ${result.flashcards.length} new cards.`
+        });
+        router.push('/ai-tools/flashcards');
+    } catch(e) {
+        toast({ title: 'Generation Failed', description: 'Could not generate flashcards. Please try again.', variant: 'destructive' });
+    } finally {
+        setIsGeneratingFlashcards(false);
+    }
+  }
+
   const editorPanel = (
       <div className={cn(
         "flex flex-col flex-1",
@@ -103,20 +130,29 @@ export default function NotesPage() {
       )}>
         {selectedNote ? (
           <>
-            <div className="flex items-center justify-end gap-2 mb-4 p-4 border-b">
+            <div className="flex items-center justify-end gap-2 mb-4 p-4 border-b flex-wrap">
               {isMobile && (
                 <Button variant="ghost" size="icon" className="mr-auto" onClick={() => setSelectedNoteId(null)}>
                   <ArrowLeft />
                   <span className="sr-only">Back to list</span>
                 </Button>
               )}
-              <Button onClick={handleSummarize} disabled={isSummarizing}>
+              <div className="flex-1" />
+              <Button onClick={handleSummarize} disabled={isSummarizing || isGeneratingFlashcards} variant="outline">
                 {isSummarizing ? (
                   <Sparkles className="mr-2 animate-spin" />
                 ) : (
                   <BrainCircuit className="mr-2" />
                 )}
                 {isSummarizing ? 'Summarizing...' : 'AI Summary'}
+              </Button>
+              <Button onClick={handleGenerateFlashcards} disabled={isSummarizing || isGeneratingFlashcards} variant="outline">
+                {isGeneratingFlashcards ? (
+                  <Sparkles className="mr-2 animate-spin" />
+                ) : (
+                  <Blocks className="mr-2" />
+                )}
+                {isGeneratingFlashcards ? 'Generating...' : 'Flashcards'}
               </Button>
               <Button
                 variant="destructive"

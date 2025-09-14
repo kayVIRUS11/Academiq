@@ -11,18 +11,10 @@ export default function FlashcardsPage() {
             </div>
             <h1 className="text-4xl font-bold font-headline">AI Flashcard Generator</h1>
             <p className="text-muted-foreground mt-2 max-w-2xl">
-                Paste your notes below, and our AI will automatically create a set of flashcards to help you study more effectively.
+                Generate flashcards from your notes and test your knowledge. Click on a card to flip it.
             </p>
         </div>
-        <Card>
-            <CardHeader>
-                <CardTitle>Generate from Notes</CardTitle>
-                <CardDescription>Enter your study material to get started.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <FlashcardGenerator />
-            </CardContent>
-        </Card>
+        <FlashcardGenerator />
     </div>
   );
 }

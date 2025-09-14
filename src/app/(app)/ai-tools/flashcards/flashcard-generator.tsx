@@ -1,53 +1,17 @@
 'use client';
-import { generateFlashcards as generateFlashcardsFlow, GenerateFlashcardsOutput } from '@/ai/flows/generate-flashcards';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
 import { useState } from 'react';
-import { Loader2, Sparkles, ArrowLeft, ArrowRight } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { Card, CardContent } from '@/components/ui/card';
+import { ArrowLeft, ArrowRight, BookOpen } from 'lucide-react';
+import { Card } from '@/components/ui/card';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { cn } from '@/lib/utils';
-
-type Flashcard = GenerateFlashcardsOutput['flashcards'][0];
+import { useFlashcards } from './flashcards-context';
+import Link from 'next/link';
 
 export function FlashcardGenerator() {
-  const [notes, setNotes] = useState('');
-  const [flashcards, setFlashcards] = useState<Flashcard[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
+  const { flashcards } = useFlashcards();
 
-  const handleGenerate = async () => {
-    if (!notes.trim()) {
-      toast({
-        title: 'Error',
-        description: 'Please enter some notes to generate flashcards.',
-        variant: 'destructive',
-      });
-      return;
-    }
-    setIsLoading(true);
-    setFlashcards([]);
-    try {
-      const result = await generateFlashcardsFlow({ notes });
-      setFlashcards(result.flashcards);
-      toast({
-        title: 'Success!',
-        description: `Generated ${result.flashcards.length} flashcards.`,
-      });
-    } catch (error) {
-      console.error('Error generating flashcards:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to generate flashcards. Please try again.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  function Flashcard({ card }: { card: Flashcard }) {
+  function Flashcard({ card }: { card: { question: string, answer: string } }) {
     const [isFlipped, setIsFlipped] = useState(false);
 
     return (
@@ -70,47 +34,33 @@ export function FlashcardGenerator() {
     );
   }
 
-  return (
-    <div className="space-y-6">
-      <div className="space-y-2">
-        <Textarea
-          placeholder="Paste your notes here..."
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          rows={10}
-          disabled={isLoading}
-        />
-      </div>
-      <Button onClick={handleGenerate} disabled={isLoading}>
-        {isLoading ? (
-          <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Generating...
-          </>
-        ) : (
-          <>
-            <Sparkles className="mr-2 h-4 w-4" />
-            Generate Flashcards
-          </>
-        )}
-      </Button>
-
-      {flashcards.length > 0 && (
-        <div className="mt-8">
-            <h3 className="text-2xl font-bold mb-4 font-headline">Your Flashcards</h3>
-            <Carousel className="w-full max-w-xl mx-auto">
-                <CarouselContent>
-                    {flashcards.map((card, index) => (
-                        <CarouselItem key={index}>
-                            <Flashcard card={card} />
-                        </CarouselItem>
-                    ))}
-                </CarouselContent>
-                <CarouselPrevious />
-                <CarouselNext />
-            </Carousel>
+  if (!flashcards || flashcards.length === 0) {
+    return (
+        <div className="flex flex-col items-center justify-center text-center space-y-4 p-8 border-dashed border-2 rounded-lg h-80">
+            <BookOpen className="h-16 w-16 text-muted-foreground" />
+            <h3 className="text-xl font-semibold">No Flashcards Generated</h3>
+            <p className="text-muted-foreground">Go to your notes to generate a new set of flashcards.</p>
+            <Link href="/notes">
+                <Button>Go to Notes</Button>
+            </Link>
         </div>
-      )}
+    )
+  }
+
+  return (
+    <div className="mt-8">
+        <h3 className="text-2xl font-bold mb-4 font-headline text-center">Your Flashcards</h3>
+        <Carousel className="w-full max-w-xl mx-auto">
+            <CarouselContent>
+                {flashcards.map((card, index) => (
+                    <CarouselItem key={index}>
+                        <Flashcard card={card} />
+                    </CarouselItem>
+                ))}
+            </CarouselContent>
+            <CarouselPrevious />
+            <CarouselNext />
+        </Carousel>
     </div>
   );
 }
