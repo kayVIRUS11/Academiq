@@ -97,7 +97,10 @@ export default function NotesPage() {
   }
 
   const editorPanel = (
-      <>
+      <div className={cn(
+        "flex flex-col flex-1",
+        isMobile ? (selectedNoteId ? "flex" : "hidden") : "flex"
+      )}>
         {selectedNote ? (
           <>
             <div className="flex items-center justify-end gap-2 mb-4 p-4 border-b">
@@ -124,34 +127,36 @@ export default function NotesPage() {
                 <span className="sr-only">Delete Note</span>
               </Button>
             </div>
-            <div className="flex-1">
+            <div className="flex-1 p-4">
               <NoteEditor note={selectedNote} onUpdate={handleUpdateNote} />
             </div>
           </>
         ) : (
-          <Card className="flex-1 flex items-center justify-center">
-            <CardContent className="text-center p-6">
-              <NotebookText className="mx-auto h-12 w-12 text-muted-foreground" />
-              <h2 className="mt-4 text-xl font-semibold">No note selected</h2>
-              <p className="mt-2 text-sm text-muted-foreground">
-                Select a note from the list on the left, or create a new one.
-              </p>
-              <Button className="mt-6" onClick={handleAddNote}>
-                <Plus className="mr-2 h-4 w-4" />
-                Create a New Note
-              </Button>
-            </CardContent>
-          </Card>
+          <div className="flex-1 flex items-center justify-center p-4">
+            <Card className="w-full h-full flex items-center justify-center">
+                <CardContent className="text-center p-6">
+                <NotebookText className="mx-auto h-12 w-12 text-muted-foreground" />
+                <h2 className="mt-4 text-xl font-semibold">No note selected</h2>
+                <p className="mt-2 text-sm text-muted-foreground">
+                    Select a note from the list, or create a new one.
+                </p>
+                <Button className="mt-6" onClick={handleAddNote}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Create a New Note
+                </Button>
+                </CardContent>
+            </Card>
+          </div>
         )}
-      </>
+      </div>
   );
 
   return (
     <div className="flex h-[calc(100vh-theme(space.20))]">
       {/* Left Panel: Note List */}
       <aside className={cn(
-        "border-r pr-4 flex-col",
-        isMobile ? (selectedNoteId ? "hidden" : "flex w-full") : "flex w-1/3"
+        "border-r flex flex-col",
+        isMobile ? (selectedNoteId ? "hidden" : "w-full") : "w-1/3"
       )}>
         <div className="flex items-center justify-between p-4 border-b">
           <h1 className="text-xl font-bold font-headline flex items-center gap-2">
@@ -175,8 +180,8 @@ export default function NotesPage() {
 
       {/* Right Panel: Note Editor/Viewer */}
       <main className={cn(
-        "p-4 flex-col",
-        isMobile ? (selectedNoteId ? "flex w-full" : "hidden") : "flex w-2/3"
+        "flex flex-col",
+         isMobile ? (selectedNoteId ? "w-full" : "hidden") : "w-2/3"
       )}>
         {editorPanel}
       </main>

@@ -19,31 +19,31 @@ export function NoteEditor({ note, onUpdate }: NoteEditorProps) {
     setContent(note.content);
   }, [note]);
 
-  const handleTitleBlur = () => {
-    if (title !== note.title) {
-      onUpdate({ title });
-    }
-  };
+  // Use a timer to save changes after user stops typing
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      if (title !== note.title || content !== note.content) {
+        onUpdate({ title, content });
+      }
+    }, 1000); // 1 second delay
 
-  const handleContentBlur = () => {
-    if (content !== note.content) {
-      onUpdate({ content });
-    }
-  };
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [title, content, note, onUpdate]);
+
 
   return (
     <div className="h-full flex flex-col">
       <Input
         value={title}
         onChange={(e) => setTitle(e.target.value)}
-        onBlur={handleTitleBlur}
         className="text-2xl font-bold border-none focus-visible:ring-0 shadow-none p-0 mb-4 h-auto"
         placeholder="Note Title"
       />
       <Textarea
         value={content}
         onChange={(e) => setContent(e.target.value)}
-        onBlur={handleContentBlur}
         className="flex-1 text-base border-none focus-visible:ring-0 shadow-none p-0 resize-none"
         placeholder="Start writing your note here..."
       />
