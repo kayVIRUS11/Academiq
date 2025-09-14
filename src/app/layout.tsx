@@ -6,6 +6,7 @@ import { FirebaseProvider } from '@/lib/firebase-provider';
 export const metadata: Metadata = {
   title: 'Academiq',
   description: 'Your academic success partner.',
+  manifest: '/manifest.json'
 };
 
 export default function RootLayout({
