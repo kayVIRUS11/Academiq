@@ -8,6 +8,8 @@ import { useToast } from '@/hooks/use-toast';
 import { summarizeUploadedFile } from '@/ai/flows/summarize-uploaded-file';
 import { FileUploader } from './file-uploader';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import PDFExtract from 'pdf-extract';
+import JSZip from 'jszip';
 
 export function FileSummarizer() {
   const [file, setFile] = useState<File | null>(null);
@@ -20,6 +22,39 @@ export function FileSummarizer() {
     setSummary(''); // Reset summary when a new file is selected
   };
 
+  const extractTextFromPptx = async (file: File): Promise<string> => {
+    const arrayBuffer = await file.arrayBuffer();
+    try {
+      const zip = await JSZip.loadAsync(arrayBuffer);
+      const slidePromises: Promise<string>[] = [];
+      zip.folder('ppt/slides')?.forEach((relativePath, file) => {
+        if (relativePath.endsWith('.xml') && !relativePath.includes('_rels')) {
+          slidePromises.push(file.async('string'));
+        }
+      });
+  
+      const slideXmls = await Promise.all(slidePromises);
+      const parser = new DOMParser();
+      let fullText = '';
+  
+      for (const slideXml of slideXmls) {
+        const doc = parser.parseFromString(slideXml, 'application/xml');
+        const textNodes = doc.querySelectorAll('a\\:t');
+        textNodes.forEach(node => {
+          if (node.textContent) {
+            fullText += node.textContent + ' ';
+          }
+        });
+        fullText += '\n';
+      }
+      return fullText;
+    } catch (e) {
+      console.error("Error parsing PPTX", e);
+      throw new Error("Could not extract text from PowerPoint file. It may be corrupted or in an unsupported format.");
+    }
+  };
+
+
   const handleSummarize = async () => {
     if (!file) {
       toast({
@@ -30,61 +65,74 @@ export function FileSummarizer() {
       return;
     }
 
-    if (file.type !== 'text/plain') {
-        toast({
-            title: 'Invalid File Type',
-            description: 'Please upload a .txt file.',
-            variant: 'destructive',
-        });
-        return;
-    }
-
     setIsLoading(true);
     setSummary('');
 
     try {
-      const reader = new FileReader();
-      reader.onload = async (e) => {
-        const fileContent = e.target?.result as string;
+        let fileContent = '';
+        let fileType = file.name.split('.').pop() || '';
         
-        try {
-            const result = await summarizeUploadedFile({
-                fileContent,
-                fileType: 'txt',
+        if (file.type === 'text/plain' || fileType === 'txt') {
+            fileContent = await file.text();
+            fileType = 'txt';
+        } else if (file.type === 'application/pdf' || fileType === 'pdf') {
+          try {
+            const buffer = await file.arrayBuffer();
+            const pdfExtract = new PDFExtract();
+            const data = await new Promise<any>((resolve, reject) => {
+              pdfExtract.extractBuffer(Buffer.from(buffer), {}, (err, data) => {
+                if (err) return reject(err);
+                resolve(data);
               });
-              setSummary(result.summary);
-              toast({
-                title: 'Success!',
-                description: 'Your file has been summarized.',
-              });
-        } catch (error) {
-            console.error('Error summarizing file:', error);
+            });
+            fileContent = data.pages.map((page: any) => page.content.map((item: any) => item.str).join(' ')).join('\n');
+          } catch(e) {
+             console.error("Error parsing PDF", e);
+             throw new Error("Could not extract text from PDF. It may be an image-based PDF or corrupted.");
+          }
+          fileType = 'pdf';
+        } else if (file.type === 'application/vnd.openxmlformats-officedocument.presentationml.presentation' || fileType === 'pptx') {
+            fileContent = await extractTextFromPptx(file);
+            fileType = 'pptx';
+        } else {
             toast({
-                title: 'Summarization Failed',
-                description: 'Could not generate summary. Please try again.',
+                title: 'Unsupported File Type',
+                description: 'Please upload a .txt, .pdf, or .pptx file.',
                 variant: 'destructive',
             });
-        } finally {
             setIsLoading(false);
+            return;
         }
-      };
-      reader.onerror = () => {
-        toast({
-            title: 'File Read Error',
-            description: 'There was an error reading the file.',
+
+        if (!fileContent.trim()) {
+          toast({
+            title: 'Empty Document',
+            description: 'The file appears to be empty or text could not be extracted.',
             variant: 'destructive',
           });
-        setIsLoading(false);
-      }
-      reader.readAsText(file);
-    } catch (error) {
-      console.error('Error setting up file reader:', error);
+          setIsLoading(false);
+          return;
+        }
+
+        const result = await summarizeUploadedFile({
+            fileContent,
+            fileType,
+          });
+        setSummary(result.summary);
+        toast({
+            title: 'Success!',
+            description: 'Your file has been summarized.',
+        });
+
+    } catch (error: any) {
+      console.error('Error summarizing file:', error);
       toast({
-        title: 'Error',
-        description: 'An unexpected error occurred. Please try again.',
+        title: 'Summarization Failed',
+        description: error.message || 'Could not extract text or generate summary. The file might be corrupted or in an unsupported format.',
         variant: 'destructive',
       });
-      setIsLoading(false);
+    } finally {
+        setIsLoading(false);
     }
   };
 
@@ -94,7 +142,7 @@ export function FileSummarizer() {
         <AlertCircle className="h-4 w-4" />
         <AlertTitle>Supported File Types</AlertTitle>
         <AlertDescription>
-          Currently, only <strong>.txt</strong> files are supported for summarization. Support for PDF and other formats is coming soon.
+          You can upload <strong>.txt</strong>, <strong>.pdf</strong>, and <strong>.pptx</strong> files for summarization. Note: Image-based PDFs are not supported.
         </AlertDescription>
       </Alert>
 

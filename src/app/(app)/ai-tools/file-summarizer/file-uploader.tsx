@@ -96,7 +96,7 @@ export function FileUploader({ onFileSelect }: FileUploaderProps) {
         ref={fileInputRef}
         onChange={handleFileChange}
         className="hidden"
-        accept=".txt"
+        accept=".txt,.pdf,.pptx"
       />
       <UploadCloud className="h-12 w-12 text-muted-foreground mb-4" />
       <p className="text-muted-foreground mb-2">Drag & drop your file here, or</p>

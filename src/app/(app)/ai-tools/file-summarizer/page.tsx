@@ -11,13 +11,13 @@ export default function FileSummarizerPage() {
             </div>
             <h1 className="text-4xl font-bold font-headline">AI File Summarizer</h1>
             <p className="text-muted-foreground mt-2 max-w-2xl">
-                Upload your documents (.txt format) and get a concise summary in seconds. Perfect for quick reviews and understanding key points.
+                Upload your documents (.txt, .pdf, .pptx) and get a concise summary in seconds. Perfect for quick reviews and understanding key points.
             </p>
         </div>
         <Card>
             <CardHeader>
                 <CardTitle>Upload Document</CardTitle>
-                <CardDescription>Select a .txt file from your device to begin.</CardDescription>
+                <CardDescription>Select a file from your device to begin.</CardDescription>
             </CardHeader>
             <CardContent>
                 <FileSummarizer />
