@@ -5,13 +5,12 @@ import {
   Calendar,
   LayoutDashboard,
   ListTodo,
-  MoreHorizontal,
   NotebookText,
   Settings,
   Sparkles,
   Target,
   Timer,
-  Doughnut,
+  Donut,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -23,8 +22,10 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 
-import { Logo } from './logo';
 import { useSidebar } from './ui/sidebar';
+import { Logo } from './logo';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { cn } from '@/lib/utils';
 
 const navItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
@@ -36,106 +37,104 @@ const navItems = [
   { href: '/timetable', icon: Calendar, label: 'Timetable' },
 ];
 
-const aiTools = [
-  { href: '/ai-tools/daily-planner', label: 'Daily Planner' },
-  { href: '/ai-tools/file-summarizer', label: 'File Summarizer' },
-  { href: '/ai-tools/flashcards', label: 'Flashcard Generator' },
-  { href: '/ai-tools/study-guide', label: 'Study Guide Generator' },
-];
-
 export function SidebarNav() {
   const pathname = usePathname();
   const { setOpen } = useSidebar();
+  const isMobile = useIsMobile();
 
   const handleLinkClick = () => {
     setOpen(false);
   };
 
-  const mainNav = (
-    <>
-      {navItems.map((item) => (
-        <Tooltip key={item.href}>
-          <TooltipTrigger asChild>
-            <Link
-              href={item.href}
-              onClick={handleLinkClick}
-              className={`flex h-9 w-9 items-center justify-center rounded-lg ${
-                pathname === item.href
-                  ? 'bg-accent text-accent-foreground'
-                  : 'text-muted-foreground'
-              } transition-colors hover:text-foreground md:h-8 md:w-8`}
-            >
-              <item.icon className="h-5 w-5" />
-              <span className="sr-only">{item.label}</span>
-            </Link>
-          </TooltipTrigger>
-          <TooltipContent side="right">{item.label}</TooltipContent>
-        </Tooltip>
-      ))}
-    </>
-  );
+  const NavLink = ({
+    href,
+    icon: Icon,
+    label,
+    isMobile,
+  }: {
+    href: string;
+    icon: React.ElementType;
+    label: string;
+    isMobile: boolean;
+  }) => {
+    const isActive =
+      href === '/ai-tools'
+        ? pathname.startsWith(href)
+        : pathname === href;
+
+    if (isMobile) {
+      return (
+        <Link
+          href={href}
+          onClick={handleLinkClick}
+          className={cn(
+            'flex items-center gap-4 px-2.5',
+            isActive
+              ? 'text-foreground'
+              : 'text-muted-foreground hover:text-foreground'
+          )}
+        >
+          <Icon className="h-5 w-5" />
+          {label}
+        </Link>
+      );
+    }
+
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Link
+            href={href}
+            onClick={handleLinkClick}
+            className={cn(
+              'flex h-9 w-9 items-center justify-center rounded-lg transition-colors hover:text-foreground md:h-8 md:w-8',
+              isActive
+                ? 'bg-accent text-accent-foreground'
+                : 'text-muted-foreground'
+            )}
+          >
+            <Icon className="h-5 w-5" />
+            <span className="sr-only">{label}</span>
+          </Link>
+        </TooltipTrigger>
+        <TooltipContent side="right">{label}</TooltipContent>
+      </Tooltip>
+    );
+  };
+
+  if (isMobile) {
+    return (
+      <nav className="grid gap-6 text-lg font-medium">
+        <Logo />
+        {navItems.map((item) => (
+          <NavLink {...item} isMobile={isMobile} key={item.href} />
+        ))}
+        <div className="mt-auto grid gap-6">
+            <NavLink href="/ai-tools" icon={Sparkles} label="AI Tools" isMobile={isMobile} />
+            <NavLink href="/settings" icon={Settings} label="Settings" isMobile={isMobile} />
+        </div>
+      </nav>
+    );
+  }
 
   return (
-    <>
-      {/* Desktop Sidebar */}
-      <TooltipProvider>
-        <aside className="fixed inset-y-0 left-0 z-10 hidden w-14 flex-col border-r bg-background sm:flex">
-          <nav className="flex flex-col items-center gap-4 px-2 sm:py-5">
-            <Link
-              href="/dashboard"
-              className="group flex h-9 w-9 shrink-0 items-center justify-center gap-2 rounded-full bg-primary text-lg font-semibold text-primary-foreground md:h-8 md:w-8 md:text-base"
-            >
-              <Doughnut className="h-4 w-4 transition-all group-hover:scale-110" />
-              <span className="sr-only">Academiq</span>
-            </Link>
-            {mainNav}
-          </nav>
-          <nav className="mt-auto flex flex-col items-center gap-4 px-2 sm:py-5">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Link
-                  href="/ai-tools"
-                  onClick={handleLinkClick}
-                  className={`flex h-9 w-9 items-center justify-center rounded-lg ${
-                    pathname.startsWith('/ai-tools')
-                      ? 'bg-accent text-accent-foreground'
-                      : 'text-muted-foreground'
-                  } transition-colors hover:text-foreground md:h-8 md:w-8`}
-                >
-                  <Sparkles className="h-5 w-5" />
-                  <span className="sr-only">AI Tools</span>
-                </Link>
-              </TooltipTrigger>
-              <TooltipContent side="right">AI Tools</TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Link
-                  href="/settings"
-                  onClick={handleLinkClick}
-                  className={`flex h-9 w-9 items-center justify-center rounded-lg ${
-                    pathname === '/settings'
-                      ? 'bg-accent text-accent-foreground'
-                      : 'text-muted-foreground'
-                  } transition-colors hover:text-foreground md:h-8 md:w-8`}
-                >
-                  <Settings className="h-5 w-5" />
-                  <span className="sr-only">Settings</span>
-                </Link>
-              </TooltipTrigger>
-              <TooltipContent side="right">Settings</TooltipContent>
-            </Tooltip>
-          </nav>
-        </aside>
-      </TooltipProvider>
-
-      {/* Mobile Sheet */}
-      <div className="sm:hidden">
-        <nav className="grid gap-6 text-lg font-medium">
-          <Logo />
-          {mainNav}
-        </nav>
-      </div>
-    </>
+    <TooltipProvider>
+      <nav className="flex flex-col items-center gap-4 px-2 sm:py-5">
+        <Link
+          href="/dashboard"
+          className="group flex h-9 w-9 shrink-0 items-center justify-center gap-2 rounded-full bg-primary text-lg font-semibold text-primary-foreground md:h-8 md:w-8 md:text-base"
+        >
+          <Donut className="h-4 w-4 transition-all group-hover:scale-110" />
+          <span className="sr-only">Academiq</span>
+        </Link>
+        {navItems.map((item) => (
+          <NavLink {...item} isMobile={isMobile} key={item.href} />
+        ))}
+      </nav>
+      <nav className="mt-auto flex flex-col items-center gap-4 px-2 sm:py-5">
+        <NavLink href="/ai-tools" icon={Sparkles} label="AI Tools" isMobile={isMobile} />
+        <NavLink href="/settings" icon={Settings} label="Settings" isMobile={isMobile} />
+      </nav>
+    </TooltipProvider>
   );
 }

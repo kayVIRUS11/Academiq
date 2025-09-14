@@ -1,10 +1,11 @@
 'use client';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from './ui/button';
-import { Doughnut, PanelLeft } from 'lucide-react';
+import { Donut } from 'lucide-react';
 import { useSidebar } from './ui/sidebar';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Logo } from './logo';
+import { SidebarNav } from './sidebar-nav';
 
 export function Header() {
   const { open, setOpen } = useSidebar();
@@ -16,14 +17,12 @@ export function Header() {
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
             <Button size="icon" variant="outline">
-              <Doughnut />
+              <Donut />
               <span className="sr-only">Toggle Menu</span>
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="sm:max-w-xs">
-            <nav className="grid gap-6 text-lg font-medium">
-              <Logo />
-            </nav>
+          <SheetContent side="left" className="sm:max-w-xs pt-12">
+            <SidebarNav />
           </SheetContent>
         </Sheet>
       )}
