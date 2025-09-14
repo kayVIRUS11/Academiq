@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Course } from '@/lib/types';
 import { Card, CardDescription, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Edit, MoreVertical, Trash, AlertCircle } from 'lucide-react';
+import { Edit, MoreVertical, Trash } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,7 +20,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { EditCourse } from './edit-course';
 
