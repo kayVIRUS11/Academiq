@@ -11,7 +11,7 @@ export default function DailyPlannerPage() {
             </div>
             <h1 className="text-4xl font-bold font-headline">AI Daily Planner</h1>
             <p className="text-muted-foreground mt-2 max-w-2xl">
-                Let our AI create a detailed, hour-by-hour plan for your day based on your tasks, timetable, and personal goals.
+                Let our AI create a detailed, hour-by-hour plan for your day based on your tasks, timetable, and personal goals. Review the generated plan and save it to your calendar.
             </p>
         </div>
         <Card>

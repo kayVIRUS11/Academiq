@@ -9,10 +9,16 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { Progress } from "@/components/ui/progress";
 import { useEffect, useState } from "react";
+import { DayOfWeek } from "@/lib/types";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
-export default function DailyActivitiesPage() {
-    const { activities, setActivities } = useDailyActivities();
+const days: DayOfWeek[] = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+
+function DailyPlanView({ day }: { day: DayOfWeek }) {
+    const { weeklyActivities, setWeeklyActivities } = useDailyActivities();
     const [progress, setProgress] = useState(0);
+
+    const activities = weeklyActivities[day] || [];
 
     useEffect(() => {
         const completedCount = activities.filter(a => a.completed).length;
@@ -23,23 +29,21 @@ export default function DailyActivitiesPage() {
     const handleToggleActivity = (index: number) => {
         const newActivities = [...activities];
         newActivities[index].completed = !newActivities[index].completed;
-        setActivities(newActivities);
+        setWeeklyActivities(prev => ({ ...prev, [day]: newActivities }));
     }
     
     if (activities.length === 0) {
         return (
-            <div className="flex flex-col items-center text-center space-y-6">
-                <div className="bg-primary/10 p-3 rounded-full mb-4">
-                    <ClipboardCheck className="w-10 h-10 text-primary"/>
-                </div>
-                <h1 className="text-4xl font-bold font-headline">Your Daily Plan</h1>
-                <p className="text-muted-foreground mt-2 max-w-2xl">
-                    You haven't generated a plan for today yet.
+            <div className="flex flex-col items-center text-center space-y-4 py-16">
+                <ClipboardCheck className="w-16 h-16 text-muted-foreground/50"/>
+                <h2 className="text-xl font-semibold">No Plan for {day}</h2>
+                <p className="text-muted-foreground max-w-sm">
+                    You haven't saved a plan for this day yet. Use the AI planner to generate one!
                 </p>
                 <Link href="/ai-tools/daily-planner">
                     <Button>
                         <Sparkles className="mr-2"/>
-                        Create a Plan with AI
+                        Create a Plan
                     </Button>
                 </Link>
             </div>
@@ -47,27 +51,16 @@ export default function DailyActivitiesPage() {
     }
 
     return (
-        <div className="space-y-6">
-            <div className="flex flex-col items-center text-center">
-                <div className="bg-primary/10 p-3 rounded-full mb-4">
-                    <ClipboardCheck className="w-10 h-10 text-primary"/>
-                </div>
-                <h1 className="text-4xl font-bold font-headline">Today's Activities</h1>
-                <p className="text-muted-foreground mt-2 max-w-2xl">
-                    Here's your personalized plan. Stay focused and productive!
-                </p>
-            </div>
-
+         <div className="space-y-6">
             <Card>
                 <CardHeader>
-                    <CardTitle>Your Progress</CardTitle>
+                    <CardTitle>{day}'s Progress</CardTitle>
                     <CardDescription>You've completed {Math.round(progress)}% of your plan.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <Progress value={progress} />
                 </CardContent>
             </Card>
-
             <Card>
                 <CardHeader>
                     <CardTitle>Your Schedule</CardTitle>
@@ -77,13 +70,13 @@ export default function DailyActivitiesPage() {
                         {activities.map((activity, index) => (
                             <div key={index} className={cn("flex items-start gap-4 p-4 rounded-lg", activity.completed ? "bg-secondary" : "bg-transparent")}>
                                 <Checkbox 
-                                    id={`activity-${index}`}
+                                    id={`activity-${day}-${index}`}
                                     className="mt-1"
                                     checked={activity.completed}
                                     onCheckedChange={() => handleToggleActivity(index)}
                                 />
                                 <div className="grid gap-1.5">
-                                    <label htmlFor={`activity-${index}`} className={cn("font-semibold cursor-pointer", activity.completed && "line-through text-muted-foreground")}>
+                                    <label htmlFor={`activity-${day}-${index}`} className={cn("font-semibold cursor-pointer", activity.completed && "line-through text-muted-foreground")}>
                                         {activity.activity}
                                     </label>
                                     <p className="text-sm text-muted-foreground">{activity.time}</p>
@@ -93,6 +86,39 @@ export default function DailyActivitiesPage() {
                     </div>
                 </CardContent>
             </Card>
+        </div>
+    )
+}
+
+
+export default function DailyActivitiesPage() {
+    const today = new Date().toLocaleDateString('en-US', { weekday: 'long' }) as DayOfWeek;
+    const defaultTab = days.includes(today) ? today : 'Monday';
+
+    return (
+        <div className="space-y-6">
+            <div className="flex flex-col items-center text-center">
+                <div className="bg-primary/10 p-3 rounded-full mb-4">
+                    <ClipboardCheck className="w-10 h-10 text-primary"/>
+                </div>
+                <h1 className="text-4xl font-bold font-headline">Weekly Activities</h1>
+                <p className="text-muted-foreground mt-2 max-w-2xl">
+                    View and manage your saved daily plans for the week. Stay focused and productive!
+                </p>
+            </div>
+            
+            <Tabs defaultValue={defaultTab} className="w-full">
+                <TabsList className="grid w-full grid-cols-5">
+                    {days.map(day => (
+                        <TabsTrigger key={day} value={day}>{day}</TabsTrigger>
+                    ))}
+                </TabsList>
+                {days.map(day => (
+                    <TabsContent key={day} value={day}>
+                        <DailyPlanView day={day} />
+                    </TabsContent>
+                ))}
+            </Tabs>
         </div>
     )
 }

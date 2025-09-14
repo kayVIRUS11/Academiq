@@ -1,20 +1,29 @@
 'use client';
 
-import { DailyActivity } from '@/lib/types';
+import { DailyActivity, WeeklyActivities, DayOfWeek } from '@/lib/types';
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 
 type ActivitiesContextType = {
-  activities: DailyActivity[];
-  setActivities: React.Dispatch<React.SetStateAction<DailyActivity[]>>;
+  weeklyActivities: WeeklyActivities;
+  setWeeklyActivities: React.Dispatch<React.SetStateAction<WeeklyActivities>>;
+  savePlanForDay: (day: DayOfWeek, activities: Omit<DailyActivity, 'completed'>[]) => void;
 };
 
 const ActivitiesContext = createContext<ActivitiesContextType | undefined>(undefined);
 
 export function ActivitiesProvider({ children }: { children: ReactNode }) {
-  const [activities, setActivities] = useState<DailyActivity[]>([]);
+  const [weeklyActivities, setWeeklyActivities] = useState<WeeklyActivities>({});
+
+  const savePlanForDay = (day: DayOfWeek, activities: Omit<DailyActivity, 'completed'>[]) => {
+    const newActivities = activities.map(a => ({...a, completed: false}));
+    setWeeklyActivities(prev => ({
+      ...prev,
+      [day]: newActivities,
+    }));
+  }
 
   return (
-    <ActivitiesContext.Provider value={{ activities, setActivities }}>
+    <ActivitiesContext.Provider value={{ weeklyActivities, setWeeklyActivities, savePlanForDay }}>
       {children}
     </ActivitiesContext.Provider>
   );

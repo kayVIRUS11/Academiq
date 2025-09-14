@@ -59,3 +59,9 @@ export type DailyActivity = {
     activity: string;
     completed: boolean;
 }
+
+export type DayOfWeek = 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday' | 'Sunday';
+
+export type WeeklyActivities = {
+    [key in DayOfWeek]?: DailyActivity[];
+}
