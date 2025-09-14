@@ -1,4 +1,4 @@
-import { Course, Goal, Note, Task, TimetableEntry } from './types';
+import { Course, Goal, Note, Task, TimetableEntry, StudySession } from './types';
 
 export const mockCourses: Course[] = [
   { id: '1', name: 'Advanced Calculus', courseCode: 'MATH301', instructor: 'Dr. Evelyn Reed', color: 'bg-blue-200' },
@@ -106,4 +106,10 @@ export const motivationalQuotes = [
     "The expert in anything was once a beginner.",
     "The only way to do great work is to love what you do.",
     "Success is not final, failure is not fatal: it is the courage to continue that counts."
+];
+
+export const mockStudySessions: StudySession[] = [
+    { id: '1', courseId: '1', date: new Date(new Date().setDate(new Date().getDate() - 2)).toISOString(), duration: 60, notes: 'Reviewed linear transformations.' },
+    { id: '2', courseId: '2', date: new Date(new Date().setDate(new Date().getDate() - 1)).toISOString(), duration: 90, notes: 'Worked on Schrödinger equation problems.' },
+    { id: '3', courseId: '3', date: new Date().toISOString(), duration: 45, notes: 'Memorized functional groups.' },
 ];

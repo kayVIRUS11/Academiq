@@ -45,3 +45,11 @@ export type TimetableEntry = {
   endTime: string; // "HH:mm"
   location?: string;
 };
+
+export type StudySession = {
+  id: string;
+  courseId: string;
+  date: string; // ISO string
+  duration: number; // in minutes
+  notes?: string;
+};
