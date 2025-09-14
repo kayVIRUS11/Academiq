@@ -11,15 +11,12 @@ export default function CoursesPage() {
   const [courses, setCourses] = useState<Course[]>(mockCourses);
 
   const handleAddCourse = (newCourse: Omit<Course, 'id' | 'color'>) => {
-    const colorClasses = ['bg-blue-200', 'bg-purple-200', 'bg-green-200', 'bg-yellow-200', 'bg-red-200', 'bg-pink-200'];
-    const randomColor = colorClasses[Math.floor(Math.random() * colorClasses.length)];
-
     setCourses(prev => [
       ...prev,
       {
         ...newCourse,
         id: (prev.length + 1).toString(),
-        color: randomColor,
+        color: 'bg-gray-200', // Color is not used in the new table layout
       },
     ]);
   };
