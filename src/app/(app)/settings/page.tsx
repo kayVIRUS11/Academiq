@@ -1,6 +1,9 @@
+
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Settings, Download, Upload } from "lucide-react";
+import { Settings, Download, Upload, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { UserDataSummary } from "@/components/settings/user-data-summary";
+import { LogoutButton } from "@/components/settings/logout-button";
 
 export default function SettingsPage() {
   return (
@@ -11,10 +14,13 @@ export default function SettingsPage() {
                 Settings
             </h1>
         </div>
+        
+        <UserDataSummary />
+
       <Card>
         <CardHeader>
           <CardTitle>Data Management</CardTitle>
-          <CardDescription>Export your data for backup or import it to another device.</CardDescription>
+          <CardDescription>Export your data for backup or import it to another device. (Feature coming soon)</CardDescription>
         </CardHeader>
         <CardContent className="flex items-center gap-4">
             <Button disabled>
@@ -25,6 +31,16 @@ export default function SettingsPage() {
                 <Upload className="mr-2" />
                 Import Data
             </Button>
+        </CardContent>
+      </Card>
+      
+      <Card>
+        <CardHeader>
+          <CardTitle>Account</CardTitle>
+          <CardDescription>Manage your account settings.</CardDescription>
+        </CardHeader>
+        <CardContent>
+            <LogoutButton />
         </CardContent>
       </Card>
     </div>
