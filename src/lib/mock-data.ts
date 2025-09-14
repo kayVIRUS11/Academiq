@@ -45,7 +45,7 @@ export const mockGoals: Goal[] = [
     { id: '1', title: 'Achieve a 3.8 GPA this semester', type: 'semester', progress: 60 },
     { id: '2', title: 'Publish a research paper', type: 'yearly', progress: 25 },
     { id: '3', title: 'Master React state management', type: 'semester', progress: 80 },
-]
+];
 
 export const mockTimetable: TimetableEntry[] = [
     {
