@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Timer, BrainCircuit, Loader2 } from 'lucide-react';
+import { Timer, BrainCircuit, Loader2, Save } from 'lucide-react';
 import { mockStudySessions, mockCourses, mockTimetable } from '@/lib/mock-data';
 import { StudySession, TimetableEntry } from '@/lib/types';
 import { AddStudySession } from '@/components/study-tracker/add-study-session';
@@ -14,14 +14,19 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
+  DialogFooter,
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { generateWeeklyStudyPlan, GenerateWeeklyStudyPlanOutput } from '@/ai/flows/generate-weekly-study-plan';
+import { useWeeklyPlan } from '../weekly-plan/weekly-plan-context';
+import { useRouter } from 'next/navigation';
 
 export default function StudyTrackerPage() {
   const [sessions, setSessions] = useState<StudySession[]>(mockStudySessions);
   const [courses] = useState<Course[]>(mockCourses);
   const [timetable] = useState<TimetableEntry[]>(mockTimetable);
+  const { setPlan } = useWeeklyPlan();
+  const router = useRouter();
 
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedPlan, setGeneratedPlan] = useState<GenerateWeeklyStudyPlanOutput['weeklyPlan'] | null>(null);
@@ -64,6 +69,18 @@ export default function StudyTrackerPage() {
     }
   }
 
+  const handleSavePlan = () => {
+    if (!generatedPlan) return;
+    const planWithIds = generatedPlan.map((item, index) => ({...item, id: `${Date.now()}-${index}`}));
+    setPlan(planWithIds);
+    toast({
+        title: "Plan Saved!",
+        description: "Your new weekly study plan has been saved."
+    });
+    setIsPlanDialogOpen(false);
+    router.push('/weekly-plan');
+  }
+
   const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
   return (
@@ -94,7 +111,7 @@ export default function StudyTrackerPage() {
           <DialogHeader>
             <DialogTitle>Your AI-Generated Weekly Study Plan</DialogTitle>
             <DialogDescription>
-                Use this as a guide to plan your study sessions. This plan is based on your course units and free time.
+                Use this as a guide to plan your study sessions. You can save it to your "Weekly Plan" page to edit and track.
             </DialogDescription>
           </DialogHeader>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-[60vh] overflow-y-auto p-1">
@@ -114,6 +131,10 @@ export default function StudyTrackerPage() {
                 </div>
             ))}
           </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setIsPlanDialogOpen(false)}>View Without Saving</Button>
+            <Button onClick={handleSavePlan}><Save className="mr-2" />Save Plan</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

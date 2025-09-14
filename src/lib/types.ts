@@ -34,16 +34,9 @@ export type Note = {
 export type TimetableEntry = {
   id: string;
   courseId: string;
-  day:
-    | 'Monday'
-    | 'Tuesday'
-    | 'Wednesday'
-    | 'Thursday'
-    | 'Friday'
-    | 'Saturday'
-    | 'Sunday';
+  day: DayOfWeek;
   startTime: string; // "HH:mm"
-  endTime: string; // "HH:mm"
+  endTime: string; // "HH.mm"
   location?: string;
 };
 
@@ -66,3 +59,11 @@ export type DayOfWeek = 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Frida
 export type WeeklyActivities = {
     [key in DayOfWeek]?: DailyActivity[];
 }
+
+export type StudyPlanItem = {
+  id: string;
+  day: DayOfWeek;
+  time: string;
+  course: string;
+  activity: string;
+};

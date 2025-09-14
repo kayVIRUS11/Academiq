@@ -13,6 +13,7 @@ import {
   Donut,
   ChevronDown,
   ClipboardCheck,
+  CalendarCheck,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -39,6 +40,7 @@ import { useState } from 'react';
 const navItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { href: '/daily-activities', icon: ClipboardCheck, label: 'Daily Activities' },
+  { href: '/weekly-plan', icon: CalendarCheck, label: 'Weekly Plan' },
   { href: '/goals', icon: Target, label: 'Goals' },
   { href: '/tasks', icon: ListTodo, label: 'Tasks' },
   { href: '/courses', icon: BookCopy, label: 'Courses' },
