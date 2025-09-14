@@ -1,9 +1,9 @@
 import { Course, Goal, Task, TimetableEntry } from './types';
 
 export const mockCourses: Course[] = [
-  { id: '1', name: 'Advanced Calculus', instructor: 'Dr. Evelyn Reed', color: 'bg-blue-200' },
-  { id: '2', name: 'Quantum Physics', instructor: 'Dr. Alistair Finch', color: 'bg-purple-200' },
-  { id: '3', name: 'Organic Chemistry', instructor: 'Dr. Lena Petrova', color: 'bg-green-200' },
+  { id: '1', name: 'Advanced Calculus', courseCode: 'MATH301', instructor: 'Dr. Evelyn Reed', color: 'bg-blue-200' },
+  { id: '2', name: 'Quantum Physics', courseCode: 'PHYS402', instructor: 'Dr. Alistair Finch', color: 'bg-purple-200' },
+  { id: '3', name: 'Organic Chemistry', courseCode: 'CHEM203', instructor: 'Dr. Lena Petrova', color: 'bg-green-200' },
 ];
 
 export const mockTasks: Task[] = [

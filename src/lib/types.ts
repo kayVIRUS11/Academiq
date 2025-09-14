@@ -17,7 +17,8 @@ export type Goal = {
 export type Course = {
   id: string;
   name: string;
-  instructor: string;
+  courseCode: string;
+  instructor?: string;
   color: string;
 };
 

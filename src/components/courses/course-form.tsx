@@ -17,7 +17,8 @@ import { Button } from '@/components/ui/button';
 
 const courseFormSchema = z.object({
   name: z.string().min(3, { message: 'Course name must be at least 3 characters.' }),
-  instructor: z.string().min(3, { message: 'Instructor name must be at least 3 characters.' }),
+  courseCode: z.string().min(3, { message: 'Course code must be at least 3 characters.' }),
+  instructor: z.string().optional(),
 });
 
 type CourseFormValues = z.infer<typeof courseFormSchema>;
@@ -37,6 +38,7 @@ export function CourseForm({
     resolver: zodResolver(courseFormSchema),
     defaultValues: {
       name: defaultValues?.name ?? '',
+      courseCode: defaultValues?.courseCode ?? '',
       instructor: defaultValues?.instructor ?? '',
     },
   });
@@ -59,10 +61,23 @@ export function CourseForm({
         />
         <FormField
           control={form.control}
+          name="courseCode"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Course Code</FormLabel>
+              <FormControl>
+                <Input placeholder="e.g., PHYS101" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
           name="instructor"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Instructor Name</FormLabel>
+              <FormLabel>Lecturer (Optional)</FormLabel>
               <FormControl>
                 <Input placeholder="e.g., Dr. Alistair Finch" {...field} />
               </FormControl>

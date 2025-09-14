@@ -21,7 +21,7 @@ type AddCourseProps = {
 export function AddCourse({ onAddCourse }: AddCourseProps) {
   const [open, setOpen] = useState(false);
 
-  const handleSubmit = (values: any) => {
+  const handleSubmit = (values: Omit<Course, 'id' | 'color'>) => {
     onAddCourse(values);
     setOpen(false);
   };
