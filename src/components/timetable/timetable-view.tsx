@@ -51,11 +51,11 @@ export function TimetableView({ entries, courses, onUpdateEntry, onDeleteEntry }
             </div>
           ))}
 
-          {/* Time column */}
-          <div className="text-xs text-muted-foreground row-start-2">
-            {timeSlots.map(time => (
-              <div key={time} className="h-16 flex items-start -mt-2 pr-2">
-                {time}
+          {/* Time column and Grid Lines */}
+          <div className="row-start-2 -mr-2">
+            {timeSlots.map((time, index) => (
+              <div key={time} className="h-16 relative">
+                <div className="text-xs text-muted-foreground absolute -top-2 pr-2">{time}</div>
               </div>
             ))}
           </div>
@@ -63,13 +63,13 @@ export function TimetableView({ entries, courses, onUpdateEntry, onDeleteEntry }
           {/* Day columns */}
           {days.map(day => (
             <div key={day} className="relative border-l row-start-2">
-              <div className="relative h-[calc(11*4rem)]">
-                {/* Grid lines */}
-                {timeSlots.slice(1).map(time => (
-                    <div key={time} className="h-16 border-t"></div>
-                ))}
-                
-                {/* Entries */}
+              {/* Grid lines */}
+              {timeSlots.map((time) => (
+                  <div key={time} className="h-16 border-t"></div>
+              ))}
+              
+              {/* Entries */}
+              <div className="absolute inset-0">
                 {entries
                   .filter(entry => entry.day === day)
                   .map(entry => {
