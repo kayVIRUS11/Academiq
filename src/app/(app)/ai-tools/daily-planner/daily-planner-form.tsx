@@ -12,6 +12,7 @@ import { SavePlanDialog } from './save-plan-dialog';
 import { DayOfWeek } from '@/lib/types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import { useWeeklyPlan } from '../../weekly-plan/weekly-plan-context';
 
 const days: DayOfWeek[] = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
@@ -22,6 +23,7 @@ export function DailyPlannerForm() {
   const [generatedPlan, setGeneratedPlan] = useState<GenerateDailyPlanOutput['dailyPlan'] | null>(null);
   const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
   const { toast } = useToast();
+  const { plan: weeklyPlan } = useWeeklyPlan();
 
   const handleGeneratePlan = async () => {
     if (!selectedDay) {
@@ -38,7 +40,7 @@ export function DailyPlannerForm() {
     try {
       const timetableString = mockTimetable.filter(entry => entry.day === selectedDay).map(
           (entry) =>
-            `${entry.day}: ${entry.startTime}-${entry.endTime} - ${entry.courseId} at ${entry.location}`
+            `${entry.day}: ${entry.startTime}-${entry.endTime} - Class for ${entry.courseId} at ${entry.location}`
         ).join('\n') || 'No scheduled classes.';
       
       const tasksForDay = mockTasks.filter(t => !t.completed && new Date(t.dueDate).toLocaleDateString('en-US', { weekday: 'long' }) === selectedDay);
@@ -47,10 +49,15 @@ export function DailyPlannerForm() {
           (task) =>
             `- ${task.title} (Due: ${new Date(task.dueDate).toLocaleDateString()}, Priority: ${task.priority})`
         ).join('\n') || 'No tasks due.';
+
+      const scheduledStudyString = weeklyPlan.filter(p => p.day === selectedDay).map(
+        (p) => `- ${p.time}: Study ${p.course} (${p.activity})`
+      ).join('\n') || 'No specific study blocks scheduled.';
         
       const result = await generateDailyPlan({
         timetable: timetableString,
         tasks: tasksString,
+        scheduledStudy: scheduledStudyString,
         desiredDayDescription: description,
       });
 
