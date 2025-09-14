@@ -56,13 +56,16 @@ export function SidebarNav() {
         <SidebarMenu className="flex-1 p-2">
           {navItems.map((item) => (
             <SidebarMenuItem key={item.href}>
-              <Link href={item.href}>
+              <Link href={item.href} passHref>
                 <SidebarMenuButton
+                  asChild
                   isActive={pathname === item.href}
                   tooltip={item.label}
                 >
-                  <item.icon />
-                  <span>{item.label}</span>
+                  <>
+                    <item.icon />
+                    <span>{item.label}</span>
+                  </>
                 </SidebarMenuButton>
               </Link>
             </SidebarMenuItem>
@@ -74,8 +77,9 @@ export function SidebarNav() {
             </SidebarGroupLabel>
             {aiTools.map((item) => (
                <SidebarMenuItem key={item.href}>
-                <Link href={item.href}>
+                <Link href={item.href} passHref>
                   <SidebarMenuButton
+                    asChild
                     isActive={pathname === item.href}
                     tooltip={item.label}
                     size="sm"
@@ -91,18 +95,22 @@ export function SidebarNav() {
         <div className="p-2 mt-auto">
             <SidebarMenu>
                 <SidebarMenuItem>
-                    <Link href="/coming-soon">
-                        <SidebarMenuButton tooltip="More features coming soon!" isActive={pathname === '/coming-soon'}>
-                            <MoreHorizontal />
-                            <span>More coming...</span>
+                    <Link href="/coming-soon" passHref>
+                        <SidebarMenuButton asChild tooltip="More features coming soon!" isActive={pathname === '/coming-soon'}>
+                            <>
+                                <MoreHorizontal />
+                                <span>More coming...</span>
+                            </>
                         </SidebarMenuButton>
                     </Link>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
-                    <Link href="/settings">
-                        <SidebarMenuButton tooltip="Settings" isActive={pathname === '/settings'}>
-                            <Settings />
-                            <span>Settings</span>
+                    <Link href="/settings" passHref>
+                        <SidebarMenuButton asChild tooltip="Settings" isActive={pathname === '/settings'}>
+                            <>
+                                <Settings />
+                                <span>Settings</span>
+                            </>
                         </SidebarMenuButton>
                     </Link>
                 </SidebarMenuItem>
