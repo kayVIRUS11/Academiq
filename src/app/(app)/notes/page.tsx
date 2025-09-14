@@ -5,12 +5,14 @@ import { mockNotes, mockCourses } from '@/lib/mock-data';
 import { Note } from '@/lib/types';
 import { NoteList } from '@/components/notes/note-list';
 import { NoteEditor } from '@/components/notes/note-editor';
-import { Plus, NotebookText, Trash2, FilePlus, BrainCircuit, Sparkles } from 'lucide-react';
+import { Plus, NotebookText, Trash2, FilePlus, BrainCircuit, Sparkles, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { summarizeNotes } from '@/ai/flows/summarize-notes';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { cn } from '@/lib/utils';
 
 export default function NotesPage() {
   const [notes, setNotes] = useState<Note[]>(mockNotes);
@@ -19,6 +21,7 @@ export default function NotesPage() {
   const [isSummarizing, setIsSummarizing] = useState(false);
   
   const { toast } = useToast();
+  const isMobile = useIsMobile();
 
   const selectedNote = notes.find(note => note.id === selectedNoteId) || null;
 
@@ -93,35 +96,17 @@ export default function NotesPage() {
     }
   }
 
-  return (
-    <div className="flex h-[calc(100vh-theme(space.20))]">
-      {/* Left Panel: Note List */}
-      <aside className="w-1/3 border-r pr-4 flex flex-col">
-        <div className="flex items-center justify-between p-4 border-b">
-          <h1 className="text-xl font-bold font-headline flex items-center gap-2">
-            <NotebookText className="w-6 h-6" />
-            Notes & Journal
-          </h1>
-          <Button size="icon" variant="ghost" onClick={handleAddNote}>
-            <FilePlus className="h-5 w-5" />
-            <span className="sr-only">Add Note</span>
-          </Button>
-        </div>
-        <div className="overflow-y-auto flex-1">
-          <NoteList
-            notes={notes}
-            selectedNoteId={selectedNoteId}
-            onSelectNote={handleSelectNote}
-            courses={mockCourses}
-          />
-        </div>
-      </aside>
-
-      {/* Right Panel: Note Editor/Viewer */}
-      <main className="w-2/3 p-4 flex flex-col">
+  const editorPanel = (
+      <>
         {selectedNote ? (
           <>
             <div className="flex items-center justify-end gap-2 mb-4 p-4 border-b">
+              {isMobile && (
+                <Button variant="ghost" size="icon" className="mr-auto" onClick={() => setSelectedNoteId(null)}>
+                  <ArrowLeft />
+                  <span className="sr-only">Back to list</span>
+                </Button>
+              )}
               <Button onClick={handleSummarize} disabled={isSummarizing}>
                 {isSummarizing ? (
                   <Sparkles className="mr-2 animate-spin" />
@@ -158,6 +143,42 @@ export default function NotesPage() {
             </CardContent>
           </Card>
         )}
+      </>
+  );
+
+  return (
+    <div className="flex h-[calc(100vh-theme(space.20))]">
+      {/* Left Panel: Note List */}
+      <aside className={cn(
+        "border-r pr-4 flex-col",
+        isMobile ? (selectedNoteId ? "hidden" : "flex w-full") : "flex w-1/3"
+      )}>
+        <div className="flex items-center justify-between p-4 border-b">
+          <h1 className="text-xl font-bold font-headline flex items-center gap-2">
+            <NotebookText className="w-6 h-6" />
+            Notes & Journal
+          </h1>
+          <Button size="icon" variant="ghost" onClick={handleAddNote}>
+            <FilePlus className="h-5 w-5" />
+            <span className="sr-only">Add Note</span>
+          </Button>
+        </div>
+        <div className="overflow-y-auto flex-1">
+          <NoteList
+            notes={notes}
+            selectedNoteId={selectedNoteId}
+            onSelectNote={handleSelectNote}
+            courses={mockCourses}
+          />
+        </div>
+      </aside>
+
+      {/* Right Panel: Note Editor/Viewer */}
+      <main className={cn(
+        "p-4 flex-col",
+        isMobile ? (selectedNoteId ? "flex w-full" : "hidden") : "flex w-2/3"
+      )}>
+        {editorPanel}
       </main>
 
       <AlertDialog open={isDeleting} onOpenChange={setIsDeleting}>
