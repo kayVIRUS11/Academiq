@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { mockNotes, mockCourses } from '@/lib/mock-data';
 import { Note } from '@/lib/types';
 import { NoteList } from '@/components/notes/note-list';
 import { NoteEditor } from '@/components/notes/note-editor';
@@ -13,10 +12,17 @@ import { useToast } from '@/hooks/use-toast';
 import { summarizeNotes } from '@/ai/flows/summarize-notes';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
+import { mockCourses } from '@/lib/mock-data';
+import { useNotes } from './notes-context';
 
 export default function NotesPage() {
-  const [notes, setNotes] = useState<Note[]>(mockNotes);
-  const [selectedNoteId, setSelectedNoteId] = useState<string | null>(notes.length > 0 ? notes[0].id : null);
+    const { 
+        notes, 
+        setNotes, 
+        selectedNoteId, 
+        setSelectedNoteId, 
+        addNote 
+    } = useNotes();
   const [isDeleting, setIsDeleting] = useState(false);
   const [isSummarizing, setIsSummarizing] = useState(false);
   
@@ -30,13 +36,10 @@ export default function NotesPage() {
   };
 
   const handleAddNote = () => {
-    const newNote: Note = {
-      id: Date.now().toString(),
-      title: 'New Note',
-      content: '',
-      createdAt: new Date().toISOString(),
-    };
-    setNotes(prev => [newNote, ...prev]);
+    const newNote = addNote({
+        title: 'New Note',
+        content: '',
+    });
     setSelectedNoteId(newNote.id);
   };
 
@@ -70,15 +73,12 @@ export default function NotesPage() {
     try {
       const result = await summarizeNotes({notes: selectedNote.content});
       
-      const summaryNote: Note = {
-        id: Date.now().toString(),
+      const summaryNote = addNote({
         title: `Summary: ${selectedNote.title}`,
         content: `**Main Topic:** ${result.mainTopic}\n\n**Summary:**\n${result.summary}`,
-        createdAt: new Date().toISOString(),
         courseId: selectedNote.courseId,
-      };
+      });
       
-      setNotes(prev => [summaryNote, ...prev]);
       setSelectedNoteId(summaryNote.id);
 
       toast({

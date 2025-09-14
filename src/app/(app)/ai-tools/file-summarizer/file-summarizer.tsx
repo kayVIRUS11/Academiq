@@ -3,13 +3,14 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Loader2, Sparkles, AlertCircle } from 'lucide-react';
+import { Loader2, Sparkles, AlertCircle, FilePlus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { summarizeUploadedFile } from '@/ai/flows/summarize-uploaded-file';
 import { FileUploader } from './file-uploader';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import * as pdfjsLib from 'pdfjs-dist';
 import JSZip from 'jszip';
+import { useNotes } from '@/app/(app)/notes/notes-context';
 
 // Required by pdfjs-dist
 pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
@@ -20,6 +21,7 @@ export function FileSummarizer() {
   const [summary, setSummary] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const { addNote } = useNotes();
 
   const handleFileSelect = (selectedFile: File | null) => {
     setFile(selectedFile);
@@ -144,6 +146,20 @@ export function FileSummarizer() {
     }
   };
 
+  const handleAddToNotes = () => {
+    if (!summary || !file) return;
+
+    addNote({
+        title: `Study Guide: ${file.name}`,
+        content: summary,
+    });
+
+    toast({
+        title: 'Added to Notes!',
+        description: 'A new note has been created with the study guide.'
+    });
+  }
+
   return (
     <div className="space-y-6">
       <Alert>
@@ -173,10 +189,16 @@ export function FileSummarizer() {
 
       {summary && (
         <div className="mt-8">
-          <h3 className="text-2xl font-bold mb-4 font-headline">Study Guide</h3>
+            <div className="flex items-center justify-between mb-4">
+                <h3 className="text-2xl font-bold font-headline">Study Guide</h3>
+                <Button variant="outline" onClick={handleAddToNotes}>
+                    <FilePlus className="mr-2" />
+                    Add to Notes
+                </Button>
+            </div>
           <Card>
             <CardContent className="p-6">
-              <div className="prose prose-sm max-w-none whitespace-pre-wrap">{summary}</div>
+              <div className="prose prose-sm max-w-none">{summary}</div>
             </CardContent>
           </Card>
         </div>
