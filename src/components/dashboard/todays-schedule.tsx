@@ -1,13 +1,26 @@
+'use client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { mockCourses, mockTimetable } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
 import { Calendar } from "lucide-react";
+import { useCollection } from 'react-firebase-hooks/firestore';
+import { collection } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { Course, TimetableEntry } from "@/lib/types";
+import { Skeleton } from "../ui/skeleton";
 
 export function TodaysSchedule() {
-    const today = new Date().toLocaleDateString('en-US', { weekday: 'long' });
-    const todaysClasses = mockTimetable.filter(entry => entry.day === today);
+    const [coursesSnapshot, coursesLoading] = useCollection(collection(db, 'courses'));
+    const [timetableSnapshot, timetableLoading] = useCollection(collection(db, 'timetable'));
 
-    const getCourse = (courseId: string) => mockCourses.find(c => c.id === courseId);
+    const loading = coursesLoading || timetableLoading;
+
+    const courses = coursesSnapshot?.docs.map(doc => ({ id: doc.id, ...doc.data() } as Course)) || [];
+    const timetable = timetableSnapshot?.docs.map(doc => ({ id: doc.id, ...doc.data() } as TimetableEntry)) || [];
+
+    const today = new Date().toLocaleDateString('en-US', { weekday: 'long' });
+    const todaysClasses = timetable.filter(entry => entry.day === today);
+
+    const getCourse = (courseId: string) => courses.find(c => c.id === courseId);
 
   return (
     <Card>
@@ -19,7 +32,12 @@ export function TodaysSchedule() {
         <CardDescription>Your classes for {today}.</CardDescription>
       </CardHeader>
       <CardContent>
-        {todaysClasses.length > 0 ? (
+        {loading ? (
+            <div className="space-y-4">
+                <Skeleton className="h-16 w-full" />
+                <Skeleton className="h-16 w-full" />
+            </div>
+        ) : todaysClasses.length > 0 ? (
             <div className="space-y-4">
                 {todaysClasses.map(entry => {
                     const course = getCourse(entry.courseId);

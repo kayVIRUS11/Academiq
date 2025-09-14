@@ -8,7 +8,10 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { mockCourses } from '@/lib/mock-data';
+import { db } from '@/lib/firebase';
+import { Course } from '@/lib/types';
+import { collection } from 'firebase/firestore';
+import { useCollection } from 'react-firebase-hooks/firestore';
 
 export type FilterState = {
   status: 'all' | 'pending' | 'completed';
@@ -22,6 +25,9 @@ type TaskFiltersProps = {
 };
 
 export function TaskFilters({ filters, onFilterChange }: TaskFiltersProps) {
+  const [coursesSnapshot] = useCollection(collection(db, 'courses'));
+  const courses = coursesSnapshot?.docs.map(d => ({id: d.id, ...d.data()})) as Course[] || [];
+
   return (
     <div className="flex flex-col md:flex-row gap-4">
       <Tabs
@@ -61,7 +67,7 @@ export function TaskFilters({ filters, onFilterChange }: TaskFiltersProps) {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Courses</SelectItem>
-            {mockCourses.map((course) => (
+            {courses.map((course) => (
               <SelectItem key={course.id} value={course.id}>
                 {course.name}
               </SelectItem>

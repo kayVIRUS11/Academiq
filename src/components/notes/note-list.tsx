@@ -17,9 +17,11 @@ export function NoteList({ notes, selectedNoteId, onSelectNote, courses }: NoteL
     return courses.find(c => c.id === courseId);
   }
 
+  const sortedNotes = [...notes].sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
   return (
     <div className="space-y-2 p-4">
-      {notes.map(note => {
+      {sortedNotes.map(note => {
         const course = getCourse(note.courseId);
         return (
           <button

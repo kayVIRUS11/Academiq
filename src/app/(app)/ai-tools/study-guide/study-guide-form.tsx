@@ -10,9 +10,12 @@ import { generateStudyGuide } from '@/ai/flows/generate-study-guide';
 import { useNotes } from '@/app/(app)/notes/notes-context';
 import { marked } from 'marked';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { mockCourses } from '@/lib/mock-data';
 import { Course } from '@/lib/types';
 import { Label } from '@/components/ui/label';
+import { useCollection } from 'react-firebase-hooks/firestore';
+import { collection } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export function StudyGuideForm() {
   const [file, setFile] = useState<File | null>(null);
@@ -21,6 +24,9 @@ export function StudyGuideForm() {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const { addNote } = useNotes();
+  
+  const [coursesSnapshot, coursesLoading] = useCollection(collection(db, 'courses'));
+  const courses = coursesSnapshot?.docs.map(d => ({id: d.id, ...d.data()})) as Course[] || [];
 
   const handleFileSelect = (selectedFile: File | null) => {
     setFile(selectedFile);
@@ -28,7 +34,7 @@ export function StudyGuideForm() {
   };
 
   const handleCourseSelect = (courseId: string) => {
-    const course = mockCourses.find(c => c.id === courseId);
+    const course = courses.find(c => c.id === courseId);
     setSelectedCourse(course || null);
   };
 
@@ -80,10 +86,10 @@ export function StudyGuideForm() {
     }
   };
 
-  const handleAddToNotes = () => {
+  const handleAddToNotes = async () => {
     if (!studyGuide || !selectedCourse) return;
 
-    addNote({
+    await addNote({
       title: `Study Guide: ${selectedCourse.name}`,
       content: studyGuide,
       courseId: selectedCourse.id,
@@ -103,39 +109,43 @@ export function StudyGuideForm() {
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-            <Label>Select a Course</Label>
-            <Select onValueChange={handleCourseSelect}>
-                <SelectTrigger>
-                    <SelectValue placeholder="Which course is this for?" />
-                </SelectTrigger>
-                <SelectContent>
-                {mockCourses.map(course => (
-                    <SelectItem key={course.id} value={course.id}>
-                        {course.name}
-                    </SelectItem>
-                ))}
-                </SelectContent>
-            </Select>
-        </div>
-      </div>
-      
-      <FileUploader onFileSelect={handleFileSelect} />
-      
-      <Button onClick={handleGenerate} disabled={!file || !selectedCourse || isLoading} className="w-full sm:w-auto">
-        {isLoading ? (
-          <>
-            <Loader2 className="mr-2 animate-spin" />
-            Generating Guide...
-          </>
-        ) : (
-          <>
-            <Sparkles className="mr-2" />
-            Generate Study Guide
-          </>
-        )}
-      </Button>
+      {coursesLoading ? <Skeleton className="h-32 w-full" /> : (
+        <>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                    <Label>Select a Course</Label>
+                    <Select onValueChange={handleCourseSelect}>
+                        <SelectTrigger>
+                            <SelectValue placeholder="Which course is this for?" />
+                        </SelectTrigger>
+                        <SelectContent>
+                        {courses.map(course => (
+                            <SelectItem key={course.id} value={course.id}>
+                                {course.name}
+                            </SelectItem>
+                        ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+            </div>
+            
+            <FileUploader onFileSelect={handleFileSelect} />
+            
+            <Button onClick={handleGenerate} disabled={!file || !selectedCourse || isLoading} className="w-full sm:w-auto">
+                {isLoading ? (
+                <>
+                    <Loader2 className="mr-2 animate-spin" />
+                    Generating Guide...
+                </>
+                ) : (
+                <>
+                    <Sparkles className="mr-2" />
+                    Generate Study Guide
+                </>
+                )}
+            </Button>
+        </>
+      )}
 
       {studyGuide && (
         <div className="mt-8">

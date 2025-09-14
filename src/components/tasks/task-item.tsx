@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Task } from '@/lib/types';
+import { Task, Course } from '@/lib/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Edit, MoreVertical, Trash } from 'lucide-react';
@@ -16,7 +16,9 @@ import { Checkbox } from '../ui/checkbox';
 import { format, formatDistanceToNow } from 'date-fns';
 import { Badge } from '../ui/badge';
 import { cn } from '@/lib/utils';
-import { mockCourses } from '@/lib/mock-data';
+import { useCollection } from 'react-firebase-hooks/firestore';
+import { collection } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
 type TaskItemProps = {
   task: Task;
@@ -33,7 +35,11 @@ const priorityStyles = {
 
 export function TaskItem({ task, onUpdate, onDelete, onToggle }: TaskItemProps) {
   const [isEditing, setIsEditing] = useState(false);
-  const course = task.courseId ? mockCourses.find(c => c.id === task.courseId) : null;
+  
+  const [coursesSnapshot] = useCollection(collection(db, 'courses'));
+  const courses = coursesSnapshot?.docs.map(d => ({id: d.id, ...d.data()})) as Course[] || [];
+  const course = task.courseId ? courses.find(c => c.id === task.courseId) : null;
+
   const dueDate = new Date(task.dueDate);
 
   const getDueDateLabel = () => {

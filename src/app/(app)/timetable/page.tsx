@@ -1,32 +1,54 @@
 'use client';
 
-import { useState } from 'react';
 import { Calendar } from 'lucide-react';
-import { mockTimetable, mockCourses } from '@/lib/mock-data';
 import { TimetableEntry, Course } from '@/lib/types';
 import { TimetableView } from '@/components/timetable/timetable-view';
 import { AddTimetableEntry } from '@/components/timetable/add-timetable-entry';
+import { useCollection } from 'react-firebase-hooks/firestore';
+import { collection, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { useToast } from '@/hooks/use-toast';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function TimetablePage() {
-  const [entries, setEntries] = useState<TimetableEntry[]>(mockTimetable);
-  const [courses] = useState<Course[]>(mockCourses);
+  const { toast } = useToast();
+  const [coursesSnapshot, coursesLoading] = useCollection(collection(db, 'courses'));
+  const [timetableSnapshot, timetableLoading] = useCollection(collection(db, 'timetable'));
+  
+  const loading = coursesLoading || timetableLoading;
 
-  const handleAddEntry = (newEntryData: Omit<TimetableEntry, 'id'>) => {
-    setEntries(prev => [
-      ...prev,
-      {
-        ...newEntryData,
-        id: (prev.length + 1).toString(),
-      },
-    ]);
+  const courses = coursesSnapshot?.docs.map(doc => ({ id: doc.id, ...doc.data() } as Course)) || [];
+  const entries = timetableSnapshot?.docs.map(doc => ({ id: doc.id, ...doc.data() } as TimetableEntry)) || [];
+
+  const handleAddEntry = async (newEntryData: Omit<TimetableEntry, 'id'>) => {
+    try {
+      await addDoc(collection(db, 'timetable'), newEntryData);
+      toast({ title: 'Class added!' });
+    } catch (e) {
+      console.error(e);
+      toast({ title: 'Error adding class', variant: 'destructive' });
+    }
   };
 
-  const handleUpdateEntry = (updatedEntry: TimetableEntry) => {
-    setEntries(prev => prev.map(e => (e.id === updatedEntry.id ? updatedEntry : e)));
+  const handleUpdateEntry = async (updatedEntry: TimetableEntry) => {
+    try {
+      const { id, ...entryData } = updatedEntry;
+      await updateDoc(doc(db, 'timetable', id), entryData);
+      toast({ title: 'Class updated.' });
+    } catch (e) {
+      console.error(e);
+      toast({ title: 'Error updating class', variant: 'destructive' });
+    }
   };
 
-  const handleDeleteEntry = (entryId: string) => {
-    setEntries(prev => prev.filter(e => e.id !== entryId));
+  const handleDeleteEntry = async (entryId: string) => {
+    try {
+      await deleteDoc(doc(db, 'timetable', entryId));
+      toast({ title: 'Class deleted.' });
+    } catch (e) {
+      console.error(e);
+      toast({ title: 'Error deleting class', variant: 'destructive' });
+    }
   };
 
   return (
@@ -39,12 +61,16 @@ export default function TimetablePage() {
         <AddTimetableEntry courses={courses} onAddEntry={handleAddEntry} />
       </div>
 
-      <TimetableView
-        entries={entries}
-        courses={courses}
-        onUpdateEntry={handleUpdateEntry}
-        onDeleteEntry={handleDeleteEntry}
-      />
+      {loading ? (
+        <Skeleton className="h-[500px] w-full" />
+      ) : (
+        <TimetableView
+          entries={entries}
+          courses={courses}
+          onUpdateEntry={handleUpdateEntry}
+          onDeleteEntry={handleDeleteEntry}
+        />
+      )}
     </div>
   );
 }

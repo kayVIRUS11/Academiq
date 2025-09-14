@@ -1,27 +1,30 @@
-
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useNotes } from "@/app/(app)/notes/notes-context";
 import { useFlashcards } from "@/app/(app)/ai-tools/flashcards/flashcards-context";
 import { useDailyActivities } from "@/app/(app)/daily-activities/activities-context";
-import { mockTasks } from "@/lib/mock-data";
-import { mockGoals } from "@/lib/mock-data";
-import { mockCourses } from "@/lib/mock-data";
-import { mockStudySessions } from "@/lib/mock-data";
-import { BookCopy, BrainCircuit, Calendar, CheckSquare, ClipboardCheck, ListTodo, NotebookText, Target } from "lucide-react";
+import { BookCopy, BrainCircuit, Calendar, ListTodo, NotebookText, Target, ClipboardCheck } from "lucide-react";
+import { useCollection } from "react-firebase-hooks/firestore";
+import { collection } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
 export function UserDataSummary() {
     const { notes } = useNotes();
     const { flashcardSets } = useFlashcards();
     const { weeklyActivities } = useDailyActivities();
     
+    const [courses] = useCollection(collection(db, 'courses'));
+    const [tasks] = useCollection(collection(db, 'tasks'));
+    const [goals] = useCollection(collection(db, 'goals'));
+    const [sessions] = useCollection(collection(db, 'study-sessions'));
+    
     const stats = [
-        { label: "Courses", value: mockCourses.length, icon: BookCopy },
-        { label: "Tasks", value: mockTasks.length, icon: ListTodo },
-        { label: "Goals", value: mockGoals.length, icon: Target },
+        { label: "Courses", value: courses?.docs.length || 0, icon: BookCopy },
+        { label: "Tasks", value: tasks?.docs.length || 0, icon: ListTodo },
+        { label: "Goals", value: goals?.docs.length || 0, icon: Target },
         { label: "Notes", value: notes.length, icon: NotebookText },
-        { label: "Study Sessions Logged", value: mockStudySessions.length, icon: Calendar },
+        { label: "Study Sessions Logged", value: sessions?.docs.length || 0, icon: Calendar },
         { label: "Flashcard Sets", value: flashcardSets.length, icon: BrainCircuit },
         { label: "Planned Days", value: Object.keys(weeklyActivities).length, icon: ClipboardCheck },
     ];
@@ -48,4 +51,3 @@ export function UserDataSummary() {
         </Card>
     );
 }
-

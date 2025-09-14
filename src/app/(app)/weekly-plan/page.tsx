@@ -1,20 +1,38 @@
-
 'use client';
 
 import { CalendarCheck, Sparkles } from "lucide-react";
 import { useWeeklyPlan } from "./weekly-plan-context";
-import { mockCourses } from "@/lib/mock-data";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useCollection } from "react-firebase-hooks/firestore";
+import { collection } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { Course } from "@/lib/types";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
 export default function WeeklyPlanPage() {
-    const { plan } = useWeeklyPlan();
+    const { plan, loading } = useWeeklyPlan();
+    const [coursesSnapshot, coursesLoading] = useCollection(collection(db, 'courses'));
+    const courses = coursesSnapshot?.docs.map(d => ({id: d.id, ...d.data()})) as Course[] || [];
 
     const getCourseColor = (courseName: string) => {
-        return mockCourses.find(c => c.name === courseName)?.color || '#ccc';
+        return courses.find(c => c.name === courseName)?.color || '#ccc';
+    }
+
+    if (loading || coursesLoading) {
+        return (
+            <div className="space-y-6">
+                <Skeleton className="h-24 w-full" />
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <Skeleton className="h-64 w-full" />
+                    <Skeleton className="h-64 w-full" />
+                    <Skeleton className="h-64 w-full" />
+                </div>
+            </div>
+        )
     }
 
     if (plan.length === 0) {
@@ -78,4 +96,3 @@ export default function WeeklyPlanPage() {
         </div>
     );
 }
-

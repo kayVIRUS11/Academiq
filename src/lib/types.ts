@@ -49,6 +49,7 @@ export type StudySession = {
 };
 
 export type DailyActivity = {
+    id: string;
     time: string;
     activity: string;
     completed: boolean;

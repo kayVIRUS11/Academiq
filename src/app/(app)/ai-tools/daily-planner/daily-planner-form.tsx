@@ -6,13 +6,16 @@ import { Loader2, Sparkles, Save } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '@/components/ui/textarea';
 import { generateDailyPlan, GenerateDailyPlanOutput } from '@/ai/flows/generate-daily-plan';
-import { mockTasks, mockTimetable } from '@/lib/mock-data';
 import { Card, CardContent } from '@/components/ui/card';
 import { SavePlanDialog } from './save-plan-dialog';
-import { DayOfWeek } from '@/lib/types';
+import { DayOfWeek, Course, Task, TimetableEntry } from '@/lib/types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { useWeeklyPlan } from '../../weekly-plan/weekly-plan-context';
+import { useCollection } from 'react-firebase-hooks/firestore';
+import { collection } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const days: DayOfWeek[] = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
@@ -24,6 +27,18 @@ export function DailyPlannerForm() {
   const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
   const { toast } = useToast();
   const { plan: weeklyPlan } = useWeeklyPlan();
+
+  const [tasksSnapshot, tasksLoading] = useCollection(collection(db, 'tasks'));
+  const [timetableSnapshot, timetableLoading] = useCollection(collection(db, 'timetable'));
+  const [coursesSnapshot, coursesLoading] = useCollection(collection(db, 'courses'));
+
+  const loading = tasksLoading || timetableLoading || coursesLoading;
+
+  const tasks = tasksSnapshot?.docs.map(d => ({id: d.id, ...d.data()})) as Task[] || [];
+  const timetable = timetableSnapshot?.docs.map(d => ({id: d.id, ...d.data()})) as TimetableEntry[] || [];
+  const courses = coursesSnapshot?.docs.map(d => ({id: d.id, ...d.data()})) as Course[] || [];
+
+  const getCourseName = (id: string) => courses.find(c => c.id === id)?.name || 'Unknown Course';
 
   const handleGeneratePlan = async () => {
     if (!selectedDay) {
@@ -38,12 +53,13 @@ export function DailyPlannerForm() {
     setIsLoading(true);
     setGeneratedPlan(null);
     try {
-      const timetableString = mockTimetable.filter(entry => entry.day === selectedDay).map(
+      const timetableForDay = timetable.filter(entry => entry.day === selectedDay);
+      const timetableString = timetableForDay.map(
           (entry) =>
-            `${entry.day}: ${entry.startTime}-${entry.endTime} - Class for ${entry.courseId} at ${entry.location}`
+            `${entry.day}: ${entry.startTime}-${entry.endTime} - Class for ${getCourseName(entry.courseId)} at ${entry.location}`
         ).join('\n') || 'No scheduled classes.';
       
-      const tasksForDay = mockTasks.filter(t => !t.completed && new Date(t.dueDate).toLocaleDateString('en-US', { weekday: 'long' }) === selectedDay);
+      const tasksForDay = tasks.filter(t => !t.completed && new Date(t.dueDate).toLocaleDateString('en-US', { weekday: 'long' }) === selectedDay);
 
       const tasksString = tasksForDay.map(
           (task) =>
@@ -83,43 +99,47 @@ export function DailyPlannerForm() {
   return (
     <>
       <div className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-                <Label htmlFor="day-select">Select a Day</Label>
-                <Select onValueChange={(value: DayOfWeek) => setSelectedDay(value)}>
-                    <SelectTrigger id="day-select">
-                        <SelectValue placeholder="Which day are you planning for?" />
-                    </SelectTrigger>
-                    <SelectContent>
-                    {days.map(day => (
-                        <SelectItem key={day} value={day}>
-                        {day}
-                        </SelectItem>
-                    ))}
-                    </SelectContent>
-                </Select>
+      {loading ? <Skeleton className="h-24 w-full" /> : (
+        <>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                    <Label htmlFor="day-select">Select a Day</Label>
+                    <Select onValueChange={(value: DayOfWeek) => setSelectedDay(value)}>
+                        <SelectTrigger id="day-select">
+                            <SelectValue placeholder="Which day are you planning for?" />
+                        </SelectTrigger>
+                        <SelectContent>
+                        {days.map(day => (
+                            <SelectItem key={day} value={day}>
+                            {day}
+                            </SelectItem>
+                        ))}
+                        </SelectContent>
+                    </Select>
+                </div>
             </div>
-        </div>
-        <Textarea
-          placeholder="e.g., I want to focus on my physics assignment in the morning, take a long lunch break, and do some light reading in the evening. I feel most energetic after my morning coffee."
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          rows={6}
-          disabled={isLoading}
-        />
-        <Button onClick={handleGeneratePlan} disabled={isLoading || !description.trim() || !selectedDay}>
-          {isLoading ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Generating Plan...
-            </>
-          ) : (
-            <>
-              <Sparkles className="mr-2 h-4 w-4" />
-              Generate Plan
-            </>
-          )}
-        </Button>
+            <Textarea
+            placeholder="e.g., I want to focus on my physics assignment in the morning, take a long lunch break, and do some light reading in the evening. I feel most energetic after my morning coffee."
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            rows={6}
+            disabled={isLoading}
+            />
+            <Button onClick={handleGeneratePlan} disabled={isLoading || !description.trim() || !selectedDay}>
+            {isLoading ? (
+                <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Generating Plan...
+                </>
+            ) : (
+                <>
+                <Sparkles className="mr-2 h-4 w-4" />
+                Generate Plan
+                </>
+            )}
+            </Button>
+        </>
+      )}
       </div>
 
       {generatedPlan && (

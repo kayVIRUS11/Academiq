@@ -1,6 +1,6 @@
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Settings, Download, Upload, LogOut } from "lucide-react";
+import { Settings, Download, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { UserDataSummary } from "@/components/settings/user-data-summary";
 import { LogoutButton } from "@/components/settings/logout-button";

@@ -25,8 +25,10 @@ import { CalendarIcon } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
-import { mockCourses } from '@/lib/mock-data';
-import { Task } from '@/lib/types';
+import { Task, Course } from '@/lib/types';
+import { useCollection } from 'react-firebase-hooks/firestore';
+import { collection } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
 const taskFormSchema = z.object({
   title: z.string().min(3, { message: 'Title must be at least 3 characters.' }),
@@ -48,6 +50,9 @@ export function TaskForm({
   defaultValues,
   submitButtonText = 'Save Task',
 }: TaskFormProps) {
+  const [coursesSnapshot] = useCollection(collection(db, 'courses'));
+  const courses = coursesSnapshot?.docs.map(d => ({id: d.id, ...d.data()})) as Course[] || [];
+
   const form = useForm<TaskFormValues>({
     resolver: zodResolver(taskFormSchema),
     defaultValues: {
@@ -151,7 +156,7 @@ export function TaskForm({
                 </FormControl>
                 <SelectContent>
                     <SelectItem value="none">No course</SelectItem>
-                    {mockCourses.map(course => (
+                    {courses.map(course => (
                         <SelectItem key={course.id} value={course.id}>{course.name}</SelectItem>
                     ))}
                 </SelectContent>

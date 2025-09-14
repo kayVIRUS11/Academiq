@@ -1,20 +1,30 @@
 'use client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { mockTasks } from "@/lib/mock-data";
 import { Task } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { ListTodo } from "lucide-react";
-import { useState } from "react";
+import { useCollection } from "react-firebase-hooks/firestore";
+import { collection, doc, updateDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { Skeleton } from "../ui/skeleton";
 
 export function TasksDueToday() {
-  const today = new Date().toISOString().split('T')[0];
-  const [tasks, setTasks] = useState<Task[]>(mockTasks.filter(task => task.dueDate.startsWith(today)));
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  
+  const [tasksSnapshot, loading] = useCollection(collection(db, 'tasks'));
+  
+  const tasksDueToday = tasksSnapshot?.docs.map(doc => ({id: doc.id, ...doc.data()}) as Task)
+    .filter(task => {
+        const dueDate = new Date(task.dueDate);
+        dueDate.setHours(0,0,0,0);
+        return dueDate.getTime() === today.getTime();
+    }) || [];
 
-  const handleTaskToggle = (taskId: string) => {
-    setTasks(prevTasks => prevTasks.map(task => 
-      task.id === taskId ? { ...task, completed: !task.completed } : task
-    ));
+  const handleTaskToggle = async (taskId: string, currentStatus: boolean) => {
+    const taskRef = doc(db, 'tasks', taskId);
+    await updateDoc(taskRef, { completed: !currentStatus });
   };
 
   return (
@@ -25,18 +35,23 @@ export function TasksDueToday() {
             <span>Tasks Due Today</span>
         </CardTitle>
         <CardDescription>
-            You have {tasks.filter(t => !t.completed).length} tasks left for today.
+            You have {tasksDueToday.filter(t => !t.completed).length} tasks left for today.
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {tasks.length > 0 ? (
+        {loading ? (
           <div className="space-y-4">
-            {tasks.map(task => (
+            <Skeleton className="h-6 w-full" />
+            <Skeleton className="h-6 w-full" />
+          </div>
+        ) : tasksDueToday.length > 0 ? (
+          <div className="space-y-4">
+            {tasksDueToday.map(task => (
               <div key={task.id} className="flex items-center space-x-4">
                 <Checkbox 
                   id={`task-${task.id}`} 
                   checked={task.completed}
-                  onCheckedChange={() => handleTaskToggle(task.id)}
+                  onCheckedChange={() => handleTaskToggle(task.id, task.completed)}
                 />
                 <label
                   htmlFor={`task-${task.id}`}

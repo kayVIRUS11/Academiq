@@ -2,11 +2,9 @@
 
 import { useState } from 'react';
 import { Timer, BrainCircuit, Loader2, Save } from 'lucide-react';
-import { mockStudySessions, mockCourses, mockTimetable } from '@/lib/mock-data';
-import { StudySession, TimetableEntry } from '@/lib/types';
+import { StudySession, TimetableEntry, Course } from '@/lib/types';
 import { AddStudySession } from '@/components/study-tracker/add-study-session';
 import { StudySessionList } from '@/components/study-tracker/study-session-list';
-import { Course } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -20,35 +18,59 @@ import { useToast } from '@/hooks/use-toast';
 import { generateWeeklyStudyPlan, GenerateWeeklyStudyPlanOutput } from '@/ai/flows/generate-weekly-study-plan';
 import { useWeeklyPlan } from '../weekly-plan/weekly-plan-context';
 import { useRouter } from 'next/navigation';
+import { useCollection } from 'react-firebase-hooks/firestore';
+import { collection, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function StudyTrackerPage() {
-  const [sessions, setSessions] = useState<StudySession[]>(mockStudySessions);
-  const [courses] = useState<Course[]>(mockCourses);
-  const [timetable] = useState<TimetableEntry[]>(mockTimetable);
   const { setPlan } = useWeeklyPlan();
   const router = useRouter();
+  const { toast } = useToast();
+
+  const [coursesSnapshot, coursesLoading] = useCollection(collection(db, 'courses'));
+  const [timetableSnapshot, timetableLoading] = useCollection(collection(db, 'timetable'));
+  const [sessionsSnapshot, sessionsLoading] = useCollection(collection(db, 'study-sessions'));
+  
+  const courses = coursesSnapshot?.docs.map(d => ({id: d.id, ...d.data()})) as Course[] || [];
+  const timetable = timetableSnapshot?.docs.map(d => ({id: d.id, ...d.data()})) as TimetableEntry[] || [];
+  const sessions = sessionsSnapshot?.docs.map(d => ({id: d.id, ...d.data()})) as StudySession[] || [];
+  
+  const loading = coursesLoading || timetableLoading || sessionsLoading;
 
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedPlan, setGeneratedPlan] = useState<GenerateWeeklyStudyPlanOutput['weeklyPlan'] | null>(null);
   const [isPlanDialogOpen, setIsPlanDialogOpen] = useState(false);
-  const { toast } = useToast();
 
-  const handleAddSession = (newSessionData: Omit<StudySession, 'id'>) => {
-    setSessions(prev => [
-      ...prev,
-      {
-        ...newSessionData,
-        id: (prev.length + 1).toString(),
-      },
-    ].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+  const handleAddSession = async (newSessionData: Omit<StudySession, 'id'>) => {
+    try {
+        await addDoc(collection(db, 'study-sessions'), newSessionData);
+        toast({title: 'Session logged!'});
+    } catch(e) {
+        console.error(e);
+        toast({title: 'Error logging session', variant: 'destructive'});
+    }
   };
 
-  const handleUpdateSession = (updatedSession: StudySession) => {
-    setSessions(prev => prev.map(s => s.id === updatedSession.id ? updatedSession : s));
+  const handleUpdateSession = async (updatedSession: StudySession) => {
+    try {
+        const { id, ...data } = updatedSession;
+        await updateDoc(doc(db, 'study-sessions', id), data);
+        toast({title: 'Session updated.'});
+    } catch(e) {
+        console.error(e);
+        toast({title: 'Error updating session', variant: 'destructive'});
+    }
   };
 
-  const handleDeleteSession = (sessionId: string) => {
-    setSessions(prev => prev.filter(s => s.id !== sessionId));
+  const handleDeleteSession = async (sessionId: string) => {
+    try {
+        await deleteDoc(doc(db, 'study-sessions', sessionId));
+        toast({title: 'Session deleted.'});
+    } catch(e) {
+        console.error(e);
+        toast({title: 'Error deleting session', variant: 'destructive'});
+    }
   };
 
   const handleGeneratePlan = async () => {
@@ -91,7 +113,7 @@ export default function StudyTrackerPage() {
           Study Tracker
         </h1>
         <div className='flex gap-2'>
-            <Button variant="outline" onClick={handleGeneratePlan} disabled={isGenerating}>
+            <Button variant="outline" onClick={handleGeneratePlan} disabled={isGenerating || loading}>
                 {isGenerating ? <Loader2 className="mr-2 animate-spin" /> : <BrainCircuit className="mr-2" />}
                 {isGenerating ? 'Generating...' : 'AI Weekly Study Plan'}
             </Button>
@@ -99,12 +121,21 @@ export default function StudyTrackerPage() {
         </div>
       </div>
 
-      <StudySessionList
-        sessions={sessions}
-        courses={courses}
-        onUpdateSession={handleUpdateSession}
-        onDeleteSession={handleDeleteSession}
-      />
+        {loading ? (
+            <div className="border rounded-lg p-4 space-y-4">
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+            </div>
+        ) : (
+            <StudySessionList
+                sessions={sessions.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime())}
+                courses={courses}
+                onUpdateSession={handleUpdateSession}
+                onDeleteSession={handleDeleteSession}
+            />
+        )}
+
 
       <Dialog open={isPlanDialogOpen} onOpenChange={setIsPlanDialogOpen}>
         <DialogContent className="max-w-4xl">
@@ -121,7 +152,7 @@ export default function StudyTrackerPage() {
                     {generatedPlan?.filter(p => p.day === day).map((planItem, index) => (
                         <div key={index} className="p-3 rounded-md bg-background shadow-sm">
                             <p className="font-semibold text-sm">{planItem.time}</p>
-                            <p className="text-sm text-primary font-medium">{planItem.course}</p>
+                            <p className="text-primary font-medium">{planItem.course}</p>
                             <p className="text-xs text-muted-foreground">{planItem.activity}</p>
                         </div>
                     ))}

@@ -15,7 +15,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 const days: DayOfWeek[] = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
 function DailyPlanView({ day }: { day: DayOfWeek }) {
-    const { weeklyActivities, setWeeklyActivities } = useDailyActivities();
+    const { weeklyActivities, updateActivitiesForDay } = useDailyActivities();
     const [progress, setProgress] = useState(0);
 
     const activities = weeklyActivities[day] || [];
@@ -26,10 +26,9 @@ function DailyPlanView({ day }: { day: DayOfWeek }) {
         setProgress(totalCount > 0 ? (completedCount / totalCount) * 100 : 0);
     }, [activities]);
 
-    const handleToggleActivity = (index: number) => {
-        const newActivities = [...activities];
-        newActivities[index].completed = !newActivities[index].completed;
-        setWeeklyActivities(prev => ({ ...prev, [day]: newActivities }));
+    const handleToggleActivity = (activityId: string) => {
+        const newActivities = activities.map(act => act.id === activityId ? {...act, completed: !act.completed} : act);
+        updateActivitiesForDay(day, newActivities);
     }
     
     if (activities.length === 0) {
@@ -67,16 +66,16 @@ function DailyPlanView({ day }: { day: DayOfWeek }) {
                 </CardHeader>
                 <CardContent>
                     <div className="space-y-4">
-                        {activities.map((activity, index) => (
-                            <div key={index} className={cn("flex items-start gap-4 p-4 rounded-lg", activity.completed ? "bg-secondary" : "bg-transparent")}>
+                        {activities.map((activity) => (
+                            <div key={activity.id} className={cn("flex items-start gap-4 p-4 rounded-lg", activity.completed ? "bg-secondary" : "bg-transparent")}>
                                 <Checkbox 
-                                    id={`activity-${day}-${index}`}
+                                    id={`activity-${day}-${activity.id}`}
                                     className="mt-1"
                                     checked={activity.completed}
-                                    onCheckedChange={() => handleToggleActivity(index)}
+                                    onCheckedChange={() => handleToggleActivity(activity.id)}
                                 />
                                 <div className="grid gap-1.5">
-                                    <label htmlFor={`activity-${day}-${index}`} className={cn("font-semibold cursor-pointer", activity.completed && "line-through text-muted-foreground")}>
+                                    <label htmlFor={`activity-${day}-${activity.id}`} className={cn("font-semibold cursor-pointer", activity.completed && "line-through text-muted-foreground")}>
                                         {activity.activity}
                                     </label>
                                     <p className="text-sm text-muted-foreground">{activity.time}</p>

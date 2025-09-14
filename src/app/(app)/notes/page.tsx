@@ -12,20 +12,29 @@ import { useToast } from '@/hooks/use-toast';
 import { summarizeNotes } from '@/ai/flows/summarize-notes';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
-import { mockCourses } from '@/lib/mock-data';
 import { useNotes } from './notes-context';
 import { useFlashcards } from '../ai-tools/flashcards/flashcards-context';
 import { generateFlashcards } from '@/ai/flows/generate-flashcards';
 import { useRouter } from 'next/navigation';
+import { useCollection } from 'react-firebase-hooks/firestore';
+import { collection } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function NotesPage() {
     const { 
         notes, 
-        setNotes, 
+        loading,
+        error,
         selectedNoteId, 
         setSelectedNoteId, 
-        addNote 
+        addNote,
+        updateNote,
+        deleteNote
     } = useNotes();
+    const [coursesSnapshot, coursesLoading] = useCollection(collection(db, 'courses'));
+    const courses = coursesSnapshot?.docs.map(d => ({id: d.id, ...d.data()})) || [];
+
   const [isDeleting, setIsDeleting] = useState(false);
   const [isSummarizing, setIsSummarizing] = useState(false);
   const [isGeneratingFlashcards, setIsGeneratingFlashcards] = useState(false);
@@ -41,8 +50,8 @@ export default function NotesPage() {
     setSelectedNoteId(id);
   };
 
-  const handleAddNote = () => {
-    const newNote = addNote({
+  const handleAddNote = async () => {
+    const newNote = await addNote({
         title: 'New Note',
         content: '',
     });
@@ -51,17 +60,13 @@ export default function NotesPage() {
 
   const handleUpdateNote = (updatedNote: Partial<Note>) => {
     if (!selectedNoteId) return;
-    setNotes(prev =>
-      prev.map(note =>
-        note.id === selectedNoteId ? { ...note, ...updatedNote } : note
-      )
-    );
+    updateNote(selectedNoteId, updatedNote);
   };
 
-  const handleDeleteNote = () => {
+  const handleDeleteNote = async () => {
     if (!selectedNoteId) return;
     const noteIndex = notes.findIndex(n => n.id === selectedNoteId);
-    setNotes(prev => prev.filter(note => note.id !== selectedNoteId));
+    await deleteNote(selectedNoteId);
     setSelectedNoteId(notes.length > 1 ? (noteIndex > 0 ? notes[noteIndex-1].id : notes[1].id) : null);
     setIsDeleting(false);
   };
@@ -79,7 +84,7 @@ export default function NotesPage() {
     try {
       const result = await summarizeNotes({notes: selectedNote.content});
       
-      const summaryNote = addNote({
+      const summaryNote = await addNote({
         title: `Summary: ${selectedNote.title}`,
         content: `**Main Topic:** ${result.mainTopic}\n\n**Summary:**\n${result.summary}`,
         courseId: selectedNote.courseId,
@@ -110,7 +115,7 @@ export default function NotesPage() {
     setIsGeneratingFlashcards(true);
     try {
         const result = await generateFlashcards({ notes: selectedNote.content });
-        addFlashcardSet(selectedNote.title, result.flashcards);
+        await addFlashcardSet(selectedNote.title, result.flashcards);
         toast({
             title: 'Flashcards Generated!',
             description: `A new set with ${result.flashcards.length} cards has been saved.`
@@ -122,6 +127,8 @@ export default function NotesPage() {
         setIsGeneratingFlashcards(false);
     }
   }
+  
+  if (error) return <p className="text-destructive p-4">Error: {error.message}</p>
 
   const editorPanel = (
       <div className={cn(
@@ -164,7 +171,7 @@ export default function NotesPage() {
               </Button>
             </div>
             <div className="flex-1 p-4">
-              <NoteEditor note={selectedNote} onUpdate={handleUpdateNote} />
+              <NoteEditor note={selectedNote} onUpdate={handleUpdateNote} key={selectedNoteId} />
             </div>
           </>
         ) : (
@@ -205,12 +212,20 @@ export default function NotesPage() {
           </Button>
         </div>
         <div className="overflow-y-auto flex-1">
-          <NoteList
-            notes={notes}
-            selectedNoteId={selectedNoteId}
-            onSelectNote={handleSelectNote}
-            courses={mockCourses}
-          />
+          {loading || coursesLoading ? (
+            <div className="p-4 space-y-2">
+                <Skeleton className="h-20 w-full" />
+                <Skeleton className="h-20 w-full" />
+                <Skeleton className="h-20 w-full" />
+            </div>
+          ) : (
+            <NoteList
+                notes={notes}
+                selectedNoteId={selectedNoteId}
+                onSelectNote={handleSelectNote}
+                courses={courses as Course[]}
+            />
+          )}
         </div>
       </aside>
 

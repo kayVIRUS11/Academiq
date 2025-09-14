@@ -7,9 +7,10 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function FlashcardsPage() {
-    const { flashcardSets, deleteFlashcardSet } = useFlashcards();
+    const { flashcardSets, deleteFlashcardSet, loading } = useFlashcards();
     const router = useRouter();
 
     const handleDelete = (e: React.MouseEvent, setId: string) => {
@@ -30,7 +31,13 @@ export default function FlashcardsPage() {
             </p>
         </div>
 
-        {flashcardSets.length === 0 ? (
+        {loading ? (
+             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <Skeleton className="h-48 w-full" />
+                <Skeleton className="h-48 w-full" />
+                <Skeleton className="h-48 w-full" />
+            </div>
+        ) : flashcardSets.length === 0 ? (
             <Card className="text-center py-16">
                 <CardContent>
                     <h3 className="text-xl font-semibold">No Flashcards Yet</h3>
