@@ -1,5 +1,6 @@
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { CalendarDays } from "lucide-react";
+import { DailyPlannerForm } from "./daily-planner-form";
 
 export default function DailyPlannerPage() {
   return (
@@ -15,11 +16,11 @@ export default function DailyPlannerPage() {
         </div>
         <Card>
             <CardHeader>
-                <CardTitle>Coming Soon</CardTitle>
-                <CardDescription>Describe your ideal day and let AI handle the planning.</CardDescription>
+                <CardTitle>Describe Your Ideal Day</CardTitle>
+                <CardDescription>Tell the AI what you want to accomplish, your energy levels, and any preferences you have.</CardDescription>
             </CardHeader>
             <CardContent>
-                <p className="text-muted-foreground">This feature is under construction. Soon, you'll be able to input your daily constraints and preferences to receive a hyper-personalized schedule.</p>
+                <DailyPlannerForm />
             </CardContent>
         </Card>
     </div>
