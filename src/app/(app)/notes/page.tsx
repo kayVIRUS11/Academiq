@@ -33,7 +33,7 @@ export default function NotesPage() {
   const { toast } = useToast();
   const isMobile = useIsMobile();
   const router = useRouter();
-  const { setFlashcards } = useFlashcards();
+  const { addFlashcardSet } = useFlashcards();
 
   const selectedNote = notes.find(note => note.id === selectedNoteId) || null;
 
@@ -110,10 +110,10 @@ export default function NotesPage() {
     setIsGeneratingFlashcards(true);
     try {
         const result = await generateFlashcards({ notes: selectedNote.content });
-        setFlashcards(result.flashcards);
+        addFlashcardSet(selectedNote.title, result.flashcards);
         toast({
             title: 'Flashcards Generated!',
-            description: `Navigating to flashcards page to view your ${result.flashcards.length} new cards.`
+            description: `A new set with ${result.flashcards.length} cards has been saved.`
         });
         router.push('/ai-tools/flashcards');
     } catch(e) {
