@@ -1,4 +1,4 @@
-import { Course, Goal, Task, TimetableEntry } from './types';
+import { Course, Goal, Note, Task, TimetableEntry } from './types';
 
 export const mockCourses: Course[] = [
   { id: '1', name: 'Advanced Calculus', courseCode: 'MATH301', instructor: 'Dr. Evelyn Reed', color: 'bg-blue-200' },
@@ -46,6 +46,30 @@ export const mockGoals: Goal[] = [
     { id: '2', title: 'Publish a research paper', type: 'yearly', progress: 25 },
     { id: '3', title: 'Master React state management', type: 'semester', progress: 80 },
 ];
+
+export const mockNotes: Note[] = [
+  {
+    id: '1',
+    title: 'Lecture 1: Intro to Quantum Mechanics',
+    content: 'The first lecture covered the basics of quantum mechanics, including wave-particle duality and the Schrödinger equation. Key takeaway: everything is probabilistic at the quantum level. Need to review the section on Heisenberg\'s Uncertainty Principle.',
+    courseId: '2',
+    createdAt: new Date(new Date().setDate(new Date().getDate() - 2)).toISOString(),
+  },
+  {
+    id: '2',
+    title: 'Semester Goals Breakdown',
+    content: 'My main goal is to achieve a 3.8 GPA. To do this, I need to:\n- Get an A in Advanced Calculus.\n- Get at least a B+ in Quantum Physics.\n- Stay on top of all assignments for Organic Chemistry.\n\nI will use the Pomodoro timer for focused study sessions.',
+    createdAt: new Date(new Date().setDate(new Date().getDate() - 1)).toISOString(),
+  },
+  {
+    id: '3',
+    title: 'Lab Prep: Titration Experiment',
+    content: 'Need to prepare for the titration lab on Wednesday. \n\nProcedure:\n1. Calibrate pH meter.\n2. Prepare the burette with NaOH solution.\n3. Titrate the unknown acid until the equivalence point is reached.\n\nRemember to wear safety goggles at all times.',
+    courseId: '3',
+    createdAt: new Date().toISOString(),
+  },
+];
+
 
 export const mockTimetable: TimetableEntry[] = [
     {
