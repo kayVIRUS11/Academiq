@@ -6,36 +6,16 @@ import { useWeeklyPlan } from "./weekly-plan-context";
 import { mockCourses } from "@/lib/mock-data";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { Card, CardContent } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-const timeSlots = Array.from({ length: 13 }, (_, i) => `${(i + 8).toString().padStart(2, '0')}:00`); // 8am to 8pm
 
 export default function WeeklyPlanPage() {
-    const { plan, setPlan } = useWeeklyPlan();
+    const { plan } = useWeeklyPlan();
 
-    const getCourse = (courseName: string) => mockCourses.find(c => c.name === courseName);
-
-    const timeToPosition = (time: string) => {
-        const [hours, minutes] = time.split(':').map(Number);
-        return (hours - 8) * 60 + minutes;
-    };
-    
-    const getEntryStyle = (startTime: string, endTime: string, courseName: string) => {
-        const start = timeToPosition(startTime);
-        const end = timeToPosition(endTime);
-        const course = getCourse(courseName);
-
-        // Calculate duration, ensuring a minimum height for visibility
-        const duration = Math.max(end - start, 30);
-    
-        return {
-          top: `${(start / (13 * 60)) * 100}%`,
-          height: `${(duration / (13 * 60)) * 100}%`,
-          backgroundColor: course?.color || '#ccc',
-        };
-    };
+    const getCourseColor = (courseName: string) => {
+        return mockCourses.find(c => c.name === courseName)?.color || '#ccc';
+    }
 
     if (plan.length === 0) {
         return (
@@ -67,65 +47,35 @@ export default function WeeklyPlanPage() {
                 </p>
             </div>
 
-            <Card className="p-4 overflow-x-auto">
-                <div className="flex min-w-[900px]">
-                {/* Time column */}
-                <div className="w-16 flex-shrink-0">
-                    {/* Top-left empty cell */}
-                    <div className="h-10 border-b"></div>
-                    {/* Time slots */}
-                    {timeSlots.map((time) => (
-                        <div key={time} className="h-16 relative border-t">
-                            <div className="text-xs text-muted-foreground absolute -top-[9px] right-2">{time}</div>
-                        </div>
-                    ))}
-                </div>
-
-                {/* Schedule Grid */}
-                <div className="flex-grow grid grid-cols-7">
-                    {/* Day headers */}
-                    {days.map(day => (
-                        <div key={day} className="text-center font-semibold py-2 border-b border-l h-10">
-                        <h3>{day}</h3>
-                        </div>
-                    ))}
-
-                    {/* Day columns */}
-                    {days.map(day => (
-                        <div key={day} className="relative border-l">
-                            {/* Grid lines */}
-                            {timeSlots.map((time) => (
-                                <div key={time} className="h-16 border-t"></div>
-                            ))}
-                            
-                            {/* Entries */}
-                            <div className="absolute inset-0">
-                                {plan
-                                .filter(item => item.day === day)
-                                .map(item => {
-                                    const [startTime, endTime] = item.time.split(' - ');
-                                    const course = getCourse(item.course);
-                                    return (
-                                        <div
-                                            key={item.id}
-                                            className={cn(
-                                                "absolute w-full text-left p-2 rounded-lg text-white overflow-hidden",
-                                                "opacity-80 border"
-                                            )}
-                                            style={getEntryStyle(startTime, endTime, item.course)}
-                                        >
-                                            <p className="font-bold text-xs leading-tight">{item.course}</p>
-                                            <p className="text-xs leading-tight">{item.time}</p>
-                                            <p className="text-xs leading-tight truncate">{item.activity}</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {days.map(day => {
+                    const dayPlan = plan.filter(item => item.day === day);
+                    return (
+                        <Card key={day}>
+                            <CardHeader>
+                                <CardTitle>{day}</CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                {dayPlan.length > 0 ? (
+                                    dayPlan.map(item => (
+                                        <div key={item.id} className="p-3 rounded-lg bg-secondary/60">
+                                            <p className="font-semibold text-sm">{item.time}</p>
+                                            <div className="flex items-center gap-2 mt-1">
+                                                <div className="w-2 h-2 rounded-full" style={{backgroundColor: getCourseColor(item.course)}}/>
+                                                <p className="text-primary font-medium text-sm">{item.course}</p>
+                                            </div>
+                                            <p className="text-xs text-muted-foreground mt-1">{item.activity}</p>
                                         </div>
-                                    )
-                                })}
-                            </div>
-                        </div>
-                    ))}
-                </div>
-                </div>
-            </Card>
+                                    ))
+                                ) : (
+                                    <p className="text-sm text-muted-foreground italic text-center py-4">No study planned.</p>
+                                )}
+                            </CardContent>
+                        </Card>
+                    )
+                })}
+            </div>
         </div>
     );
 }
+
