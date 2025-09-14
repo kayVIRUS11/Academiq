@@ -4,20 +4,13 @@ import { Course } from '@/lib/types';
 import {
   Table,
   TableBody,
-  TableCaption,
   TableCell,
   TableHead,
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { MoreHorizontal, Edit, Trash } from 'lucide-react';
+import { Edit, Trash } from 'lucide-react';
 import { EditCourse } from './edit-course';
 import {
   AlertDialog,
@@ -68,25 +61,15 @@ export function CourseList({ courses, onUpdateCourse, onDeleteCourse }: CourseLi
                   <TableCell className="font-medium">{course.name}</TableCell>
                   <TableCell>{course.courseCode}</TableCell>
                   <TableCell>{course.instructor || 'N/A'}</TableCell>
-                  <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                          <span className="sr-only">Open menu</span>
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onSelect={() => handleEdit(course)}>
-                          <Edit className="mr-2 h-4 w-4" />
-                          <span>Edit</span>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onSelect={() => setDeletingCourseId(course.id)} className="text-destructive">
-                          <Trash className="mr-2 h-4 w-4" />
-                          <span>Delete</span>
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                  <TableCell className="text-right space-x-2">
+                    <Button variant="ghost" size="icon" onClick={() => handleEdit(course)}>
+                      <Edit className="h-4 w-4" />
+                      <span className="sr-only">Edit Course</span>
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={() => setDeletingCourseId(course.id)} className="text-destructive hover:text-destructive">
+                      <Trash className="h-4 w-4" />
+                      <span className="sr-only">Delete Course</span>
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))
