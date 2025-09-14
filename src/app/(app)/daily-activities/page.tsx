@@ -12,7 +12,7 @@ import { useEffect, useState } from "react";
 import { DayOfWeek } from "@/lib/types";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
-const days: DayOfWeek[] = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+const days: DayOfWeek[] = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
 function DailyPlanView({ day }: { day: DayOfWeek }) {
     const { weeklyActivities, setWeeklyActivities } = useDailyActivities();
@@ -108,7 +108,7 @@ export default function DailyActivitiesPage() {
             </div>
             
             <Tabs defaultValue={defaultTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-5">
+                <TabsList className="grid w-full grid-cols-7">
                     {days.map(day => (
                         <TabsTrigger key={day} value={day}>{day}</TabsTrigger>
                     ))}
