@@ -38,7 +38,7 @@ export function TimetableView({ entries, courses, onUpdateEntry, onDeleteEntry }
 
   return (
     <>
-      <div className="border rounded-lg bg-card text-card-foreground p-4">
+      <div className="border rounded-lg bg-card text-card-foreground p-4 overflow-x-auto">
         <div className="grid grid-cols-[auto_1fr_1fr_1fr_1fr_1fr] min-w-[800px]">
           {/* Time column */}
           <div className="text-xs text-muted-foreground">
