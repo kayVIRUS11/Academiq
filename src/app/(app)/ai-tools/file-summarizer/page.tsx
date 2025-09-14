@@ -1,5 +1,6 @@
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { FileText } from "lucide-react";
+import { FileSummarizer } from "./file-summarizer";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function FileSummarizerPage() {
   return (
@@ -10,16 +11,16 @@ export default function FileSummarizerPage() {
             </div>
             <h1 className="text-4xl font-bold font-headline">AI File Summarizer</h1>
             <p className="text-muted-foreground mt-2 max-w-2xl">
-                Upload your documents (PDF, PPTX, TXT) and get a concise summary in seconds. Perfect for quick reviews and understanding key points.
+                Upload your documents (.txt format) and get a concise summary in seconds. Perfect for quick reviews and understanding key points.
             </p>
         </div>
         <Card>
             <CardHeader>
-                <CardTitle>Coming Soon</CardTitle>
-                <CardDescription>Upload a file to get started.</CardDescription>
+                <CardTitle>Upload Document</CardTitle>
+                <CardDescription>Select a .txt file from your device to begin.</CardDescription>
             </CardHeader>
             <CardContent>
-                <p className="text-muted-foreground">This feature is under construction. You will soon be able to upload your files and receive AI-generated summaries that you can save to your notes.</p>
+                <FileSummarizer />
             </CardContent>
         </Card>
     </div>
