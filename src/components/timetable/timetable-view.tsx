@@ -40,59 +40,62 @@ export function TimetableView({ entries, courses, onUpdateEntry, onDeleteEntry }
   return (
     <>
       <div className="border rounded-lg bg-card text-card-foreground p-4 overflow-x-auto">
-        <div className="grid grid-cols-[auto_repeat(5,_1fr)] min-w-[800px]">
-          {/* Top-left empty cell */}
-          <div className="border-b"></div>
-
-          {/* Day headers */}
-          {days.map(day => (
-            <div key={day} className="text-center font-semibold py-2 border-b border-l">
-              <h3>{day}</h3>
-            </div>
-          ))}
-
-          {/* Time column and Grid Lines */}
-          <div className="row-start-2 -mr-2">
-            {timeSlots.map((time, index) => (
-              <div key={time} className="h-16 relative">
-                <div className="text-xs text-muted-foreground absolute -top-2 pr-2">{time}</div>
-              </div>
-            ))}
+        <div className="flex min-w-[800px]">
+          {/* Time column */}
+          <div className="w-16 flex-shrink-0">
+             {/* Top-left empty cell */}
+             <div className="h-10 border-b"></div>
+             {/* Time slots */}
+             {timeSlots.map((time) => (
+                <div key={time} className="h-16 relative border-t">
+                    <div className="text-xs text-muted-foreground absolute -top-[9px] right-2">{time}</div>
+                </div>
+             ))}
           </div>
 
-          {/* Day columns */}
-          {days.map(day => (
-            <div key={day} className="relative border-l row-start-2">
-              {/* Grid lines */}
-              {timeSlots.map((time) => (
-                  <div key={time} className="h-16 border-t"></div>
-              ))}
-              
-              {/* Entries */}
-              <div className="absolute inset-0">
-                {entries
-                  .filter(entry => entry.day === day)
-                  .map(entry => {
-                    const course = getCourse(entry.courseId);
-                    return (
-                        <button
-                            key={entry.id}
-                            onClick={() => setSelectedEntry(entry)}
-                            className={cn(
-                                "absolute w-full text-left p-2 rounded-lg text-white overflow-hidden transition-shadow hover:shadow-lg",
-                                "opacity-80 border"
-                            )}
-                            style={getEntryStyle(entry)}
-                        >
-                            <p className="font-bold text-xs leading-tight">{course?.name}</p>
-                            <p className="text-xs leading-tight">{entry.startTime} - {entry.endTime}</p>
-                            <p className="text-xs leading-tight truncate">{entry.location}</p>
-                        </button>
-                    )
-                  })}
-              </div>
-            </div>
-          ))}
+          {/* Schedule Grid */}
+          <div className="flex-grow grid grid-cols-5">
+            {/* Day headers */}
+            {days.map(day => (
+                <div key={day} className="text-center font-semibold py-2 border-b border-l h-10">
+                <h3>{day}</h3>
+                </div>
+            ))}
+
+            {/* Day columns */}
+            {days.map(day => (
+                <div key={day} className="relative border-l">
+                    {/* Grid lines */}
+                    {timeSlots.map((time) => (
+                        <div key={time} className="h-16 border-t"></div>
+                    ))}
+                    
+                    {/* Entries */}
+                    <div className="absolute inset-0">
+                        {entries
+                        .filter(entry => entry.day === day)
+                        .map(entry => {
+                            const course = getCourse(entry.courseId);
+                            return (
+                                <button
+                                    key={entry.id}
+                                    onClick={() => setSelectedEntry(entry)}
+                                    className={cn(
+                                        "absolute w-full text-left p-2 rounded-lg text-white overflow-hidden transition-shadow hover:shadow-lg",
+                                        "opacity-80 border"
+                                    )}
+                                    style={getEntryStyle(entry)}
+                                >
+                                    <p className="font-bold text-xs leading-tight">{course?.name}</p>
+                                    <p className="text-xs leading-tight">{entry.startTime} - {entry.endTime}</p>
+                                    <p className="text-xs leading-tight truncate">{entry.location}</p>
+                                </button>
+                            )
+                        })}
+                    </div>
+                </div>
+            ))}
+          </div>
         </div>
       </div>
 
