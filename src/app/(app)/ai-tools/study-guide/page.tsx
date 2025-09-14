@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { BookOpen } from "lucide-react";
+import { StudyGuideForm } from "./study-guide-form";
 
 export default function StudyGuidePage() {
   return (
@@ -15,11 +16,11 @@ export default function StudyGuidePage() {
         </div>
         <Card>
             <CardHeader>
-                <CardTitle>Coming Soon</CardTitle>
-                <CardDescription>Upload your course syllabus to create a study guide.</CardDescription>
+                <CardTitle>Generate Your Study Guide</CardTitle>
+                <CardDescription>Select a course and upload its syllabus to create a custom study plan.</CardDescription>
             </CardHeader>
             <CardContent>
-                <p className="text-muted-foreground">This feature is under construction. Soon, you'll be able to transform your course materials into a structured study plan.</p>
+                <StudyGuideForm />
             </CardContent>
         </Card>
     </div>

@@ -22,7 +22,7 @@ const GenerateStudyGuideInputSchema = z.object({
 export type GenerateStudyGuideInput = z.infer<typeof GenerateStudyGuideInputSchema>;
 
 const GenerateStudyGuideOutputSchema = z.object({
-  studyGuide: z.string().describe('The generated study guide for the course.'),
+  studyGuide: z.string().describe('The generated study guide for the course in Markdown format.'),
 });
 export type GenerateStudyGuideOutput = z.infer<typeof GenerateStudyGuideOutputSchema>;
 
@@ -34,14 +34,21 @@ const prompt = ai.definePrompt({
   name: 'generateStudyGuidePrompt',
   input: {schema: GenerateStudyGuideInputSchema},
   output: {schema: GenerateStudyGuideOutputSchema},
-  prompt: `You are an expert tutor, creating study guides for students.
+  prompt: `You are an expert tutor, creating a detailed, week-by-week study guide for a university student.
 
-You will use this scheme of work to create a study guide for the course.
+  Based on the provided course syllabus, generate a comprehensive study plan that spans a typical 12-14 week semester. Break down topics, suggest study activities, and allocate time appropriately. End with a "Finals Preparation" section.
 
-Course Name: {{{courseName}}}
-Scheme of Work: {{media url=schemeOfWorkDataUri}}
+  Rules:
+  - The output must be a single string formatted as Markdown.
+  - Use headings for each week (e.g., "### Week 1: Introduction to...").
+  - Use bullet points for weekly topics and suggested tasks.
+  - Be practical and encouraging.
 
-Study Guide: `,
+  Course Name: {{{courseName}}}
+  Syllabus/Scheme of Work: {{media url=schemeOfWorkDataUri}}
+
+  Generate the study guide now.
+  `,
 });
 
 const generateStudyGuideFlow = ai.defineFlow(
