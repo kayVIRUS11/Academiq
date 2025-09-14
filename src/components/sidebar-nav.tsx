@@ -56,7 +56,7 @@ export function SidebarNav() {
         <SidebarMenu className="flex-1 p-2">
           {navItems.map((item) => (
             <SidebarMenuItem key={item.href}>
-              <Link href={item.href} legacyBehavior passHref>
+              <Link href={item.href}>
                 <SidebarMenuButton
                   isActive={pathname === item.href}
                   tooltip={item.label}
@@ -74,7 +74,7 @@ export function SidebarNav() {
             </SidebarGroupLabel>
             {aiTools.map((item) => (
                <SidebarMenuItem key={item.href}>
-                <Link href={item.href} legacyBehavior passHref>
+                <Link href={item.href}>
                   <SidebarMenuButton
                     isActive={pathname === item.href}
                     tooltip={item.label}
@@ -91,7 +91,7 @@ export function SidebarNav() {
         <div className="p-2 mt-auto">
             <SidebarMenu>
                 <SidebarMenuItem>
-                    <Link href="/coming-soon" legacyBehavior passHref>
+                    <Link href="/coming-soon">
                         <SidebarMenuButton tooltip="More features coming soon!" isActive={pathname === '/coming-soon'}>
                             <MoreHorizontal />
                             <span>More coming...</span>
@@ -99,7 +99,7 @@ export function SidebarNav() {
                     </Link>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
-                    <Link href="/settings" legacyBehavior passHref>
+                    <Link href="/settings">
                         <SidebarMenuButton tooltip="Settings" isActive={pathname === '/settings'}>
                             <Settings />
                             <span>Settings</span>

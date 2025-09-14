@@ -42,18 +42,16 @@ export default function AiToolsPage() {
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {aiTools.map(tool => (
-                <Link href={tool.href} key={tool.href} legacyBehavior>
-                    <a className="block">
-                        <Card className="h-full hover:border-primary hover:shadow-lg transition-all">
-                            <CardHeader className="flex flex-row items-center gap-4">
-                                <tool.icon className="w-8 h-8 text-primary" />
-                                <div>
-                                    <CardTitle>{tool.title}</CardTitle>
-                                    <CardDescription>{tool.description}</CardDescription>
-                                </div>
-                            </CardHeader>
-                        </Card>
-                    </a>
+                <Link href={tool.href} key={tool.href} className="block">
+                    <Card className="h-full hover:border-primary hover:shadow-lg transition-all">
+                        <CardHeader className="flex flex-row items-center gap-4">
+                            <tool.icon className="w-8 h-8 text-primary" />
+                            <div>
+                                <CardTitle>{tool.title}</CardTitle>
+                                <CardDescription>{tool.description}</CardDescription>
+                            </div>
+                        </CardHeader>
+                    </Card>
                 </Link>
             ))}
         </div>
