@@ -7,29 +7,46 @@ import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '@/components/ui/textarea';
 import { generateDailyPlan, GenerateDailyPlanOutput } from '@/ai/flows/generate-daily-plan';
 import { mockTasks, mockTimetable } from '@/lib/mock-data';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { SavePlanDialog } from './save-plan-dialog';
+import { DayOfWeek } from '@/lib/types';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+
+const days: DayOfWeek[] = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
 export function DailyPlannerForm() {
   const [description, setDescription] = useState('');
+  const [selectedDay, setSelectedDay] = useState<DayOfWeek | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [generatedPlan, setGeneratedPlan] = useState<GenerateDailyPlanOutput['dailyPlan'] | null>(null);
   const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
   const { toast } = useToast();
 
   const handleGeneratePlan = async () => {
+    if (!selectedDay) {
+        toast({
+            title: 'Error',
+            description: 'Please select a day to generate a plan for.',
+            variant: 'destructive',
+        });
+        return;
+    }
+
     setIsLoading(true);
     setGeneratedPlan(null);
     try {
-      const timetableString = mockTimetable.map(
+      const timetableString = mockTimetable.filter(entry => entry.day === selectedDay).map(
           (entry) =>
             `${entry.day}: ${entry.startTime}-${entry.endTime} - ${entry.courseId} at ${entry.location}`
-        ).join('\n');
+        ).join('\n') || 'No scheduled classes.';
       
-      const tasksString = mockTasks.filter(t => !t.completed).map(
+      const tasksForDay = mockTasks.filter(t => !t.completed && new Date(t.dueDate).toLocaleDateString('en-US', { weekday: 'long' }) === selectedDay);
+
+      const tasksString = tasksForDay.map(
           (task) =>
             `- ${task.title} (Due: ${new Date(task.dueDate).toLocaleDateString()}, Priority: ${task.priority})`
-        ).join('\n');
+        ).join('\n') || 'No tasks due.';
         
       const result = await generateDailyPlan({
         timetable: timetableString,
@@ -41,7 +58,7 @@ export function DailyPlannerForm() {
       
       toast({
         title: 'Plan Generated!',
-        description: 'Review your personalized daily plan below.',
+        description: `Review your personalized plan for ${selectedDay} below.`,
       });
 
     } catch (error) {
@@ -59,6 +76,23 @@ export function DailyPlannerForm() {
   return (
     <>
       <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+                <Label htmlFor="day-select">Select a Day</Label>
+                <Select onValueChange={(value: DayOfWeek) => setSelectedDay(value)}>
+                    <SelectTrigger id="day-select">
+                        <SelectValue placeholder="Which day are you planning for?" />
+                    </SelectTrigger>
+                    <SelectContent>
+                    {days.map(day => (
+                        <SelectItem key={day} value={day}>
+                        {day}
+                        </SelectItem>
+                    ))}
+                    </SelectContent>
+                </Select>
+            </div>
+        </div>
         <Textarea
           placeholder="e.g., I want to focus on my physics assignment in the morning, take a long lunch break, and do some light reading in the evening. I feel most energetic after my morning coffee."
           value={description}
@@ -66,7 +100,7 @@ export function DailyPlannerForm() {
           rows={6}
           disabled={isLoading}
         />
-        <Button onClick={handleGeneratePlan} disabled={isLoading || !description.trim()}>
+        <Button onClick={handleGeneratePlan} disabled={isLoading || !description.trim() || !selectedDay}>
           {isLoading ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -84,7 +118,7 @@ export function DailyPlannerForm() {
       {generatedPlan && (
         <div className="mt-8">
             <div className="flex items-center justify-between mb-4">
-                <h3 className="text-2xl font-bold font-headline">Generated Plan</h3>
+                <h3 className="text-2xl font-bold font-headline">Generated Plan for {selectedDay}</h3>
                 <Button variant="outline" onClick={() => setIsSaveDialogOpen(true)}>
                     <Save className="mr-2" />
                     Save Plan
@@ -102,11 +136,12 @@ export function DailyPlannerForm() {
             </Card>
         </div>
       )}
-      {generatedPlan && (
+      {generatedPlan && selectedDay && (
         <SavePlanDialog 
             isOpen={isSaveDialogOpen}
             onOpenChange={setIsSaveDialogOpen}
             plan={generatedPlan}
+            defaultDay={selectedDay}
         />
       )}
     </>

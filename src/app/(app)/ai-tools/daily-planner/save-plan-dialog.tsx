@@ -18,7 +18,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { useDailyActivities } from '@/app/(app)/daily-activities/activities-context';
 import { DailyActivity, DayOfWeek } from '@/lib/types';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 
@@ -26,15 +26,22 @@ type SavePlanDialogProps = {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   plan: Omit<DailyActivity, 'completed'>[];
+  defaultDay?: DayOfWeek;
 };
 
 const days: DayOfWeek[] = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
-export function SavePlanDialog({ isOpen, onOpenChange, plan }: SavePlanDialogProps) {
-  const [selectedDay, setSelectedDay] = useState<DayOfWeek | null>(null);
+export function SavePlanDialog({ isOpen, onOpenChange, plan, defaultDay }: SavePlanDialogProps) {
+  const [selectedDay, setSelectedDay] = useState<DayOfWeek | null>(defaultDay || null);
   const { savePlanForDay } = useDailyActivities();
   const { toast } = useToast();
   const router = useRouter();
+
+  useEffect(() => {
+    if(isOpen) {
+        setSelectedDay(defaultDay || null);
+    }
+  }, [isOpen, defaultDay])
 
   const handleSave = () => {
     if (!selectedDay) {
@@ -64,7 +71,7 @@ export function SavePlanDialog({ isOpen, onOpenChange, plan }: SavePlanDialogPro
           </DialogDescription>
         </DialogHeader>
         <div className="py-4">
-          <Select onValueChange={(value: DayOfWeek) => setSelectedDay(value)}>
+          <Select onValueChange={(value: DayOfWeek) => setSelectedDay(value)} value={selectedDay || undefined}>
             <SelectTrigger>
               <SelectValue placeholder="Select a day" />
             </SelectTrigger>

@@ -16,8 +16,8 @@ export default function DailyPlannerPage() {
         </div>
         <Card>
             <CardHeader>
-                <CardTitle>Describe Your Ideal Day</CardTitle>
-                <CardDescription>Tell the AI what you want to accomplish, your energy levels, and any preferences you have.</CardDescription>
+                <CardTitle>Create Your Plan</CardTitle>
+                <CardDescription>Select a day and tell the AI what you want to accomplish, your energy levels, and any preferences you have.</CardDescription>
             </CardHeader>
             <CardContent>
                 <DailyPlannerForm />
