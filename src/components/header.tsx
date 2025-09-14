@@ -1,5 +1,5 @@
 'use client';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from './ui/button';
 import { Donut } from 'lucide-react';
 import { useSidebar } from './ui/sidebar';
@@ -22,6 +22,9 @@ export function Header() {
             </Button>
           </SheetTrigger>
           <SheetContent side="left" className="sm:max-w-xs pt-12">
+            <SheetHeader>
+                <SheetTitle className="sr-only">Main Menu</SheetTitle>
+            </SheetHeader>
             <SidebarNav />
           </SheetContent>
         </Sheet>
