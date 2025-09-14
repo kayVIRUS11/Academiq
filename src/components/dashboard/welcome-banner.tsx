@@ -1,8 +1,15 @@
 'use client';
-import { motivationalQuotes } from "@/lib/mock-data";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import Image from "next/image";
 import { useEffect, useState } from "react";
+
+const motivationalQuotes = [
+    "The secret of getting ahead is getting started.",
+    "Believe you can and you're halfway there.",
+    "The expert in anything was once a beginner.",
+    "The only way to do great work is to love what you do.",
+    "Success is not final, failure is not fatal: it is the courage to continue that counts."
+];
 
 export function WelcomeBanner() {
     const bannerImage = PlaceHolderImages.find(img => img.id === 'dashboard-banner');
