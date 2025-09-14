@@ -11,8 +11,13 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'zod';
 
+const ContentPartSchema = z.union([
+  z.object({ text: z.string() }),
+  z.object({ media: z.object({ url: z.string() }) }),
+]);
+
 const SummarizeUploadedFileInputSchema = z.object({
-  fileContent: z.string().describe('Content of the uploaded file.'),
+  parts: z.array(ContentPartSchema).describe('An array of text and media parts from the document.'),
   fileType: z.string().describe('Type of the uploaded file (PDF, pptx, txt).'),
 });
 
@@ -32,12 +37,14 @@ const summarizeUploadedFilePrompt = ai.definePrompt({
   name: 'summarizeUploadedFilePrompt',
   input: {schema: SummarizeUploadedFileInputSchema},
   output: {schema: SummarizeUploadedFileOutputSchema},
-  prompt: `You are an academic assistant for university students. 
+  prompt: `You are an academic assistant for university students.
 Your task is to summarize the uploaded document into a structured, easy-to-use study guide.
+The document content is provided as a series of parts, which can be text or images.
 
 Rules:
 - Use clear, simple language (avoid jargon unless explained).
 - Break content into **Headings, Subheadings, and Bullet Points**.
+- Analyze any images (charts, diagrams, etc.) and incorporate their meaning into the summary.
 - Highlight key definitions, formulas, examples, and important concepts.
 - Provide a short "Key Takeaways" section at the end.
 - If the document is very long, create a **chapter-by-chapter or section-by-section summary**.
@@ -45,8 +52,17 @@ Rules:
 - The output should be a single string formatted as Markdown.
 
 Document Type: {{{fileType}}}
-Content: {{{fileContent}}}`,
+Content:
+{{#each parts}}
+  {{#if this.text}}
+    {{{this.text}}}
+  {{/if}}
+  {{#if this.media}}
+    {{media url=this.media.url}}
+  {{/if}}
+{{/each}}`,
 });
+
 
 const summarizeUploadedFileFlow = ai.defineFlow({
     name: 'summarizeUploadedFileFlow',

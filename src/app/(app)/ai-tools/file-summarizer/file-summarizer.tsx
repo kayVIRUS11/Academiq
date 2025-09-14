@@ -11,9 +11,14 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import * as pdfjsLib from 'pdfjs-dist';
 import JSZip from 'jszip';
 import { useNotes } from '@/app/(app)/notes/notes-context';
+import { marked } from 'marked';
 
 // Required by pdfjs-dist
 pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
+
+type ContentPart = { text: string } | { media: { url: string } };
+
+const MAX_IMAGES_TO_PROCESS = 5;
 
 
 export function FileSummarizer() {
@@ -28,53 +33,130 @@ export function FileSummarizer() {
     setSummary(''); // Reset summary when a new file is selected
   };
 
-  const extractTextFromPptx = async (file: File): Promise<string> => {
+  const extractPptxContent = async (file: File): Promise<ContentPart[]> => {
     const arrayBuffer = await file.arrayBuffer();
-    try {
-      const zip = await JSZip.loadAsync(arrayBuffer);
-      const slidePromises: Promise<string>[] = [];
-      zip.folder('ppt/slides')?.forEach((relativePath, file) => {
-        if (relativePath.endsWith('.xml') && !relativePath.includes('_rels')) {
-          slidePromises.push(file.async('string'));
+    const zip = await JSZip.loadAsync(arrayBuffer);
+    const contentParts: ContentPart[] = [];
+  
+    // Extract text from slides
+    const slidePromises: Promise<string>[] = [];
+    zip.folder('ppt/slides')?.forEach((relativePath, file) => {
+      if (relativePath.startsWith('slide') && relativePath.endsWith('.xml')) {
+        slidePromises.push(file.async('string'));
+      }
+    });
+    const slideXmls = await Promise.all(slidePromises);
+    const parser = new DOMParser();
+    for (const slideXml of slideXmls) {
+      const doc = parser.parseFromString(slideXml, 'application/xml');
+      const textNodes = doc.querySelectorAll('a\\:t');
+      let slideText = '';
+      textNodes.forEach(node => {
+        if (node.textContent) {
+          slideText += node.textContent + ' ';
         }
       });
-  
-      const slideXmls = await Promise.all(slidePromises);
-      const parser = new DOMParser();
-      let fullText = '';
-  
-      for (const slideXml of slideXmls) {
-        const doc = parser.parseFromString(slideXml, 'application/xml');
-        const textNodes = doc.querySelectorAll('a\\:t');
-        textNodes.forEach(node => {
-          if (node.textContent) {
-            fullText += node.textContent + ' ';
-          }
-        });
-        fullText += '\n';
+      if (slideText.trim()) {
+        contentParts.push({ text: `Slide Content: ${slideText}\n` });
       }
-      return fullText;
-    } catch (e) {
-      console.error("Error parsing PPTX", e);
-      throw new Error("Could not extract text from PowerPoint file. It may be corrupted or in an unsupported format.");
     }
-  };
+  
+    // Extract images
+    const imagePromises: Promise<{ name: string; data: string; type: string }>[] = [];
+    let imageCount = 0;
+    zip.folder('ppt/media')?.forEach((relativePath, file) => {
+        if (imageCount < MAX_IMAGES_TO_PROCESS) {
+            const extension = relativePath.split('.').pop()?.toLowerCase();
+            if (['jpeg', 'jpg', 'png', 'gif'].includes(extension || '')) {
+                imagePromises.push(
+                file.async('base64').then(data => ({
+                    name: relativePath,
+                    data,
+                    type: `image/${extension}`,
+                }))
+                );
+                imageCount++;
+            }
+        }
+    });
 
-  const extractTextFromPdf = async (file: File): Promise<string> => {
+    if (imageCount >= MAX_IMAGES_TO_PROCESS) {
+        toast({
+            title: 'Image Limit Reached',
+            description: `Only the first ${MAX_IMAGES_TO_PROCESS} images will be processed to ensure performance.`,
+        });
+    }
+  
+    const images = await Promise.all(imagePromises);
+    for (const image of images) {
+      contentParts.push({
+        media: { url: `data:${image.type};base64,${image.data}` },
+      });
+    }
+  
+    return contentParts;
+  };
+  
+
+  const extractPdfContent = async (file: File): Promise<ContentPart[]> => {
     const arrayBuffer = await file.arrayBuffer();
-    try {
-      const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
-      let fullText = '';
-      for (let i = 1; i <= pdf.numPages; i++) {
+    const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
+    const contentParts: ContentPart[] = [];
+    let imageCount = 0;
+
+    for (let i = 1; i <= pdf.numPages; i++) {
         const page = await pdf.getPage(i);
         const textContent = await page.getTextContent();
-        fullText += textContent.items.map(item => ('str' in item ? item.str : '')).join(' ') + '\n';
-      }
-      return fullText;
-    } catch (e) {
-      console.error("Error parsing PDF", e);
-      throw new Error("Could not extract text from PDF. It may be an image-based PDF, encrypted, or corrupted.");
+        const pageText = textContent.items.map(item => 'str' in item ? item.str : '').join(' ');
+        
+        if (pageText.trim()) {
+            contentParts.push({ text: `Page ${i} Content: ${pageText}\n` });
+        }
+
+        if (imageCount < MAX_IMAGES_TO_PROCESS) {
+            const opList = await page.getOperatorList();
+            for (let j = 0; j < opList.fnArray.length; j++) {
+                if (opList.fnArray[j] === pdfjsLib.OPS.paintImageXObject) {
+                    if (imageCount >= MAX_IMAGES_TO_PROCESS) break;
+
+                    try {
+                        const objId = opList.argsArray[j][0];
+                        const img = await page.objs.get(objId);
+                        
+                        if (img && img.data) {
+                            const imageBytes = new Uint8Array(img.data.length);
+                            for (let k = 0; k < img.data.length; k++) {
+                                imageBytes[k] = img.data[k];
+                            }
+
+                            // Convert to Base64
+                            let binary = '';
+                            const len = imageBytes.byteLength;
+                            for (let k = 0; k < len; k++) {
+                                binary += String.fromCharCode(imageBytes[k]);
+                            }
+                            const base64 = btoa(binary);
+                            
+                            const mimeType = img.kind === pdfjsLib.ImageKind.JPEG ? 'image/jpeg' : 'image/png';
+                            contentParts.push({ media: { url: `data:${mimeType};base64,${base64}` } });
+                            imageCount++;
+                        }
+                    } catch (e) {
+                        console.warn("Could not process an image in the PDF.", e);
+                    }
+                }
+            }
+        }
     }
+    
+    if (imageCount >= MAX_IMAGES_TO_PROCESS && pdf.numPages > 1) {
+        toast({
+            title: 'Image Limit Reached',
+            description: `Only the first ${MAX_IMAGES_TO_PROCESS} images from the document will be analyzed.`,
+        });
+    }
+
+    return contentParts;
   };
 
 
@@ -92,17 +174,18 @@ export function FileSummarizer() {
     setSummary('');
 
     try {
-        let fileContent = '';
+        let parts: ContentPart[] = [];
         let fileType = file.name.split('.').pop() || '';
         
         if (file.type === 'text/plain' || fileType === 'txt') {
-            fileContent = await file.text();
+            const fileContent = await file.text();
+            parts = [{ text: fileContent }];
             fileType = 'txt';
         } else if (file.type === 'application/pdf' || fileType === 'pdf') {
-          fileContent = await extractTextFromPdf(file);
+          parts = await extractPdfContent(file);
           fileType = 'pdf';
         } else if (file.type === 'application/vnd.openxmlformats-officedocument.presentationml.presentation' || fileType === 'pptx') {
-            fileContent = await extractTextFromPptx(file);
+            parts = await extractPptxContent(file);
             fileType = 'pptx';
         } else {
             toast({
@@ -114,7 +197,7 @@ export function FileSummarizer() {
             return;
         }
 
-        if (!fileContent.trim()) {
+        if (parts.length === 0 || parts.every(p => 'text' in p && !p.text.trim())) {
           toast({
             title: 'Empty Document',
             description: 'The file appears to be empty or text could not be extracted.',
@@ -125,7 +208,7 @@ export function FileSummarizer() {
         }
 
         const result = await summarizeUploadedFile({
-            fileContent,
+            parts,
             fileType,
           });
         setSummary(result.summary);
@@ -160,13 +243,19 @@ export function FileSummarizer() {
     });
   }
 
+  const getRenderedSummary = () => {
+    if (!summary) return null;
+    const rawMarkup = marked.parse(summary);
+    return { __html: rawMarkup as string };
+  };
+
   return (
     <div className="space-y-6">
       <Alert>
         <AlertCircle className="h-4 w-4" />
-        <AlertTitle>Supported File Types</AlertTitle>
+        <AlertTitle>Multimodal Summarization</AlertTitle>
         <AlertDescription>
-          You can upload <strong>.txt</strong>, <strong>.pdf</strong>, and <strong>.pptx</strong> files for summarization. Note: Image-based or encrypted PDFs are not supported.
+          You can upload <strong>.txt</strong>, <strong>.pdf</strong>, and <strong>.pptx</strong> files. This tool now analyzes both text and images (like charts and diagrams) to create a more comprehensive summary.
         </AlertDescription>
       </Alert>
 
@@ -198,7 +287,7 @@ export function FileSummarizer() {
             </div>
           <Card>
             <CardContent className="p-6">
-              <div className="prose prose-sm max-w-none">{summary}</div>
+              <div className="prose max-w-none prose-sm" dangerouslySetInnerHTML={getRenderedSummary()!} />
             </CardContent>
           </Card>
         </div>
