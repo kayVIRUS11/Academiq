@@ -1,3 +1,10 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "dashboard-banner",
+      "description": "Abstract image for dashboard banner",
+      "imageUrl": "https://picsum.photos/seed/academiq/1200/300",
+      "imageHint": "abstract productivity"
+    }
+  ]
 }
