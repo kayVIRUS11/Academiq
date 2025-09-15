@@ -58,6 +58,9 @@ const nextConfig: NextConfig = {
   },
   env: {
     NEXT_PUBLIC_FIREBASE_API_KEY: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  },
+  serverActions: {
+    bodySizeLimit: '4.5mb',
   }
 };
 
