@@ -3,7 +3,7 @@
 import { DailyActivity, WeeklyActivities, DayOfWeek } from '@/lib/types';
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { useDocument } from 'react-firebase-hooks/firestore';
-import { doc, getDocs, setDoc, collection, query, where } from 'firebase/firestore';
+import { doc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
@@ -31,7 +31,13 @@ export function ActivitiesProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (activitiesSnapshot?.exists()) {
-        setWeeklyActivities(activitiesSnapshot.data() as WeeklyActivities);
+        const data = activitiesSnapshot.data();
+        // Ensure all days have an array, even if empty, to prevent rendering issues.
+        const sanitizedData = Object.keys(data).reduce((acc, day) => {
+            acc[day as DayOfWeek] = data[day as DayOfWeek] || [];
+            return acc;
+        }, {} as WeeklyActivities)
+        setWeeklyActivities(sanitizedData);
     } else {
         setWeeklyActivities({});
     }
@@ -95,7 +101,10 @@ export function ActivitiesProvider({ children }: { children: ReactNode }) {
     try {
         // 1. Parse course name
         const courseNameMatch = activity.activity.match(/study\s+(.+)/i);
-        if (!courseNameMatch || !courseNameMatch[1]) return;
+        if (!courseNameMatch || !courseNameMatch[1]) {
+            console.warn(`Could not parse course name from activity: "${activity.activity}"`);
+            return;
+        }
         
         let courseName = courseNameMatch[1];
         // Remove parenthetical clarifications if they exist
@@ -106,10 +115,18 @@ export function ActivitiesProvider({ children }: { children: ReactNode }) {
 
         // 2. Parse duration
         const timeParts = activity.time.split('-').map(t => t.trim());
-        if (timeParts.length !== 2) return;
+        if (timeParts.length !== 2) {
+             console.warn(`Could not parse time range from activity: "${activity.time}"`);
+            return
+        };
 
         const [startH, startM] = timeParts[0].split(':').map(Number);
         const [endH, endM] = timeParts[1].split(':').map(Number);
+
+        if (isNaN(startH) || isNaN(startM) || isNaN(endH) || isNaN(endM)) {
+            console.warn(`Could not parse hours/minutes from time range: "${activity.time}"`);
+            return;
+        }
 
         const startDate = new Date();
         startDate.setHours(startH, startM, 0, 0);
@@ -119,7 +136,10 @@ export function ActivitiesProvider({ children }: { children: ReactNode }) {
         
         const durationInMinutes = (endDate.getTime() - startDate.getTime()) / (1000 * 60);
 
-        if (durationInMinutes <= 0) return;
+        if (durationInMinutes <= 0) {
+            console.warn(`Calculated duration is not positive: ${durationInMinutes}`);
+            return;
+        };
 
         // 3. Log the session
         const loggedSession = await logStudySession(user.uid, courseName, durationInMinutes, activity.suggestions);
