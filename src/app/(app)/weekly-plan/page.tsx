@@ -138,7 +138,7 @@ export default function WeeklyPlanPage() {
                                                 <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEdit(item)}>
                                                     <Edit2 className="h-4 w-4"/>
                                                 </Button>
-                                                <AlertDialog>
+                                                <AlertDialog key={`delete-${item.id}`}>
                                                     <AlertDialogTrigger asChild>
                                                         <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive">
                                                             <Trash2 className="h-4 w-4"/>
