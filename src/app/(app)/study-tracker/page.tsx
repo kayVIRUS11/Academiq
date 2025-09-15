@@ -19,12 +19,11 @@ import { generateWeeklyStudyPlan } from '@/ai/flows/generate-weekly-study-plan';
 import { useWeeklyPlan } from '../weekly-plan/weekly-plan-context';
 import { useRouter } from 'next/navigation';
 import { useCollection } from 'react-firebase-hooks/firestore';
-import { collection, updateDoc, deleteDoc, doc, query, where } from 'firebase/firestore';
+import { collection, updateDoc, deleteDoc, doc, query, where, addDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/context/auth-context';
 import { mergeWeeklyPlans } from '@/ai/flows/merge-weekly-study-plan';
-import { logStudySession } from '@/lib/study-session-helpers';
 
 export default function StudyTrackerPage() {
   const { plan: existingPlan, setPlan } = useWeeklyPlan();
@@ -51,22 +50,19 @@ export default function StudyTrackerPage() {
   const [generatedPlan, setGeneratedPlan] = useState<Omit<StudyPlanItem, 'id'>[] | null>(null);
   const [isPlanDialogOpen, setIsPlanDialogOpen] = useState(false);
 
-  const handleAddSession = async (newSessionData: Omit<StudySession, 'id' | 'uid' | 'courseId'> & {courseId: string}) => {
+  const handleAddSession = async (newSessionData: Omit<StudySession, 'id' | 'uid'>) => {
     if (!user) {
         toast({ title: 'You must be logged in', variant: 'destructive' });
         return;
     }
-    const courseName = courses.find(c => c.id === newSessionData.courseId)?.name;
-    if (!courseName) {
-        toast({title: 'Course not found', variant: 'destructive'});
-        return;
-    }
-
-    const loggedSession = await logStudySession(user.uid, courseName, newSessionData.duration, newSessionData.notes);
-
-    if (loggedSession) {
+    try {
+        await addDoc(collection(db, 'study-sessions'), {
+            ...newSessionData,
+            uid: user.uid,
+        });
         toast({title: 'Session logged!'});
-    } else {
+    } catch(e) {
+        console.error(e);
         toast({title: 'Error logging session', variant: 'destructive'});
     }
   };
