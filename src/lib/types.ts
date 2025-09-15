@@ -68,3 +68,13 @@ export type StudyPlanItem = {
   course: string;
   activity: string;
 };
+
+// This is the shape of all data fetched from the server.
+export type AppData = {
+  courses: Course[];
+  goals: Goal[];
+  notes: Note[];
+  studySessions: StudySession[];
+  tasks: Task[];
+  timetable: TimetableEntry[];
+}

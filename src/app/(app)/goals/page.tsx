@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import { Target } from 'lucide-react';
 import { Goal } from '@/lib/types';
 import { GoalList } from '@/components/goals/goal-list';

@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import { BookCopy } from 'lucide-react';
 import { Course } from '@/lib/types';
 import { AddCourse } from '@/components/courses/add-course';
