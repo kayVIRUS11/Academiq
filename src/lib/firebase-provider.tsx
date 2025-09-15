@@ -17,9 +17,5 @@ export function FirebaseProvider({ children }: PropsWithChildren) {
     )
   }
 
-  if (!user) {
-    // To be implemented: redirect to login if not on a public page
-  }
-
   return <>{children}</>;
 }

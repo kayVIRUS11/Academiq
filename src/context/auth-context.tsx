@@ -87,6 +87,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const signInWithGoogle = async () => {
         const provider = new GoogleAuthProvider();
+        provider.setCustomParameters({ prompt: 'select_account' });
         const result = await signInWithPopup(auth, provider);
         const user = result.user;
 
@@ -112,7 +113,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const userDocRef = doc(db, 'users', auth.currentUser.uid);
         await updateDoc(userDocRef, updates);
         // Manually trigger a state update for the user object
-        setUser({ ...auth.currentUser });
+        const updatedUser = { ...auth.currentUser, ...updates };
+        setUser(updatedUser as User);
     };
 
     const isPublicRoute = publicRoutes.includes(pathname);
