@@ -15,13 +15,13 @@ import { CourseForm } from './course-form';
 import { Course } from '@/lib/types';
 
 type AddCourseProps = {
-  onAddCourse: (course: Omit<Course, 'id'>) => void;
+  onAddCourse: (course: Omit<Course, 'id' | 'uid'>) => void;
 };
 
 export function AddCourse({ onAddCourse }: AddCourseProps) {
   const [open, setOpen] = useState(false);
 
-  const handleSubmit = (values: Omit<Course, 'id'>) => {
+  const handleSubmit = (values: Omit<Course, 'id' | 'uid'>) => {
     onAddCourse(values);
     setOpen(false);
   };

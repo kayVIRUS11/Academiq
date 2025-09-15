@@ -5,24 +5,34 @@ import { TimetableEntry, Course } from '@/lib/types';
 import { TimetableView } from '@/components/timetable/timetable-view';
 import { AddTimetableEntry } from '@/components/timetable/add-timetable-entry';
 import { useCollection } from 'react-firebase-hooks/firestore';
-import { collection, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
+import { collection, addDoc, updateDoc, deleteDoc, doc, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useAuth } from '@/context/auth-context';
 
 export default function TimetablePage() {
   const { toast } = useToast();
-  const [coursesSnapshot, coursesLoading] = useCollection(collection(db, 'courses'));
-  const [timetableSnapshot, timetableLoading] = useCollection(collection(db, 'timetable'));
+  const { user } = useAuth();
+
+  const coursesQuery = user ? query(collection(db, 'courses'), where('uid', '==', user.uid)) : null;
+  const timetableQuery = user ? query(collection(db, 'timetable'), where('uid', '==', user.uid)) : null;
+
+  const [coursesSnapshot, coursesLoading] = useCollection(coursesQuery);
+  const [timetableSnapshot, timetableLoading] = useCollection(timetableQuery);
   
   const loading = coursesLoading || timetableLoading;
 
   const courses = coursesSnapshot?.docs.map(doc => ({ id: doc.id, ...doc.data() } as Course)) || [];
   const entries = timetableSnapshot?.docs.map(doc => ({ id: doc.id, ...doc.data() } as TimetableEntry)) || [];
 
-  const handleAddEntry = async (newEntryData: Omit<TimetableEntry, 'id'>) => {
+  const handleAddEntry = async (newEntryData: Omit<TimetableEntry, 'id' | 'uid'>) => {
+    if (!user) {
+        toast({ title: 'You must be logged in', variant: 'destructive' });
+        return;
+    }
     try {
-      await addDoc(collection(db, 'timetable'), newEntryData);
+      await addDoc(collection(db, 'timetable'), { ...newEntryData, uid: user.uid });
       toast({ title: 'Class added!' });
     } catch (e) {
       console.error(e);

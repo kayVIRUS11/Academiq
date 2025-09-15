@@ -15,7 +15,7 @@ import { GoalForm } from './goal-form';
 import { Goal } from '@/lib/types';
 
 type AddGoalProps = {
-  onAddGoal: (goal: Omit<Goal, 'id' | 'progress'>) => void;
+  onAddGoal: (goal: Omit<Goal, 'id' | 'progress' | 'uid'>) => void;
 };
 
 export function AddGoal({ onAddGoal }: AddGoalProps) {

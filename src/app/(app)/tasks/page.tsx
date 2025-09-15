@@ -5,24 +5,33 @@ import { Task } from '@/lib/types';
 import { TaskList } from '@/components/tasks/task-list';
 import { AddTask } from '@/components/tasks/add-task';
 import { useCollection } from 'react-firebase-hooks/firestore';
-import { collection, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
+import { collection, addDoc, updateDoc, deleteDoc, doc, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useAuth } from '@/context/auth-context';
 
 export default function TasksPage() {
   const { toast } = useToast();
-  const [tasksSnapshot, loading, error] = useCollection(collection(db, 'tasks'));
+  const { user } = useAuth();
+  
+  const tasksQuery = user ? query(collection(db, 'tasks'), where('uid', '==', user.uid)) : null;
+  const [tasksSnapshot, loading, error] = useCollection(tasksQuery);
 
   const tasks: Task[] = loading || !tasksSnapshot
     ? []
     : tasksSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task));
 
-  const handleAddTask = async (newTask: Omit<Task, 'id' | 'completed'>) => {
+  const handleAddTask = async (newTask: Omit<Task, 'id' | 'completed' | 'uid'>) => {
+    if (!user) {
+        toast({ title: 'You must be logged in', variant: 'destructive' });
+        return;
+    }
     try {
       await addDoc(collection(db, 'tasks'), {
         ...newTask,
         completed: false,
+        uid: user.uid,
       });
       toast({ title: 'Task added!' });
     } catch (e) {

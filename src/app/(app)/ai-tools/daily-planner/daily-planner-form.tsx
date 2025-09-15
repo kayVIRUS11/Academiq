@@ -13,9 +13,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { useWeeklyPlan } from '../../weekly-plan/weekly-plan-context';
 import { useCollection } from 'react-firebase-hooks/firestore';
-import { collection } from 'firebase/firestore';
+import { collection, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useAuth } from '@/context/auth-context';
 
 const days: DayOfWeek[] = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
@@ -27,10 +28,15 @@ export function DailyPlannerForm() {
   const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
   const { toast } = useToast();
   const { plan: weeklyPlan } = useWeeklyPlan();
+  const { user } = useAuth();
 
-  const [tasksSnapshot, tasksLoading] = useCollection(collection(db, 'tasks'));
-  const [timetableSnapshot, timetableLoading] = useCollection(collection(db, 'timetable'));
-  const [coursesSnapshot, coursesLoading] = useCollection(collection(db, 'courses'));
+  const tasksQuery = user ? query(collection(db, 'tasks'), where('uid', '==', user.uid)) : null;
+  const timetableQuery = user ? query(collection(db, 'timetable'), where('uid', '==', user.uid)) : null;
+  const coursesQuery = user ? query(collection(db, 'courses'), where('uid', '==', user.uid)) : null;
+
+  const [tasksSnapshot, tasksLoading] = useCollection(tasksQuery);
+  const [timetableSnapshot, timetableLoading] = useCollection(timetableQuery);
+  const [coursesSnapshot, coursesLoading] = useCollection(coursesQuery);
 
   const loading = tasksLoading || timetableLoading || coursesLoading;
 

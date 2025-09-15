@@ -1,5 +1,6 @@
 export type Task = {
   id: string;
+  uid: string;
   title: string;
   dueDate: string;
   priority: 'Low' | 'Medium' | 'High';
@@ -9,6 +10,7 @@ export type Task = {
 
 export type Goal = {
   id: string;
+  uid: string;
   title: string;
   type: 'semester' | 'yearly';
   progress: number; // percentage
@@ -16,6 +18,7 @@ export type Goal = {
 
 export type Course = {
   id:string;
+  uid: string;
   name: string;
   courseCode: string;
   instructor?: string;
@@ -25,6 +28,7 @@ export type Course = {
 
 export type Note = {
   id: string;
+  uid: string;
   title: string;
   content: string;
   courseId?: string;
@@ -33,6 +37,7 @@ export type Note = {
 
 export type TimetableEntry = {
   id: string;
+  uid: string;
   courseId: string;
   day: DayOfWeek;
   startTime: string; // "HH:mm"
@@ -42,6 +47,7 @@ export type TimetableEntry = {
 
 export type StudySession = {
   id: string;
+  uid: string;
   courseId: string;
   date: string; // ISO string
   duration: number; // in minutes

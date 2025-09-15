@@ -4,13 +4,16 @@ import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from "recha
 import { ChartTooltipContent, ChartContainer } from "@/components/ui/chart";
 import { Timer } from "lucide-react";
 import { useCollection } from "react-firebase-hooks/firestore";
-import { collection } from "firebase/firestore";
+import { collection, query, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { StudySession } from "@/lib/types";
 import { format, startOfWeek, addDays } from "date-fns";
+import { useAuth } from "@/context/auth-context";
 
 export function WeeklyStudyChart() {
-    const [sessionsSnapshot] = useCollection(collection(db, 'study-sessions'));
+    const { user } = useAuth();
+    const sessionsQuery = user ? query(collection(db, 'study-sessions'), where('uid', '==', user.uid)) : null;
+    const [sessionsSnapshot] = useCollection(sessionsQuery);
     const sessions = sessionsSnapshot?.docs.map(doc => ({id: doc.id, ...doc.data()})) as StudySession[] || [];
 
     const weekStartsOn = 1; // Monday

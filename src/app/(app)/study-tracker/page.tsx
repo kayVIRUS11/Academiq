@@ -19,18 +19,24 @@ import { generateWeeklyStudyPlan, GenerateWeeklyStudyPlanOutput } from '@/ai/flo
 import { useWeeklyPlan } from '../weekly-plan/weekly-plan-context';
 import { useRouter } from 'next/navigation';
 import { useCollection } from 'react-firebase-hooks/firestore';
-import { collection, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
+import { collection, addDoc, updateDoc, deleteDoc, doc, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useAuth } from '@/context/auth-context';
 
 export default function StudyTrackerPage() {
   const { setPlan } = useWeeklyPlan();
   const router = useRouter();
   const { toast } = useToast();
+  const { user } = useAuth();
 
-  const [coursesSnapshot, coursesLoading] = useCollection(collection(db, 'courses'));
-  const [timetableSnapshot, timetableLoading] = useCollection(collection(db, 'timetable'));
-  const [sessionsSnapshot, sessionsLoading] = useCollection(collection(db, 'study-sessions'));
+  const coursesQuery = user ? query(collection(db, 'courses'), where('uid', '==', user.uid)) : null;
+  const timetableQuery = user ? query(collection(db, 'timetable'), where('uid', '==', user.uid)) : null;
+  const sessionsQuery = user ? query(collection(db, 'study-sessions'), where('uid', '==', user.uid)) : null;
+
+  const [coursesSnapshot, coursesLoading] = useCollection(coursesQuery);
+  const [timetableSnapshot, timetableLoading] = useCollection(timetableQuery);
+  const [sessionsSnapshot, sessionsLoading] = useCollection(sessionsQuery);
   
   const courses = coursesSnapshot?.docs.map(d => ({id: d.id, ...d.data()})) as Course[] || [];
   const timetable = timetableSnapshot?.docs.map(d => ({id: d.id, ...d.data()})) as TimetableEntry[] || [];
@@ -42,9 +48,13 @@ export default function StudyTrackerPage() {
   const [generatedPlan, setGeneratedPlan] = useState<GenerateWeeklyStudyPlanOutput['weeklyPlan'] | null>(null);
   const [isPlanDialogOpen, setIsPlanDialogOpen] = useState(false);
 
-  const handleAddSession = async (newSessionData: Omit<StudySession, 'id'>) => {
+  const handleAddSession = async (newSessionData: Omit<StudySession, 'id' | 'uid'>) => {
+    if (!user) {
+        toast({ title: 'You must be logged in', variant: 'destructive' });
+        return;
+    }
     try {
-        await addDoc(collection(db, 'study-sessions'), newSessionData);
+        await addDoc(collection(db, 'study-sessions'), { ...newSessionData, uid: user.uid });
         toast({title: 'Session logged!'});
     } catch(e) {
         console.error(e);

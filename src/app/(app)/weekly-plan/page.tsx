@@ -6,16 +6,20 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useCollection } from "react-firebase-hooks/firestore";
-import { collection } from "firebase/firestore";
+import { collection, query, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Course } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useAuth } from "@/context/auth-context";
 
 const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
 export default function WeeklyPlanPage() {
     const { plan, loading } = useWeeklyPlan();
-    const [coursesSnapshot, coursesLoading] = useCollection(collection(db, 'courses'));
+    const { user } = useAuth();
+
+    const coursesQuery = user ? query(collection(db, 'courses'), where('uid', '==', user.uid)) : null;
+    const [coursesSnapshot, coursesLoading] = useCollection(coursesQuery);
     const courses = coursesSnapshot?.docs.map(d => ({id: d.id, ...d.data()})) as Course[] || [];
 
     const getCourseColor = (courseName: string) => {

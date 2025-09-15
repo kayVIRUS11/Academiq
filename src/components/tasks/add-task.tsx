@@ -15,7 +15,7 @@ import { TaskForm } from './task-form';
 import { Task } from '@/lib/types';
 
 type AddTaskProps = {
-  onAddTask: (task: Omit<Task, 'id' | 'completed'>) => void;
+  onAddTask: (task: Omit<Task, 'id' | 'completed' | 'uid'>) => void;
 };
 
 export function AddTask({ onAddTask }: AddTaskProps) {

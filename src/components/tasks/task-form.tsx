@@ -27,8 +27,9 @@ import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { Task, Course } from '@/lib/types';
 import { useCollection } from 'react-firebase-hooks/firestore';
-import { collection } from 'firebase/firestore';
+import { collection, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { useAuth } from '@/context/auth-context';
 
 const taskFormSchema = z.object({
   title: z.string().min(3, { message: 'Title must be at least 3 characters.' }),
@@ -50,7 +51,9 @@ export function TaskForm({
   defaultValues,
   submitButtonText = 'Save Task',
 }: TaskFormProps) {
-  const [coursesSnapshot] = useCollection(collection(db, 'courses'));
+  const { user } = useAuth();
+  const coursesQuery = user ? query(collection(db, 'courses'), where('uid', '==', user.uid)) : null;
+  const [coursesSnapshot] = useCollection(coursesQuery);
   const courses = coursesSnapshot?.docs.map(d => ({id: d.id, ...d.data()})) as Course[] || [];
 
   const form = useForm<TaskFormValues>({

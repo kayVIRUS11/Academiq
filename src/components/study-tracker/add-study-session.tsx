@@ -16,7 +16,7 @@ import { StudySession, Course } from '@/lib/types';
 
 type AddStudySessionProps = {
   courses: Course[];
-  onAddSession: (session: Omit<StudySession, 'id'>) => void;
+  onAddSession: (session: Omit<StudySession, 'id' | 'uid'>) => void;
 };
 
 export function AddStudySession({ courses, onAddSession }: AddStudySessionProps) {

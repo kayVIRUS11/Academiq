@@ -5,24 +5,33 @@ import { Goal } from '@/lib/types';
 import { GoalList } from '@/components/goals/goal-list';
 import { AddGoal } from '@/components/goals/add-goal';
 import { useCollection } from 'react-firebase-hooks/firestore';
-import { collection, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
+import { collection, addDoc, updateDoc, deleteDoc, doc, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useAuth } from '@/context/auth-context';
 
 export default function GoalsPage() {
   const { toast } = useToast();
-  const [goalsSnapshot, loading, error] = useCollection(collection(db, 'goals'));
+  const { user } = useAuth();
+
+  const goalsQuery = user ? query(collection(db, 'goals'), where('uid', '==', user.uid)) : null;
+  const [goalsSnapshot, loading, error] = useCollection(goalsQuery);
 
   const goals: Goal[] = loading || !goalsSnapshot
     ? []
     : goalsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Goal));
 
-  const handleAddGoal = async (newGoal: Omit<Goal, 'id' | 'progress'>) => {
+  const handleAddGoal = async (newGoal: Omit<Goal, 'id' | 'progress' | 'uid'>) => {
+    if (!user) {
+        toast({ title: 'You must be logged in', variant: 'destructive' });
+        return;
+    }
     try {
       await addDoc(collection(db, 'goals'), {
         ...newGoal,
-        progress: 0
+        progress: 0,
+        uid: user.uid,
       });
       toast({ title: 'Goal added!' });
     } catch (error) {

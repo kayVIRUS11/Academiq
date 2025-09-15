@@ -6,18 +6,25 @@ import { useFlashcards } from "@/app/(app)/ai-tools/flashcards/flashcards-contex
 import { useDailyActivities } from "@/app/(app)/daily-activities/activities-context";
 import { BookCopy, BrainCircuit, Calendar, ListTodo, NotebookText, Target, ClipboardCheck } from "lucide-react";
 import { useCollection } from "react-firebase-hooks/firestore";
-import { collection } from "firebase/firestore";
+import { collection, query, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { useAuth } from "@/context/auth-context";
 
 export function UserDataSummary() {
+    const { user } = useAuth();
     const { notes } = useNotes();
     const { flashcardSets } = useFlashcards();
     const { weeklyActivities } = useDailyActivities();
     
-    const [courses] = useCollection(collection(db, 'courses'));
-    const [tasks] = useCollection(collection(db, 'tasks'));
-    const [goals] = useCollection(collection(db, 'goals'));
-    const [sessions] = useCollection(collection(db, 'study-sessions'));
+    const coursesQuery = user ? query(collection(db, 'courses'), where('uid', '==', user.uid)) : null;
+    const tasksQuery = user ? query(collection(db, 'tasks'), where('uid', '==', user.uid)) : null;
+    const goalsQuery = user ? query(collection(db, 'goals'), where('uid', '==', user.uid)) : null;
+    const sessionsQuery = user ? query(collection(db, 'study-sessions'), where('uid', '==', user.uid)) : null;
+
+    const [courses] = useCollection(coursesQuery);
+    const [tasks] = useCollection(tasksQuery);
+    const [goals] = useCollection(goalsQuery);
+    const [sessions] = useCollection(sessionsQuery);
     
     const stats = [
         { label: "Courses", value: courses?.docs.length || 0, icon: BookCopy },

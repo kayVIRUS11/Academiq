@@ -3,14 +3,19 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { cn } from "@/lib/utils";
 import { Calendar } from "lucide-react";
 import { useCollection } from 'react-firebase-hooks/firestore';
-import { collection } from 'firebase/firestore';
+import { collection, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Course, TimetableEntry } from "@/lib/types";
 import { Skeleton } from "../ui/skeleton";
+import { useAuth } from "@/context/auth-context";
 
 export function TodaysSchedule() {
-    const [coursesSnapshot, coursesLoading] = useCollection(collection(db, 'courses'));
-    const [timetableSnapshot, timetableLoading] = useCollection(collection(db, 'timetable'));
+    const { user } = useAuth();
+    const coursesQuery = user ? query(collection(db, 'courses'), where('uid', '==', user.uid)) : null;
+    const timetableQuery = user ? query(collection(db, 'timetable'), where('uid', '==', user.uid)) : null;
+
+    const [coursesSnapshot, coursesLoading] = useCollection(coursesQuery);
+    const [timetableSnapshot, timetableLoading] = useCollection(timetableQuery);
 
     const loading = coursesLoading || timetableLoading;
 

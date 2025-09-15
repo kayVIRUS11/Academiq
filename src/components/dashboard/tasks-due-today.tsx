@@ -5,15 +5,18 @@ import { Task } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { ListTodo } from "lucide-react";
 import { useCollection } from "react-firebase-hooks/firestore";
-import { collection, doc, updateDoc } from "firebase/firestore";
+import { collection, doc, updateDoc, query, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Skeleton } from "../ui/skeleton";
+import { useAuth } from "@/context/auth-context";
 
 export function TasksDueToday() {
+  const { user } = useAuth();
   const today = new Date();
   today.setHours(0,0,0,0);
   
-  const [tasksSnapshot, loading] = useCollection(collection(db, 'tasks'));
+  const tasksQuery = user ? query(collection(db, 'tasks'), where('uid', '==', user.uid)) : null;
+  const [tasksSnapshot, loading] = useCollection(tasksQuery);
   
   const tasksDueToday = tasksSnapshot?.docs.map(doc => ({id: doc.id, ...doc.data()}) as Task)
     .filter(task => {

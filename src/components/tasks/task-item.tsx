@@ -17,8 +17,9 @@ import { format, formatDistanceToNow } from 'date-fns';
 import { Badge } from '../ui/badge';
 import { cn } from '@/lib/utils';
 import { useCollection } from 'react-firebase-hooks/firestore';
-import { collection } from 'firebase/firestore';
+import { collection, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { useAuth } from '@/context/auth-context';
 
 type TaskItemProps = {
   task: Task;
@@ -35,8 +36,10 @@ const priorityStyles = {
 
 export function TaskItem({ task, onUpdate, onDelete, onToggle }: TaskItemProps) {
   const [isEditing, setIsEditing] = useState(false);
+  const { user } = useAuth();
   
-  const [coursesSnapshot] = useCollection(collection(db, 'courses'));
+  const coursesQuery = user ? query(collection(db, 'courses'), where('uid', '==', user.uid)) : null;
+  const [coursesSnapshot] = useCollection(coursesQuery);
   const courses = coursesSnapshot?.docs.map(d => ({id: d.id, ...d.data()})) as Course[] || [];
   const course = task.courseId ? courses.find(c => c.id === task.courseId) : null;
 

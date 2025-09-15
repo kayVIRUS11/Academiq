@@ -5,6 +5,8 @@ import React, { createContext, useContext, useState, ReactNode, useEffect } from
 import { useDocument } from 'react-firebase-hooks/firestore';
 import { doc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { useAuth } from '@/context/auth-context';
+import { useToast } from '@/hooks/use-toast';
 
 type WeeklyPlanContextType = {
   plan: StudyPlanItem[];
@@ -14,22 +16,31 @@ type WeeklyPlanContextType = {
 
 const WeeklyPlanContext = createContext<WeeklyPlanContextType | undefined>(undefined);
 
-// In a real app, get this from auth
-const USER_ID = 'default-user';
-
 export function WeeklyPlanProvider({ children }: { children: ReactNode }) {
   const [plan, setPlanState] = useState<StudyPlanItem[]>([]);
-  const planRef = doc(db, 'weeklyPlans', USER_ID);
+  const { user } = useAuth();
+  const { toast } = useToast();
+  
+  const planRef = user ? doc(db, 'weeklyPlans', user.uid) : null;
   const [planSnapshot, loading, error] = useDocument(planRef);
 
   useEffect(() => {
     if (planSnapshot?.exists()) {
       const data = planSnapshot.data();
       setPlanState(data.plan || []);
+    } else {
+        setPlanState([]);
     }
   }, [planSnapshot]);
+
+  useEffect(() => {
+    if (error) {
+        toast({ title: 'Error loading weekly plan', description: error.message, variant: 'destructive'});
+    }
+  }, [error, toast]);
   
   const setPlan = async (newPlan: StudyPlanItem[]) => {
+    if (!planRef) return;
     setPlanState(newPlan);
     await setDoc(planRef, { plan: newPlan });
   };

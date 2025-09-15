@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Note } from '@/lib/types';
+import { Course, Note } from '@/lib/types';
 import { NoteList } from '@/components/notes/note-list';
 import { NoteEditor } from '@/components/notes/note-editor';
 import { Plus, NotebookText, Trash2, FilePlus, BrainCircuit, Sparkles, ArrowLeft, Blocks } from 'lucide-react';
@@ -17,9 +17,10 @@ import { useFlashcards } from '../ai-tools/flashcards/flashcards-context';
 import { generateFlashcards } from '@/ai/flows/generate-flashcards';
 import { useRouter } from 'next/navigation';
 import { useCollection } from 'react-firebase-hooks/firestore';
-import { collection } from 'firebase/firestore';
+import { collection, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useAuth } from '@/context/auth-context';
 
 export default function NotesPage() {
     const { 
@@ -32,8 +33,11 @@ export default function NotesPage() {
         updateNote,
         deleteNote
     } = useNotes();
-    const [coursesSnapshot, coursesLoading] = useCollection(collection(db, 'courses'));
-    const courses = coursesSnapshot?.docs.map(d => ({id: d.id, ...d.data()})) || [];
+    const { user } = useAuth();
+    
+    const coursesQuery = user ? query(collection(db, 'courses'), where('uid', '==', user.uid)) : null;
+    const [coursesSnapshot, coursesLoading] = useCollection(coursesQuery);
+    const courses = coursesSnapshot?.docs.map(d => ({id: d.id, ...d.data()})) as Course[] || [];
 
   const [isDeleting, setIsDeleting] = useState(false);
   const [isSummarizing, setIsSummarizing] = useState(false);
@@ -223,7 +227,7 @@ export default function NotesPage() {
                 notes={notes}
                 selectedNoteId={selectedNoteId}
                 onSelectNote={handleSelectNote}
-                courses={courses as Course[]}
+                courses={courses}
             />
           )}
         </div>

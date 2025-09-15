@@ -10,8 +10,9 @@ import {
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { db } from '@/lib/firebase';
 import { Course } from '@/lib/types';
-import { collection } from 'firebase/firestore';
+import { collection, query, where } from 'firebase/firestore';
 import { useCollection } from 'react-firebase-hooks/firestore';
+import { useAuth } from '@/context/auth-context';
 
 export type FilterState = {
   status: 'all' | 'pending' | 'completed';
@@ -25,7 +26,9 @@ type TaskFiltersProps = {
 };
 
 export function TaskFilters({ filters, onFilterChange }: TaskFiltersProps) {
-  const [coursesSnapshot] = useCollection(collection(db, 'courses'));
+  const { user } = useAuth();
+  const coursesQuery = user ? query(collection(db, 'courses'), where('uid', '==', user.uid)) : null;
+  const [coursesSnapshot] = useCollection(coursesQuery);
   const courses = coursesSnapshot?.docs.map(d => ({id: d.id, ...d.data()})) as Course[] || [];
 
   return (

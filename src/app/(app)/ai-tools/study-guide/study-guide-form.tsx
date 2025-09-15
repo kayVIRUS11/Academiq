@@ -13,9 +13,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Course } from '@/lib/types';
 import { Label } from '@/components/ui/label';
 import { useCollection } from 'react-firebase-hooks/firestore';
-import { collection } from 'firebase/firestore';
+import { collection, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useAuth } from '@/context/auth-context';
 
 export function StudyGuideForm() {
   const [file, setFile] = useState<File | null>(null);
@@ -24,8 +25,10 @@ export function StudyGuideForm() {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const { addNote } = useNotes();
+  const { user } = useAuth();
   
-  const [coursesSnapshot, coursesLoading] = useCollection(collection(db, 'courses'));
+  const coursesQuery = user ? query(collection(db, 'courses'), where('uid', '==', user.uid)) : null;
+  const [coursesSnapshot, coursesLoading] = useCollection(coursesQuery);
   const courses = coursesSnapshot?.docs.map(d => ({id: d.id, ...d.data()})) as Course[] || [];
 
   const handleFileSelect = (selectedFile: File | null) => {

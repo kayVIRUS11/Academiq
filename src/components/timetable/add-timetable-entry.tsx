@@ -16,7 +16,7 @@ import { TimetableEntry, Course } from '@/lib/types';
 
 type AddTimetableEntryProps = {
   courses: Course[];
-  onAddEntry: (entry: Omit<TimetableEntry, 'id'>) => void;
+  onAddEntry: (entry: Omit<TimetableEntry, 'id' | 'uid'>) => void;
 };
 
 export function AddTimetableEntry({ courses, onAddEntry }: AddTimetableEntryProps) {

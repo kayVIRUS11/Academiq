@@ -3,13 +3,16 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Progress } from "@/components/ui/progress";
 import { Target } from "lucide-react";
 import { useCollection } from 'react-firebase-hooks/firestore';
-import { collection } from 'firebase/firestore';
+import { collection, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Goal } from "@/lib/types";
 import { Skeleton } from "../ui/skeleton";
+import { useAuth } from "@/context/auth-context";
 
 export function GoalsOverview() {
-  const [goalsSnapshot, loading] = useCollection(collection(db, 'goals'));
+  const { user } = useAuth();
+  const goalsQuery = user ? query(collection(db, 'goals'), where('uid', '==', user.uid)) : null;
+  const [goalsSnapshot, loading] = useCollection(goalsQuery);
   const goals = goalsSnapshot?.docs.map(d => ({id: d.id, ...d.data()})) as Goal[] || [];
   
   return (

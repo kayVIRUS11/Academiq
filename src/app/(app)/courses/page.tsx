@@ -5,22 +5,30 @@ import { Course } from '@/lib/types';
 import { AddCourse } from '@/components/courses/add-course';
 import { CourseList } from '@/components/courses/course-list';
 import { useCollection } from 'react-firebase-hooks/firestore';
-import { collection, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
+import { collection, addDoc, updateDoc, deleteDoc, doc, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useAuth } from '@/context/auth-context';
 
 export default function CoursesPage() {
   const { toast } = useToast();
-  const [coursesSnapshot, loading, error] = useCollection(collection(db, 'courses'));
+  const { user } = useAuth();
+  
+  const coursesQuery = user ? query(collection(db, 'courses'), where('uid', '==', user.uid)) : null;
+  const [coursesSnapshot, loading, error] = useCollection(coursesQuery);
 
   const courses: Course[] = loading || !coursesSnapshot 
     ? [] 
     : coursesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Course));
 
-  const handleAddCourse = async (newCourse: Omit<Course, 'id'>) => {
+  const handleAddCourse = async (newCourse: Omit<Course, 'id' | 'uid'>) => {
+    if (!user) {
+        toast({ title: 'You must be logged in', variant: 'destructive' });
+        return;
+    }
     try {
-      await addDoc(collection(db, 'courses'), newCourse);
+      await addDoc(collection(db, 'courses'), { ...newCourse, uid: user.uid });
       toast({ title: 'Course added!' });
     } catch (error) {
       console.error(error);
