@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Timer, BrainCircuit, Loader2, Save } from 'lucide-react';
-import { StudySession, TimetableEntry, Course } from '@/lib/types';
+import { StudySession, TimetableEntry, Course, StudyPlanItem } from '@/lib/types';
 import { AddStudySession } from '@/components/study-tracker/add-study-session';
 import { StudySessionList } from '@/components/study-tracker/study-session-list';
 import { Button } from '@/components/ui/button';
@@ -15,7 +15,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { generateWeeklyStudyPlan, GenerateWeeklyStudyPlanOutput } from '@/ai/flows/generate-weekly-study-plan';
+import { generateWeeklyStudyPlan } from '@/ai/flows/generate-weekly-study-plan';
 import { useWeeklyPlan } from '../weekly-plan/weekly-plan-context';
 import { useRouter } from 'next/navigation';
 import { useCollection } from 'react-firebase-hooks/firestore';
@@ -23,9 +23,10 @@ import { collection, addDoc, updateDoc, deleteDoc, doc, query, where } from 'fir
 import { db } from '@/lib/firebase';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/context/auth-context';
+import { mergeWeeklyPlans } from '@/ai/flows/merge-weekly-study-plan';
 
 export default function StudyTrackerPage() {
-  const { setPlan } = useWeeklyPlan();
+  const { plan: existingPlan, setPlan } = useWeeklyPlan();
   const router = useRouter();
   const { toast } = useToast();
   const { user } = useAuth();
@@ -45,7 +46,8 @@ export default function StudyTrackerPage() {
   const loading = coursesLoading || timetableLoading || sessionsLoading;
 
   const [isGenerating, setIsGenerating] = useState(false);
-  const [generatedPlan, setGeneratedPlan] = useState<GenerateWeeklyStudyPlanOutput['weeklyPlan'] | null>(null);
+  const [isMerging, setIsMerging] = useState(false);
+  const [generatedPlan, setGeneratedPlan] = useState<Omit<StudyPlanItem, 'id'>[] | null>(null);
   const [isPlanDialogOpen, setIsPlanDialogOpen] = useState(false);
 
   const handleAddSession = async (newSessionData: Omit<StudySession, 'id' | 'uid'>) => {
@@ -101,16 +103,45 @@ export default function StudyTrackerPage() {
     }
   }
 
-  const handleSavePlan = () => {
+  const handleSavePlan = (replace: boolean) => {
     if (!generatedPlan) return;
-    const planWithIds = generatedPlan.map((item, index) => ({...item, id: `${Date.now()}-${index}`}));
-    setPlan(planWithIds);
+    
+    if (!replace && existingPlan.length > 0) {
+      handleMerge();
+      return;
+    }
+
+    setPlan(generatedPlan);
     toast({
         title: "Plan Saved!",
         description: "Your new weekly study plan has been saved."
     });
     setIsPlanDialogOpen(false);
     router.push('/weekly-plan');
+  }
+
+  const handleMerge = async () => {
+    if (!generatedPlan) return;
+    setIsMerging(true);
+    try {
+      const result = await mergeWeeklyPlans({
+        existingPlan,
+        newPlan: generatedPlan.map(p => ({...p, id: ''})) // satisfy schema, id is not used in prompt
+      });
+
+      setPlan(result.mergedPlan);
+      toast({
+        title: "Plan Merged!",
+        description: "Your weekly study plan has been updated."
+      });
+      setIsPlanDialogOpen(false);
+      router.push('/weekly-plan');
+    } catch (error) {
+      console.error("Failed to merge weekly plans:", error);
+      toast({ title: 'Merge Failed', description: 'Could not merge the plans. Please try again.', variant: 'destructive' });
+    } finally {
+      setIsMerging(false);
+    }
   }
 
   const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
@@ -152,7 +183,7 @@ export default function StudyTrackerPage() {
           <DialogHeader>
             <DialogTitle>Your AI-Generated Weekly Study Plan</DialogTitle>
             <DialogDescription>
-                Use this as a guide to plan your study sessions. You can save it to your "Weekly Plan" page to edit and track.
+                Review the suggested schedule. You can save it as a new plan or merge it with your existing one.
             </DialogDescription>
           </DialogHeader>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-[60vh] overflow-y-auto p-1">
@@ -173,8 +204,24 @@ export default function StudyTrackerPage() {
             ))}
           </div>
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setIsPlanDialogOpen(false)}>View Without Saving</Button>
-            <Button onClick={handleSavePlan}><Save className="mr-2" />Save Plan</Button>
+            {existingPlan && existingPlan.length > 0 ? (
+                <div className="flex w-full justify-end gap-2">
+                    <Button variant="ghost" onClick={() => setIsPlanDialogOpen(false)}>Cancel</Button>
+                    <Button variant="secondary" onClick={handleMerge} disabled={isMerging}>
+                        {isMerging && <Loader2 className="mr-2 animate-spin" />}
+                        Merge with Existing
+                    </Button>
+                    <Button onClick={() => handleSavePlan(true)} disabled={isMerging}>
+                      <Save className="mr-2"/>
+                      Replace Existing
+                    </Button>
+                </div>
+            ) : (
+              <>
+                <Button variant="ghost" onClick={() => setIsPlanDialogOpen(false)}>Cancel</Button>
+                <Button onClick={() => handleSavePlan(true)}><Save className="mr-2" />Save Plan</Button>
+              </>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

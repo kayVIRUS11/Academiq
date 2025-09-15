@@ -1,6 +1,6 @@
 'use client';
 
-import { StudyPlanItem } from '@/lib/types';
+import { StudyPlanItem, DayOfWeek } from '@/lib/types';
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { useDocument } from 'react-firebase-hooks/firestore';
 import { doc, setDoc } from 'firebase/firestore';
@@ -10,7 +10,10 @@ import { useToast } from '@/hooks/use-toast';
 
 type WeeklyPlanContextType = {
   plan: StudyPlanItem[];
-  setPlan: (newPlan: StudyPlanItem[]) => void;
+  setPlan: (newPlan: Omit<StudyPlanItem, 'id'>[]) => void;
+  addPlanItem: (item: Omit<StudyPlanItem, 'id'>) => void;
+  updatePlanItem: (id: string, item: Omit<StudyPlanItem, 'id'>) => void;
+  deletePlanItem: (id: string) => void;
   loading: boolean;
 };
 
@@ -38,16 +41,43 @@ export function WeeklyPlanProvider({ children }: { children: ReactNode }) {
         toast({ title: 'Error loading weekly plan', description: error.message, variant: 'destructive'});
     }
   }, [error, toast]);
-  
-  const setPlan = async (newPlan: StudyPlanItem[]) => {
+
+  const updateFirestore = async (newPlan: StudyPlanItem[]) => {
     if (!planRef) return;
-    setPlanState(newPlan);
     await setDoc(planRef, { plan: newPlan });
+  }
+  
+  const setPlan = (newPlanData: Omit<StudyPlanItem, 'id'>[]) => {
+    const newPlanWithIds = newPlanData.map(item => ({...item, id: `${Date.now()}-${Math.random()}`}));
+    setPlanState(newPlanWithIds);
+    updateFirestore(newPlanWithIds);
   };
+
+  const addPlanItem = (item: Omit<StudyPlanItem, 'id'>) => {
+    const newItem = { ...item, id: Date.now().toString() };
+    const newPlan = [...plan, newItem];
+    setPlanState(newPlan);
+    updateFirestore(newPlan);
+    toast({ title: 'Study block added!' });
+  }
+
+  const updatePlanItem = (id: string, item: Omit<StudyPlanItem, 'id'>) => {
+    const newPlan = plan.map(p => p.id === id ? { ...item, id } : p);
+    setPlanState(newPlan);
+    updateFirestore(newPlan);
+    toast({ title: 'Study block updated!' });
+  }
+
+  const deletePlanItem = (id: string) => {
+    const newPlan = plan.filter(p => p.id !== id);
+    setPlanState(newPlan);
+    updateFirestore(newPlan);
+    toast({ title: 'Study block deleted.' });
+  }
 
 
   return (
-    <WeeklyPlanContext.Provider value={{ plan, setPlan, loading }}>
+    <WeeklyPlanContext.Provider value={{ plan, setPlan, addPlanItem, updatePlanItem, deletePlanItem, loading }}>
       {children}
     </WeeklyPlanContext.Provider>
   );
