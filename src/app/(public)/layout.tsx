@@ -1,4 +1,5 @@
 import { Logo } from "@/components/logo";
+import Link from "next/link";
 
 export default function PublicLayout({
     children,
@@ -6,13 +7,17 @@ export default function PublicLayout({
     children: React.ReactNode;
 }) {
     return (
-        <>
-            <header className="absolute top-0 left-0 right-0 p-4">
-                <Logo />
+        <div className="flex flex-col min-h-screen">
+            <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-sm border-b">
+                <div className="container mx-auto flex h-16 items-center justify-between px-4">
+                    <Link href="/">
+                        <Logo />
+                    </Link>
+                </div>
             </header>
-            <main className="min-h-screen flex items-center justify-center">
+            <main className="flex-1">
                 {children}
             </main>
-        </>
+        </div>
     )
 }
