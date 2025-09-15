@@ -1,10 +1,8 @@
-
 'use server';
 
 import { addDoc, collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "./firebase";
 import { Course, StudySession } from "./types";
-import { getAuth } from "firebase/auth";
 
 export const logStudySession = async (
     userId: string,
