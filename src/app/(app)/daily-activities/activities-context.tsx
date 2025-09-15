@@ -99,25 +99,17 @@ export function ActivitiesProvider({ children }: { children: ReactNode }) {
     if (!user || !activity.activity.toLowerCase().includes('study')) return;
     
     try {
-        // 1. Parse course name
-        const courseNameMatch = activity.activity.match(/study\s+(.+)/i);
+        const courseNameMatch = activity.activity.match(/study\s+(.*?)(?:\s\(.+?\))?$/i);
         if (!courseNameMatch || !courseNameMatch[1]) {
             console.warn(`Could not parse course name from activity: "${activity.activity}"`);
             return;
         }
+        let courseName = courseNameMatch[1].trim();
         
-        let courseName = courseNameMatch[1];
-        // Remove parenthetical clarifications if they exist
-        const parenthesisIndex = courseName.indexOf('(');
-        if (parenthesisIndex > -1) {
-            courseName = courseName.substring(0, parenthesisIndex).trim();
-        }
-
-        // 2. Parse duration
         const timeParts = activity.time.split('-').map(t => t.trim());
         if (timeParts.length !== 2) {
              console.warn(`Could not parse time range from activity: "${activity.time}"`);
-            return
+            return;
         };
 
         const [startH, startM] = timeParts[0].split(':').map(Number);
@@ -141,7 +133,6 @@ export function ActivitiesProvider({ children }: { children: ReactNode }) {
             return;
         };
 
-        // 3. Log the session
         const loggedSession = await logStudySession(user.uid, courseName, durationInMinutes, activity.suggestions);
 
         if (loggedSession) {
@@ -153,7 +144,11 @@ export function ActivitiesProvider({ children }: { children: ReactNode }) {
 
     } catch (e) {
         console.error("Failed to automatically log study session:", e);
-        // Don't bother the user with a toast for this background task failure.
+        toast({
+            title: "Logging Failed",
+            description: "Could not automatically log the study session.",
+            variant: "destructive"
+        });
     }
   }
 
@@ -170,7 +165,6 @@ export function ActivitiesProvider({ children }: { children: ReactNode }) {
         return act;
     });
 
-    // If the activity was marked as completed (not un-marked)
     if (toggledActivity && toggledActivity.completed) {
        handleAutomaticLogging(toggledActivity);
     }
