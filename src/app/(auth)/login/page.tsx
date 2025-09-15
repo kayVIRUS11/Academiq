@@ -40,7 +40,7 @@ export default function LoginPage() {
                 <Button className="w-full">Sign In</Button>
                 <p className="text-sm text-center">
                     Don't have an account?{' '}
-                    <Link href="/signup" className="font-semibold underline">
+                    <Link href="/join" className="font-semibold underline hover:text-primary">
                         Sign up
                     </Link>
                 </p>

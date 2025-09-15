@@ -27,15 +27,15 @@ export default function JoinPage() {
                 <Button asChild className="w-full">
                     <Link href="/signup">Create account</Link>
                 </Button>
-                <p className="text-xs text-muted-foreground text-center">
-                    By signing up, you agree to the <Link href="#" className="underline">Terms of Service</Link> and <Link href="#" className="underline">Privacy Policy</Link>.
+                <p className="text-xs text-muted-foreground text-center px-4">
+                    By signing up, you agree to the <Link href="/terms" className="underline hover:text-primary">Terms of Service</Link> and <Link href="/privacy" className="underline hover:text-primary">Privacy Policy</Link>.
                 </p>
 
             </CardContent>
-            <CardFooter className="flex-col items-start gap-4">
-                <p className="text-sm">
+            <CardFooter className="flex-col items-start gap-4 pt-4 border-t">
+                <p className="text-sm w-full text-center">
                     Already have an account?{' '}
-                    <Link href="/login" className="font-semibold underline">
+                    <Link href="/login" className="font-semibold underline hover:text-primary">
                         Sign in
                     </Link>
                 </p>
