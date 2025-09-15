@@ -23,9 +23,10 @@ export type GenerateDailyPlanInput = z.infer<typeof GenerateDailyPlanInputSchema
 
 const GenerateDailyPlanOutputSchema = z.object({
   dailyPlan: z.array(z.object({
-    time: z.string().describe('The time for the activity, e.g., "09:00 - 10:30".'),
+    time: z.string().describe('The time for the activity in a tight format, e.g., "05:30-06:00".'),
     activity: z.string().describe('The description of the activity.'),
-  })).describe('A detailed list of activities for the day.'),
+    suggestions: z.string().optional().describe('Actionable tips, reminders, or suggestions for the activity.'),
+  })).describe('A detailed list of activities for the day, broken into small, specific time blocks.'),
 });
 export type GenerateDailyPlanOutput = z.infer<typeof GenerateDailyPlanOutputSchema>;
 
@@ -37,17 +38,18 @@ const prompt = ai.definePrompt({
   name: 'generateDailyPlanPrompt',
   input: {schema: GenerateDailyPlanInputSchema},
   output: {schema: GenerateDailyPlanOutputSchema},
-  prompt: `You are a personal productivity assistant that helps students create a detailed daily plan.
+  prompt: `You are a world-class personal productivity assistant and scheduler for students.
 
-  Your task is to generate a detailed, hour-by-hour daily plan that integrates the student's fixed classes, their tasks, their scheduled study blocks, and their personal preferences for the day.
+  Your task is to generate a highly detailed, minute-by-minute daily plan that is both aspirational and realistic. You must account for all fixed events, tasks, user preferences, and the unstated realities of a student's life (like travel time, meals, and the need for breaks).
 
-  Rules:
-  1.  **Fixed Events:** The classes from the 'Timetable' are fixed and cannot be moved.
-  2.  **Scheduled Study:** The study blocks from 'Scheduled Study' are high-priority. Integrate them into the plan at their suggested times, but you can adjust the exact start/end times slightly to create a logical flow.
-  3.  **Tasks:** Fit the items from the 'Tasks' list into the available time slots. Prioritize 'High' priority tasks.
-  4.  **User Preferences:** Heavily weigh the user's 'Desired Day Description' to shape the schedule (e.g., if they want a relaxed morning, schedule lighter tasks then).
-  5.  **Be Realistic:** Include breaks, meals (lunch, dinner), and some downtime. A student cannot be productive from 8am to 10pm without breaks.
-  6.  **Chronological Order:** The final output must be in chronological order.
+  **Rules of Engagement:**
+  1.  **Start from Wake-Up:** The plan must begin the moment the user should wake up. If they say "I want to wake up early," you must infer a reasonable time (e.g., 05:30) that allows them to prepare for their first commitment.
+  2.  **Granularity is Key:** Break the day into small, specific time blocks (e.g., 15, 30, or 60 minutes). Avoid large, vague blocks like "Work on assignment." Instead, break it down: "Brainstorm essay outline," "Research keywords," "Write first draft of intro."
+  3.  **Actionable Suggestions:** For each activity, provide a "suggestions" field with a concrete, helpful tip. For example, for "Go to gym," suggest "Focus on cardio and core today." For "Lunch," suggest "Eat something light to avoid post-meal drowsiness."
+  4.  **Integrate Everything:** Seamlessly weave together the fixed timetable, high-priority tasks, scheduled study blocks, and the user's personal description of their ideal day.
+  5.  **Be a Realist:** Acknowledge travel time between locations. Schedule short breaks between intense focus sessions. Include time for all three meals (Breakfast, Lunch, Dinner) and personal admin.
+  6.  **Heavily Weight User Preferences:** The user's 'Desired Day Description' is the most important input. If they want a "relaxed morning," schedule lighter, more enjoyable activities then. If they want a "super productive afternoon," schedule their most demanding tasks during that time.
+  7.  **Chronological Order:** The final output must be in chronological order.
 
   **Fixed Class Timetable for Today:**
   {{{timetable}}}
@@ -61,7 +63,7 @@ const prompt = ai.definePrompt({
   **User's Desired Day Description:**
   {{{desiredDayDescription}}}
 
-  Generate the cohesive, hour-by-hour daily plan now.
+  Generate the hyper-detailed, minute-by-minute daily plan now.
   `,
 });
 
