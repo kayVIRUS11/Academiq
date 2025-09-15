@@ -66,9 +66,16 @@ export function TaskForm({
     },
   });
 
+  function handleFormSubmit(values: TaskFormValues) {
+    if (values.courseId === 'none') {
+        delete values.courseId;
+    }
+    onSubmit(values);
+  }
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+      <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-8">
         <FormField
           control={form.control}
           name="title"
