@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
-import { Check, BrainCircuit, ListTodo, Target } from "lucide-react";
+import { Check, BrainCircuit, ListTodo, Target, Calendar, Timer, CalendarCheck, Twitter, Linkedin, Facebook } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -20,6 +20,21 @@ const features = [
         icon: Target,
         title: "Goal Tracking",
         description: "Set and monitor your semester and yearly goals to stay motivated and on track for success."
+    },
+    {
+        icon: Calendar,
+        title: "Timetable Management",
+        description: "Organize your class schedule with a clear, visual timetable to keep track of where you need to be."
+    },
+    {
+        icon: Timer,
+        title: "Pomodoro Timer",
+        description: "Boost your productivity and avoid burnout with a built-in Pomodoro timer for focused study sessions."
+    },
+    {
+        icon: CalendarCheck,
+        title: "Weekly Study Planning",
+        description: "Get an intelligent, AI-generated weekly study plan based on your course load and schedule."
     }
 ]
 
@@ -77,8 +92,37 @@ export default function LandingPage() {
                 </div>
             </section>
 
-            <footer className="text-center py-8 border-t">
-                <p className="text-muted-foreground">&copy; {new Date().getFullYear()} Academiq. All rights reserved.</p>
+            <footer className="py-12 border-t bg-secondary/50">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-4 gap-8">
+                    <div className="space-y-4">
+                        <h3 className="text-lg font-semibold">Academiq</h3>
+                        <p className="text-muted-foreground">Focus. Organize. Succeed.</p>
+                    </div>
+                    <div className="space-y-2">
+                        <h4 className="font-semibold">Quick Links</h4>
+                        <ul className="space-y-1">
+                            <li><Link href="/join" className="text-muted-foreground hover:text-primary">Get Started</Link></li>
+                            <li><Link href="/privacy" className="text-muted-foreground hover:text-primary">Privacy Policy</Link></li>
+                            <li><Link href="/terms" className="text-muted-foreground hover:text-primary">Terms of Service</Link></li>
+                        </ul>
+                    </div>
+                    <div className="space-y-2">
+                        <h4 className="font-semibold">Contact Us</h4>
+                        <p className="text-muted-foreground">yohanemeka15@gmail.com</p>
+                        <p className="text-muted-foreground">07018889761</p>
+                    </div>
+                    <div className="space-y-2">
+                        <h4 className="font-semibold">Follow Us</h4>
+                        <div className="flex space-x-4">
+                            <Link href="#" className="text-muted-foreground hover:text-primary"><Twitter /></Link>
+                            <Link href="#" className="text-muted-foreground hover:text-primary"><Facebook /></Link>
+                            <Link href="#" className="text-muted-foreground hover:text-primary"><Linkedin /></Link>
+                        </div>
+                    </div>
+                </div>
+                <div className="text-center mt-8 pt-8 border-t">
+                    <p className="text-muted-foreground">&copy; {new Date().getFullYear()} Academiq. All rights reserved.</p>
+                </div>
             </footer>
         </div>
     );
