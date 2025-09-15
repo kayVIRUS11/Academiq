@@ -28,7 +28,7 @@ function DailyPlanView({ day }: { day: DayOfWeek }) {
         setProgress(totalCount > 0 ? (completedCount / totalCount) * 100 : 0);
     }, [activities]);
 
-    const handleSaveActivity = (activity: Omit<DailyActivity, 'id' | 'completed'>, id?: string) => {
+    const handleSaveActivity = (activity: Omit<DailyActivity, 'id' | 'completed' | 'suggestions'>, id?: string) => {
         if (id) { // Editing existing activity
             const updatedActivities = activities.map(act => act.id === id ? {...act, ...activity} : act);
             updateActivitiesForDay(day, updatedActivities);
@@ -116,6 +116,9 @@ function DailyPlanView({ day }: { day: DayOfWeek }) {
                                             {activity.activity}
                                         </span>
                                         <p className="text-sm text-muted-foreground">{activity.time}</p>
+                                        {activity.suggestions && (
+                                            <p className="text-xs italic text-muted-foreground/80">{activity.suggestions}</p>
+                                        )}
                                     </div>
                                 </div>
                                 <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">

@@ -18,12 +18,12 @@ import { useToast } from '@/hooks/use-toast';
 type ActivityDialogProps = {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  onSave: (activity: Omit<DailyActivity, 'id' | 'completed'>, id?: string) => void;
+  onSave: (activity: Omit<DailyActivity, 'id' | 'completed' | 'suggestions'>, id?: string) => void;
   activity: DailyActivity | null;
 };
 
 export function ActivityDialog({ isOpen, onOpenChange, onSave, activity }: ActivityDialogProps) {
-  const [time, setTime] = useState('09:00');
+  const [time, setTime] = useState('09:00-10:00');
   const [activityText, setActivityText] = useState('');
   const { toast } = useToast();
 
@@ -33,7 +33,7 @@ export function ActivityDialog({ isOpen, onOpenChange, onSave, activity }: Activ
       setActivityText(activity.activity);
     } else if (isOpen && !activity) {
       // Reset for new entry
-      setTime('09:00');
+      setTime('09:00-10:00');
       setActivityText('');
     }
   }, [isOpen, activity]);
@@ -67,9 +67,9 @@ export function ActivityDialog({ isOpen, onOpenChange, onSave, activity }: Activ
             </Label>
             <Input
               id="time"
-              type="time"
               value={time}
               onChange={(e) => setTime(e.target.value)}
+              placeholder="e.g., 09:00-10:30"
               className="col-span-3"
             />
           </div>

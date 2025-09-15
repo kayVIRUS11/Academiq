@@ -45,7 +45,7 @@ const prompt = ai.definePrompt({
   **Rules of Engagement:**
   1.  **Start from Wake-Up:** The plan must begin the moment the user should wake up. If they say "I want to wake up early," you must infer a reasonable time (e.g., 05:30) that allows them to prepare for their first commitment.
   2.  **Granularity is Key:** Break the day into small, specific time blocks (e.g., 15, 30, or 60 minutes). Avoid large, vague blocks like "Work on assignment." Instead, break it down: "Brainstorm essay outline," "Research keywords," "Write first draft of intro."
-  3.  **Actionable Suggestions:** For each activity, provide a "suggestions" field with a concrete, helpful tip. For example, for "Go to gym," suggest "Focus on cardio and core today." For "Lunch," suggest "Eat something light to avoid post-meal drowsiness."
+  3.  **Actionable Suggestions:** For each activity, you MUST provide a "suggestions" field with a concrete, helpful tip. For example, for "Go to gym," suggest "Focus on cardio and core today." For "Lunch," suggest "Eat something light to avoid post-meal drowsiness."
   4.  **Integrate Everything:** Seamlessly weave together the fixed timetable, high-priority tasks, scheduled study blocks, and the user's personal description of their ideal day.
   5.  **Be a Realist:** Acknowledge travel time between locations. Schedule short breaks between intense focus sessions. Include time for all three meals (Breakfast, Lunch, Dinner) and personal admin.
   6.  **Heavily Weight User Preferences:** The user's 'Desired Day Description' is the most important input. If they want a "relaxed morning," schedule lighter, more enjoyable activities then. If they want a "super productive afternoon," schedule their most demanding tasks during that time.

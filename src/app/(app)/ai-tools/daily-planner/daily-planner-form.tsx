@@ -161,8 +161,11 @@ export function DailyPlannerForm() {
                 <CardContent className="p-6 space-y-4">
                     {generatedPlan.map((item, index) => (
                         <div key={index} className="flex gap-4 items-start">
-                            <div className="font-semibold text-sm text-primary w-28 text-right">{item.time}</div>
-                            <div className="flex-1 text-sm">{item.activity}</div>
+                            <div className="font-semibold text-sm text-primary w-28 text-right shrink-0">{item.time}</div>
+                            <div className="flex-1 text-sm">
+                                <p>{item.activity}</p>
+                                {item.suggestions && <p className="text-xs italic text-muted-foreground mt-1">{item.suggestions}</p>}
+                            </div>
                         </div>
                     ))}
                 </CardContent>

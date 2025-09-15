@@ -1,4 +1,5 @@
 
+
 export type Task = {
   id: string;
   uid: string;
@@ -60,6 +61,7 @@ export type DailyActivity = {
     time: string;
     activity: string;
     completed: boolean;
+    suggestions?: string;
 }
 
 export enum DayOfWeek {
