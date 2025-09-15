@@ -39,15 +39,16 @@ function Flashcard({ card }: { card: { question: string, answer: string } }) {
 }
 
 export default function FlashcardSetPage({ params }: { params: { id: string } }) {
+  const { id } = params;
   const { getFlashcardSet, loading } = useFlashcards();
   const [flashcardSet, setFlashcardSet] = useState<FlashcardSet | null | undefined>(undefined);
   
   useEffect(() => {
     if (!loading) {
-        const set = getFlashcardSet(params.id);
+        const set = getFlashcardSet(id);
         setFlashcardSet(set);
     }
-  }, [params.id, getFlashcardSet, loading]);
+  }, [id, getFlashcardSet, loading]);
 
   if (flashcardSet === undefined || loading) {
     return (
