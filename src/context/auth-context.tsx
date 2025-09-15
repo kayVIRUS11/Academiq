@@ -13,7 +13,8 @@ import {
     updateProfile,
     applyActionCode
 } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { doc, setDoc } from 'firebase/firestore';
+import { auth, db } from '@/lib/firebase';
 import { usePathname, useSearchParams } from 'next/navigation';
 
 interface AuthContextType {
@@ -67,6 +68,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const signUpWithEmail = async (email: string, password: string, displayName: string) => {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         await updateProfile(userCredential.user, { displayName });
+        
+        // Create a document for the user in Firestore
+        await setDoc(doc(db, "users", userCredential.user.uid), {
+            uid: userCredential.user.uid,
+            displayName,
+            email,
+            createdAt: new Date().toISOString(),
+        });
+
         await sendEmailVerification(userCredential.user);
         return userCredential;
     };
@@ -75,9 +85,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return signInWithEmailAndPassword(auth, email, password);
     };
 
-    const signInWithGoogle = () => {
+    const signInWithGoogle = async () => {
         const provider = new GoogleAuthProvider();
-        return signInWithPopup(auth, provider);
+        const result = await signInWithPopup(auth, provider);
+        const user = result.user;
+
+        // Create a document for the user in Firestore on Google sign-in as well
+        await setDoc(doc(db, "users", user.uid), {
+            uid: user.uid,
+            displayName: user.displayName,
+            email: user.email,
+            createdAt: new Date().toISOString(),
+        }, { merge: true }); // Use merge to avoid overwriting existing data if they sign in again
+
+        return result;
     };
 
     const logout = () => {
