@@ -1,24 +1,21 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Play, Pause, RotateCcw, Coffee, BrainCircuit } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
-
-type TimerMode = 'pomodoro' | 'shortBreak' | 'longBreak';
-
-const times = {
-  pomodoro: 25 * 60,
-  shortBreak: 5 * 60,
-  longBreak: 15 * 60,
-};
+import { usePomodoro } from '@/context/pomodoro-context';
 
 export function PomodoroCard() {
-  const [mode, setMode] = useState<TimerMode>('pomodoro');
-  const [timeLeft, setTimeLeft] = useState(times[mode]);
-  const [isActive, setIsActive] = useState(false);
-  const [pomodoros, setPomodoros] = useState(0);
+  const { 
+    mode, 
+    timeLeft, 
+    isActive, 
+    toggleTimer, 
+    resetTimer, 
+    switchMode,
+    times
+  } = usePomodoro();
 
   const getTitle = () => {
     switch (mode) {
@@ -39,47 +36,6 @@ export function PomodoroCard() {
       case 'longBreak':
         return <Coffee className="h-5 w-5" />;
     }
-  };
-
-  const switchMode = useCallback((newMode: TimerMode) => {
-    setIsActive(false);
-    setMode(newMode);
-    setTimeLeft(times[newMode]);
-  }, []);
-
-  useEffect(() => {
-    let interval: NodeJS.Timeout | null = null;
-
-    if (isActive && timeLeft > 0) {
-      interval = setInterval(() => {
-        setTimeLeft((time) => time - 1);
-      }, 1000);
-    } else if (isActive && timeLeft === 0) {
-      if (mode === 'pomodoro') {
-        const newPomodoros = pomodoros + 1;
-        setPomodoros(newPomodoros);
-        if (newPomodoros % 4 === 0) {
-          switchMode('longBreak');
-        } else {
-          switchMode('shortBreak');
-        }
-      } else {
-        switchMode('pomodoro');
-      }
-    }
-
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [isActive, timeLeft, mode, pomodoros, switchMode]);
-
-  const toggleTimer = () => {
-    setIsActive(!isActive);
-  };
-
-  const resetTimer = () => {
-    setIsActive(false);
-    setTimeLeft(times[mode]);
   };
 
   const formatTime = (seconds: number) => {
