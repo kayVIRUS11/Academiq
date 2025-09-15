@@ -24,7 +24,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     </aside>
                     <div className="flex flex-col sm:pl-14">
                     <Header />
-                    <main className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
+                    <main className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8 bg-muted/40">
                         {children}
                     </main>
                     </div>

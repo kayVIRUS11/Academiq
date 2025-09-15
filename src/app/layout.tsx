@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { FirebaseProvider } from '@/lib/firebase-provider';
+import { ThemeProvider } from 'next-themes';
 
 export const metadata: Metadata = {
   title: 'Academiq',
@@ -30,10 +31,17 @@ export default function RootLayout({
         />
       </head>
       <body className="font-body antialiased">
-        <FirebaseProvider>
-          {children}
-          <Toaster />
-        </FirebaseProvider>
+        <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+        >
+            <FirebaseProvider>
+                {children}
+                <Toaster />
+            </FirebaseProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
