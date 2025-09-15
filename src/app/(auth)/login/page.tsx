@@ -9,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/auth-context";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
@@ -28,6 +28,11 @@ export default function LoginPage() {
     const searchParams = useSearchParams();
     const verificationMessage = searchParams.get('verified');
 
+    useEffect(() => {
+        if (user) {
+            router.push('/dashboard');
+        }
+    }, [user, router]);
 
     const handleGoogleSignIn = async () => {
         setIsLoading(true);
@@ -70,8 +75,7 @@ export default function LoginPage() {
     }
 
     if (user) {
-        router.push('/dashboard');
-        return null;
+        return null; // Or a loading spinner
     }
 
     return (

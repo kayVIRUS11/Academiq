@@ -6,7 +6,7 @@ import {
   LayoutDashboard,
   ListTodo,
   NotebookText,
-  Settings,
+  User,
   Sparkles,
   Target,
   Timer,
@@ -160,7 +160,7 @@ export function SidebarNav() {
         </Collapsible>
 
         <div className="mt-auto grid gap-6">
-            <NavLink href="/settings" icon={Settings} label="Settings" />
+            <NavLink href="/settings" icon={User} label="Account" />
         </div>
       </nav>
     );
@@ -182,7 +182,7 @@ export function SidebarNav() {
       </nav>
       <nav className="mt-auto flex flex-col items-center gap-4 px-2 sm:py-5">
         <NavLink href="/ai-tools" icon={Sparkles} label="AI Tools" />
-        <NavLink href="/settings" icon={Settings} label="Settings" />
+        <NavLink href="/settings" icon={User} label="Account" />
       </nav>
     </TooltipProvider>
   );

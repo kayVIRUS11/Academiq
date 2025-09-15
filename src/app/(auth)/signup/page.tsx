@@ -6,7 +6,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { useAuth } from "@/context/auth-context";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
@@ -23,6 +23,12 @@ export default function SignupPage() {
 
     const { signUpWithEmail, user } = useAuth();
     const router = useRouter();
+
+    useEffect(() => {
+        if (user) {
+            router.push('/dashboard');
+        }
+    }, [user, router]);
 
     const handleSignup = async (e: FormEvent) => {
         e.preventDefault();
@@ -49,8 +55,7 @@ export default function SignupPage() {
     };
 
     if (user) {
-        router.push('/dashboard');
-        return null;
+        return null; // Or a loading spinner
     }
 
     if (success) {

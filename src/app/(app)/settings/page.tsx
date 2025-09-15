@@ -1,6 +1,6 @@
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Settings, Download, Upload, Palette } from "lucide-react";
+import { User, Download, Upload, Palette } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { UserDataSummary } from "@/components/settings/user-data-summary";
 import { LogoutButton } from "@/components/settings/logout-button";
@@ -11,8 +11,8 @@ export default function SettingsPage() {
     <div className="space-y-6">
         <div className="flex items-center justify-between">
             <h1 className="text-3xl font-bold font-headline flex items-center gap-2">
-                <Settings className="w-8 h-8"/>
-                Settings
+                <User className="w-8 h-8"/>
+                Account & Settings
             </h1>
         </div>
         
