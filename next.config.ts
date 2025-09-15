@@ -4,6 +4,19 @@ const withPWA = require('next-pwa')({
   dest: 'public',
   register: true,
   skipWaiting: true,
+  runtimeCaching: [
+    {
+      urlPattern: ({ request }) => request.mode === 'navigate',
+      handler: 'StaleWhileRevalidate',
+      options: {
+        cacheName: 'pages',
+        expiration: {
+          maxEntries: 60,
+          maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
+        },
+      },
+    },
+  ],
 });
 
 const nextConfig: NextConfig = {
