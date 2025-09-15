@@ -1,20 +1,35 @@
 
+'use client';
+
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { User, Download, Upload, Palette } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { UserDataSummary } from "@/components/settings/user-data-summary";
 import { LogoutButton } from "@/components/settings/logout-button";
 import { ThemeToggle } from "@/components/settings/theme-toggle";
+import { useAuth } from "@/context/auth-context";
+import { AccountSettingsForm } from "@/components/settings/account-settings-form";
 
 export default function SettingsPage() {
+  const { user } = useAuth();
+  
   return (
     <div className="space-y-6">
-        <div className="flex items-center justify-between">
-            <h1 className="text-3xl font-bold font-headline flex items-center gap-2">
-                <User className="w-8 h-8"/>
-                Account & Settings
-            </h1>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+                <h1 className="text-3xl font-bold font-headline flex items-center gap-2">
+                    <User className="w-8 h-8"/>
+                    Account & Settings
+                </h1>
+                {user && (
+                    <p className="text-muted-foreground mt-1">
+                        {user.displayName} &middot; {user.email}
+                    </p>
+                )}
+            </div>
         </div>
+        
+        <AccountSettingsForm />
         
         <UserDataSummary />
 

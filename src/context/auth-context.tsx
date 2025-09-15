@@ -13,7 +13,7 @@ import {
     updateProfile,
     applyActionCode
 } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, updateDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { usePathname, useSearchParams } from 'next/navigation';
 
@@ -24,6 +24,7 @@ interface AuthContextType {
     signInWithEmail: (email: string, password: string) => Promise<any>;
     signInWithGoogle: () => Promise<any>;
     logout: () => Promise<any>;
+    updateUserProfile: (updates: { displayName: string }) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -69,7 +70,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         await updateProfile(userCredential.user, { displayName });
         
-        // Create a document for the user in Firestore
         await setDoc(doc(db, "users", userCredential.user.uid), {
             uid: userCredential.user.uid,
             displayName,
@@ -90,19 +90,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const result = await signInWithPopup(auth, provider);
         const user = result.user;
 
-        // Create a document for the user in Firestore on Google sign-in as well
         await setDoc(doc(db, "users", user.uid), {
             uid: user.uid,
             displayName: user.displayName,
             email: user.email,
             createdAt: new Date().toISOString(),
-        }, { merge: true }); // Use merge to avoid overwriting existing data if they sign in again
+        }, { merge: true });
 
         return result;
     };
 
     const logout = () => {
         return signOut(auth);
+    };
+
+    const updateUserProfile = async (updates: { displayName: string }) => {
+        if (!auth.currentUser) {
+            throw new Error("No user is signed in.");
+        }
+        await updateProfile(auth.currentUser, updates);
+        const userDocRef = doc(db, 'users', auth.currentUser.uid);
+        await updateDoc(userDocRef, updates);
+        // Manually trigger a state update for the user object
+        setUser({ ...auth.currentUser });
     };
 
     const isPublicRoute = publicRoutes.includes(pathname);
@@ -116,7 +126,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     return (
-        <AuthContext.Provider value={{ user, loading, signUpWithEmail, signInWithEmail, signInWithGoogle, logout }}>
+        <AuthContext.Provider value={{ user, loading, signUpWithEmail, signInWithEmail, signInWithGoogle, logout, updateUserProfile }}>
             {children}
         </AuthContext.Provider>
     );
