@@ -2,10 +2,11 @@
 
 import { GenerateFlashcardsOutput } from '@/ai/flows/generate-flashcards';
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import { useCollection, useDocument } from 'react-firebase-hooks/firestore';
-import { collection, doc, setDoc, deleteDoc } from 'firebase/firestore';
+import { useDocument } from 'react-firebase-hooks/firestore';
+import { doc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/context/auth-context';
 
 type Flashcard = GenerateFlashcardsOutput['flashcards'][0];
 
@@ -20,24 +21,24 @@ type FlashcardsContextType = {
   loading: boolean;
   addFlashcardSet: (title: string, cards: Flashcard[]) => Promise<void>;
   deleteFlashcardSet: (setId: string) => Promise<void>;
-  getFlashcardSet: (setId: string) => FlashcardSet | undefined;
+  getFlashcardSet: (setId: string) => FlashcardSet | null | undefined;
 };
 
 const FlashcardsContext = createContext<FlashcardsContextType | undefined>(undefined);
 
-// In a real app, get from auth
-const USER_ID = 'default-user';
-
 export function FlashcardsProvider({ children }: { children: ReactNode }) {
   const [flashcardSets, setFlashcardSets] = useState<FlashcardSet[]>([]);
   const { toast } = useToast();
+  const { user } = useAuth();
 
-  const userFlashcardsRef = doc(db, 'flashcardSets', USER_ID);
+  const userFlashcardsRef = user ? doc(db, 'flashcardSets', user.uid) : null;
   const [snapshot, loading, error] = useDocument(userFlashcardsRef);
 
   useEffect(() => {
     if (snapshot?.exists()) {
         setFlashcardSets(snapshot.data().sets || []);
+    } else {
+        setFlashcardSets([]);
     }
   }, [snapshot]);
 
@@ -48,25 +49,28 @@ export function FlashcardsProvider({ children }: { children: ReactNode }) {
   }, [error, toast]);
 
   const addFlashcardSet = async (title: string, cards: Flashcard[]) => {
+    if (!userFlashcardsRef) return;
     const newSet: FlashcardSet = {
         id: Date.now().toString(),
         title,
         cards,
     };
     const newSets = [newSet, ...flashcardSets];
-    setFlashcardSets(newSets);
     await setDoc(userFlashcardsRef, { sets: newSets });
+    setFlashcardSets(newSets);
   };
 
   const deleteFlashcardSet = async (setId: string) => {
+    if (!userFlashcardsRef) return;
     const newSets = flashcardSets.filter(set => set.id !== setId);
-    setFlashcardSets(newSets);
     await setDoc(userFlashcardsRef, { sets: newSets });
+    setFlashcardSets(newSets);
     toast({title: "Flashcard set deleted."});
   }
 
   const getFlashcardSet = (setId: string) => {
-    return flashcardSets.find(set => set.id === setId);
+    if (loading) return undefined; // Still loading
+    return flashcardSets.find(set => set.id === setId) || null;
   }
 
   return (

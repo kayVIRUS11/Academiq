@@ -39,15 +39,17 @@ function Flashcard({ card }: { card: { question: string, answer: string } }) {
 }
 
 export default function FlashcardSetPage({ params }: { params: { id: string } }) {
-  const { getFlashcardSet } = useFlashcards();
+  const { getFlashcardSet, loading } = useFlashcards();
   const [flashcardSet, setFlashcardSet] = useState<FlashcardSet | null | undefined>(undefined);
   
   useEffect(() => {
-    const set = getFlashcardSet(params.id);
-    setFlashcardSet(set);
-  }, [params.id, getFlashcardSet]);
+    if (!loading) {
+        const set = getFlashcardSet(params.id);
+        setFlashcardSet(set);
+    }
+  }, [params.id, getFlashcardSet, loading]);
 
-  if (flashcardSet === undefined) {
+  if (flashcardSet === undefined || loading) {
     return (
         <div className="space-y-6">
             <Skeleton className="h-10 w-64 mx-auto" />
