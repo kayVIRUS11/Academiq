@@ -41,6 +41,12 @@ export function FlashcardsProvider({ children }: { children: ReactNode }) {
     }
   }, [snapshot]);
 
+  useEffect(() => {
+    if (error) {
+      toast({title: 'Error loading flashcards', description: error.message, variant: 'destructive'});
+    }
+  }, [error, toast]);
+
   const addFlashcardSet = async (title: string, cards: Flashcard[]) => {
     const newSet: FlashcardSet = {
         id: Date.now().toString(),
@@ -61,10 +67,6 @@ export function FlashcardsProvider({ children }: { children: ReactNode }) {
 
   const getFlashcardSet = (setId: string) => {
     return flashcardSets.find(set => set.id === setId);
-  }
-  
-  if (error) {
-    toast({title: 'Error loading flashcards', description: error.message, variant: 'destructive'});
   }
 
   return (
