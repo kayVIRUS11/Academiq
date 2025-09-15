@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Course, Note } from '@/lib/types';
 import { NoteList } from '@/components/notes/note-list';
 import { NoteEditor } from '@/components/notes/note-editor';
@@ -15,7 +16,7 @@ import { cn } from '@/lib/utils';
 import { useNotes } from './notes-context';
 import { useFlashcards } from '../ai-tools/flashcards/flashcards-context';
 import { generateFlashcards } from '@/ai/flows/generate-flashcards';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useCollection } from 'react-firebase-hooks/firestore';
 import { collection, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -46,9 +47,20 @@ export default function NotesPage() {
   const { toast } = useToast();
   const isMobile = useIsMobile();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { addFlashcardSet } = useFlashcards();
 
   const selectedNote = notes.find(note => note.id === selectedNoteId) || null;
+
+  useEffect(() => {
+    const noteIdFromUrl = searchParams.get('noteId');
+    if (noteIdFromUrl && !selectedNoteId) {
+        if(notes.find(n => n.id === noteIdFromUrl)) {
+            setSelectedNoteId(noteIdFromUrl);
+        }
+    }
+  }, [searchParams, notes, selectedNoteId, setSelectedNoteId]);
+
 
   const handleSelectNote = (id: string) => {
     setSelectedNoteId(id);
@@ -119,12 +131,20 @@ export default function NotesPage() {
     setIsGeneratingFlashcards(true);
     try {
         const result = await generateFlashcards({ notes: selectedNote.content });
-        await addFlashcardSet(selectedNote.title, result.flashcards);
+        if (result.flashcards.length === 0) {
+            toast({
+                title: 'No Flashcards Generated',
+                description: 'The AI could not identify any key concepts to create flashcards from.',
+                variant: 'destructive'
+            });
+            return;
+        }
+        const newSet = await addFlashcardSet(selectedNote.title, result.flashcards);
         toast({
             title: 'Flashcards Generated!',
             description: `A new set with ${result.flashcards.length} cards has been saved.`
         });
-        router.push('/ai-tools/flashcards');
+        router.push(`/ai-tools/flashcards/${newSet.id}`);
     } catch(e) {
         toast({ title: 'Generation Failed', description: 'Could not generate flashcards. Please try again.', variant: 'destructive' });
     } finally {

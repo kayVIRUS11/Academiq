@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -12,6 +13,9 @@ import * as pdfjsLib from 'pdfjs-dist';
 import JSZip from 'jszip';
 import { useNotes } from '@/app/(app)/notes/notes-context';
 import { marked } from 'marked';
+import { ToastAction } from '@/components/ui/toast';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 // Required by pdfjs-dist
 pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
@@ -27,6 +31,7 @@ export function FileSummarizer() {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const { addNote } = useNotes();
+  const router = useRouter();
 
   const handleFileSelect = (selectedFile: File | null) => {
     setFile(selectedFile);
@@ -229,17 +234,18 @@ export function FileSummarizer() {
     }
   };
 
-  const handleAddToNotes = () => {
+  const handleAddToNotes = async () => {
     if (!summary || !file) return;
 
-    addNote({
+    const newNote = await addNote({
         title: `Study Guide: ${file.name}`,
         content: summary,
     });
 
     toast({
         title: 'Added to Notes!',
-        description: 'A new note has been created with the study guide.'
+        description: 'A new note has been created with the study guide.',
+        action: <ToastAction altText="View Note" onClick={() => router.push(`/notes?noteId=${newNote.id}`)}>View Note</ToastAction>
     });
   }
 

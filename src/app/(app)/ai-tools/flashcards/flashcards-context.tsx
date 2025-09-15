@@ -1,3 +1,4 @@
+
 'use client';
 
 import { GenerateFlashcardsOutput } from '@/ai/flows/generate-flashcards';
@@ -19,7 +20,7 @@ export type FlashcardSet = {
 type FlashcardsContextType = {
   flashcardSets: FlashcardSet[];
   loading: boolean;
-  addFlashcardSet: (title: string, cards: Flashcard[]) => Promise<void>;
+  addFlashcardSet: (title: string, cards: Flashcard[]) => Promise<FlashcardSet>;
   deleteFlashcardSet: (setId: string) => Promise<void>;
   getFlashcardSet: (setId: string) => FlashcardSet | null | undefined;
 };
@@ -48,8 +49,8 @@ export function FlashcardsProvider({ children }: { children: ReactNode }) {
     }
   }, [error, toast]);
 
-  const addFlashcardSet = async (title: string, cards: Flashcard[]) => {
-    if (!userFlashcardsRef) return;
+  const addFlashcardSet = async (title: string, cards: Flashcard[]): Promise<FlashcardSet> => {
+    if (!userFlashcardsRef) throw new Error("User not authenticated");
     const newSet: FlashcardSet = {
         id: Date.now().toString(),
         title,
@@ -58,6 +59,7 @@ export function FlashcardsProvider({ children }: { children: ReactNode }) {
     const newSets = [newSet, ...flashcardSets];
     await setDoc(userFlashcardsRef, { sets: newSets });
     setFlashcardSets(newSets);
+    return newSet;
   };
 
   const deleteFlashcardSet = async (setId: string) => {
