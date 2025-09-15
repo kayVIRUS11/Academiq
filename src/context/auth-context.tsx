@@ -10,10 +10,11 @@ import {
     GoogleAuthProvider,
     signOut,
     sendEmailVerification,
-    updateProfile
+    updateProfile,
+    applyActionCode
 } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 
 interface AuthContextType {
     user: User | null;
@@ -32,6 +33,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
     const pathname = usePathname();
+    const searchParams = useSearchParams();
+
+    useEffect(() => {
+        const handleEmailVerification = async () => {
+            const mode = searchParams.get('mode');
+            const actionCode = searchParams.get('oobCode');
+
+            if (mode === 'verifyEmail' && actionCode) {
+                try {
+                    await applyActionCode(auth, actionCode);
+                    // Redirect to login with a success message
+                    window.location.href = '/login?verified=true';
+                } catch (error) {
+                    console.error("Error verifying email:", error);
+                    // Optionally, redirect to an error page
+                }
+            }
+        };
+
+        handleEmailVerification();
+    }, [searchParams]);
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (user) => {
