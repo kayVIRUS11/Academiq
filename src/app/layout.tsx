@@ -3,6 +3,7 @@ import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { FirebaseProvider } from '@/lib/firebase-provider';
 import { ThemeProvider } from 'next-themes';
+import { AuthProvider } from '@/context/auth-context';
 
 export const metadata: Metadata = {
   title: 'Academiq',
@@ -37,10 +38,12 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
         >
-            <FirebaseProvider>
-                {children}
-                <Toaster />
-            </FirebaseProvider>
+            <AuthProvider>
+                <FirebaseProvider>
+                    {children}
+                    <Toaster />
+                </FirebaseProvider>
+            </AuthProvider>
         </ThemeProvider>
       </body>
     </html>

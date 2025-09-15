@@ -19,7 +19,9 @@ const auth = getAuth(app);
 
 // Enable offline persistence
 try {
-    enableIndexedDbPersistence(db);
+    if (typeof window !== 'undefined') {
+        enableIndexedDbPersistence(db);
+    }
 } catch (err: any) {
     if (err.code == 'failed-precondition') {
         // Multiple tabs open, persistence can only be enabled

@@ -3,14 +3,34 @@
 import { Header } from '@/components/header';
 import { SidebarNav } from '@/components/sidebar-nav';
 import { SidebarProvider } from '@/components/ui/sidebar';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { NotesProvider } from './notes/notes-context';
 import { ActivitiesProvider } from './daily-activities/activities-context';
 import { FlashcardsProvider } from './ai-tools/flashcards/flashcards-context';
 import { WeeklyPlanProvider } from './weekly-plan/weekly-plan-context';
 import { PomodoroProvider } from '@/context/pomodoro-context';
+import { useAuth } from '@/context/auth-context';
+import { useRouter } from 'next/navigation';
+import { Loader2 } from 'lucide-react';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push('/login');
+    }
+  }, [user, loading, router]);
+
+  if (loading || !user) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <Loader2 className="h-16 w-16 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   return (
     <SidebarProvider>
       <ActivitiesProvider>

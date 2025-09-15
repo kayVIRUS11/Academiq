@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from "react";
@@ -15,12 +14,16 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { LogOut } from "lucide-react";
+import { useAuth } from "@/context/auth-context";
+import { useRouter } from "next/navigation";
 
 export function LogoutButton() {
-  const handleLogout = () => {
-    // In a real app, this would clear tokens, etc.
-    // For this mock app, we will just reload to clear in-memory state.
-    window.location.href = '/'; 
+  const { logout } = useAuth();
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    await logout();
+    router.push('/login');
   };
 
   return (
@@ -35,7 +38,7 @@ export function LogoutButton() {
         <AlertDialogHeader>
           <AlertDialogTitle>Are you sure you want to log out?</AlertDialogTitle>
           <AlertDialogDescription>
-            This will clear all your current session data. In this demo app, this means all your notes, tasks, and plans will be reset to their initial state upon logging back in.
+            You will be returned to the login page.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
@@ -46,4 +49,3 @@ export function LogoutButton() {
     </AlertDialog>
   );
 }
-
