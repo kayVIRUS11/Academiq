@@ -1,37 +1,54 @@
-
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // Helper function to check ownership
+    
     function isOwner(userId) {
       return request.auth.uid == userId;
     }
 
-    // Users can only read their own user document
     match /users/{userId} {
-      allow read: if isOwner(userId);
-      allow create: if isOwner(userId);
-    }
-    
-    // Generic rule for collections with a 'uid' field
-    match /{collection}/{docId} {
-      // These collections all have a 'uid' field for ownership
-      where collection in ['courses', 'goals', 'notes', 'study-sessions', 'tasks', 'timetable']
-      allow read, write: if request.auth != null && resource.data.uid == request.auth.uid;
-      allow create: if request.auth != null && request.resource.data.uid == request.auth.uid;
+      allow read, write: if isOwner(userId);
     }
 
-    // Rules for collections where the document ID is the user's UID
+    match /courses/{courseId} {
+      allow read, write: if isOwner(resource.data.uid);
+      allow create: if isOwner(request.resource.data.uid);
+    }
+
+    match /tasks/{taskId} {
+      allow read, write: if isOwner(resource.data.uid);
+      allow create: if isOwner(request.resource.data.uid);
+    }
+    
+    match /goals/{goalId} {
+      allow read, write: if isOwner(resource.data.uid);
+      allow create: if isOwner(request.resource.data.uid);
+    }
+    
+    match /notes/{noteId} {
+      allow read, write: if isOwner(resource.data.uid);
+      allow create: if isOwner(request.resource.data.uid);
+    }
+    
+    match /timetable/{entryId} {
+      allow read, write: if isOwner(resource.data.uid);
+      allow create: if isOwner(request.resource.data.uid);
+    }
+    
+    match /study-sessions/{sessionId} {
+      allow read, write: if isOwner(resource.data.uid);
+      allow create: if isOwner(request.resource.data.uid);
+    }
+    
     match /dailyActivities/{userId} {
-      allow read, write: if isOwner(userId);
+        allow read, write: if isOwner(userId);
     }
 
     match /flashcardSets/{userId} {
         allow read, write: if isOwner(userId);
     }
-    
+
     match /weeklyPlans/{userId} {
         allow read, write: if isOwner(userId);
     }
