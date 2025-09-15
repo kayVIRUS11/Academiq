@@ -1,47 +1,39 @@
+
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Allow users to read and write their own user document
+
+    // Helper function to check ownership
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    // Users can only read their own user document
     match /users/{userId} {
-      allow read, update, delete: if request.auth.uid == userId;
-      allow create: if request.auth.uid != null;
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId);
+    }
+    
+    // Generic rule for collections with a 'uid' field
+    match /{collection}/{docId} {
+      // These collections all have a 'uid' field for ownership
+      where collection in ['courses', 'goals', 'notes', 'study-sessions', 'tasks', 'timetable']
+      allow read, write: if request.auth != null && resource.data.uid == request.auth.uid;
+      allow create: if request.auth != null && request.resource.data.uid == request.auth.uid;
     }
 
-    // Collections where the document ID is the user's UID
-    match /flashcardSets/{userId} {
-      allow read, write: if request.auth.uid == userId;
-    }
+    // Rules for collections where the document ID is the user's UID
     match /dailyActivities/{userId} {
-      allow read, write: if request.auth.uid == userId;
-    }
-    match /weeklyPlans/{userId} {
-      allow read, write: if request.auth.uid == userId;
+      allow read, write: if isOwner(userId);
     }
 
-    // Collections where documents have a 'uid' field for ownership
-    match /courses/{docId} {
-      allow read, write: if request.auth.uid == resource.data.uid;
-      allow create: if request.auth.uid != null;
+    match /flashcardSets/{userId} {
+        allow read, write: if isOwner(userId);
     }
-    match /goals/{docId} {
-      allow read, write: if request.auth.uid == resource.data.uid;
-      allow create: if request.auth.uid != null;
-    }
-    match /notes/{docId} {
-      allow read, write: if request.auth.uid == resource.data.uid;
-      allow create: if request.auth.uid != null;
-    }
-     match /study-sessions/{docId} {
-      allow read, write: if request.auth.uid == resource.data.uid;
-      allow create: if request.auth.uid != null;
-    }
-     match /tasks/{docId} {
-      allow read, write: if request.auth.uid == resource.data.uid;
-      allow create: if request.auth.uid != null;
-    }
-     match /timetable/{docId} {
-      allow read, write: if request.auth.uid == resource.data.uid;
-      allow create: if request.auth.uid != null;
+    
+    match /weeklyPlans/{userId} {
+        allow read, write: if isOwner(userId);
     }
   }
 }
