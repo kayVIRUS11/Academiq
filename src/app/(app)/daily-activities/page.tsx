@@ -3,20 +3,22 @@
 import { useDailyActivities } from "./activities-context";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { ClipboardCheck, Sparkles } from "lucide-react";
+import { ClipboardCheck, Sparkles, Plus, Edit, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { Progress } from "@/components/ui/progress";
 import { useEffect, useState } from "react";
-import { DayOfWeek } from "@/lib/types";
+import { DailyActivity, DayOfWeek } from "@/lib/types";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { ActivityDialog } from "./activity-dialog";
 
 const days: DayOfWeek[] = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
 function DailyPlanView({ day }: { day: DayOfWeek }) {
-    const { weeklyActivities, updateActivitiesForDay } = useDailyActivities();
+    const { weeklyActivities, updateActivitiesForDay, addActivity, deleteActivity, toggleActivity } = useDailyActivities();
     const [progress, setProgress] = useState(0);
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [editingActivity, setEditingActivity] = useState<DailyActivity | null>(null);
 
     const activities = weeklyActivities[day] || [];
 
@@ -26,9 +28,27 @@ function DailyPlanView({ day }: { day: DayOfWeek }) {
         setProgress(totalCount > 0 ? (completedCount / totalCount) * 100 : 0);
     }, [activities]);
 
-    const handleToggleActivity = (activityId: string) => {
-        const newActivities = activities.map(act => act.id === activityId ? {...act, completed: !act.completed} : act);
-        updateActivitiesForDay(day, newActivities);
+    const handleSaveActivity = (activity: Omit<DailyActivity, 'id' | 'completed'>, id?: string) => {
+        if (id) { // Editing existing activity
+            const updatedActivities = activities.map(act => act.id === id ? {...act, ...activity} : act);
+            updateActivitiesForDay(day, updatedActivities);
+        } else { // Adding new activity
+            addActivity(day, activity);
+        }
+    }
+    
+    const handleDelete = (activityId: string) => {
+        deleteActivity(day, activityId);
+    }
+    
+    const handleEdit = (activity: DailyActivity) => {
+        setEditingActivity(activity);
+        setIsDialogOpen(true);
+    }
+
+    const handleAddNew = () => {
+        setEditingActivity(null);
+        setIsDialogOpen(true);
     }
     
     if (activities.length === 0) {
@@ -37,24 +57,42 @@ function DailyPlanView({ day }: { day: DayOfWeek }) {
                 <ClipboardCheck className="w-16 h-16 text-muted-foreground/50"/>
                 <h2 className="text-xl font-semibold">No Plan for {day}</h2>
                 <p className="text-muted-foreground max-w-sm">
-                    You haven't saved a plan for this day yet. Use the AI planner to generate one!
+                    You haven't saved a plan for this day yet. Add an activity or use the AI planner to generate one!
                 </p>
-                <Link href="/ai-tools/daily-planner">
-                    <Button>
-                        <Sparkles className="mr-2"/>
-                        Create a Plan
+                <div className="flex gap-4">
+                    <Button onClick={handleAddNew}>
+                        <Plus className="mr-2"/>
+                        Add Activity
                     </Button>
-                </Link>
+                    <Button variant="outline" asChild>
+                        <Link href="/ai-tools/daily-planner">
+                            <Sparkles className="mr-2"/>
+                            AI Planner
+                        </Link>
+                    </Button>
+                </div>
             </div>
         )
     }
 
     return (
          <div className="space-y-6">
+            <ActivityDialog 
+                isOpen={isDialogOpen}
+                onOpenChange={setIsDialogOpen}
+                onSave={handleSaveActivity}
+                activity={editingActivity}
+            />
             <Card>
-                <CardHeader>
-                    <CardTitle>{day}'s Progress</CardTitle>
-                    <CardDescription>You've completed {Math.round(progress)}% of your plan.</CardDescription>
+                <CardHeader className="flex flex-row items-center justify-between">
+                    <div>
+                        <CardTitle>{day}'s Progress</CardTitle>
+                        <CardDescription>You've completed {Math.round(progress)}% of your plan.</CardDescription>
+                    </div>
+                     <Button onClick={handleAddNew}>
+                        <Plus className="mr-2"/>
+                        Add Activity
+                    </Button>
                 </CardHeader>
                 <CardContent>
                     <Progress value={progress} />
@@ -65,20 +103,28 @@ function DailyPlanView({ day }: { day: DayOfWeek }) {
                     <CardTitle>Your Schedule</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <div className="space-y-4">
-                        {activities.map((activity) => (
-                            <div key={activity.id} className={cn("flex items-start gap-4 p-4 rounded-lg", activity.completed ? "bg-secondary" : "bg-transparent")}>
-                                <Checkbox 
-                                    id={`activity-${day}-${activity.id}`}
-                                    className="mt-1"
-                                    checked={activity.completed}
-                                    onCheckedChange={() => handleToggleActivity(activity.id)}
-                                />
-                                <div className="grid gap-1.5">
-                                    <label htmlFor={`activity-${day}-${activity.id}`} className={cn("font-semibold cursor-pointer", activity.completed && "line-through text-muted-foreground")}>
-                                        {activity.activity}
-                                    </label>
-                                    <p className="text-sm text-muted-foreground">{activity.time}</p>
+                    <div className="space-y-1">
+                        {activities.sort((a,b) => a.time.localeCompare(b.time)).map((activity) => (
+                            <div key={activity.id} className={cn("flex items-start gap-4 p-3 rounded-lg group", activity.completed && "opacity-60")}>
+                                <div className="flex-1 flex items-start gap-4 cursor-pointer" onClick={() => toggleActivity(day, activity.id)}>
+                                    <div className={cn("mt-1 flex h-5 w-5 items-center justify-center rounded-sm border border-primary", activity.completed && "bg-primary text-primary-foreground")}>
+                                        {activity.completed && <ClipboardCheck className="h-3 w-3"/>}
+                                    </div>
+                                    
+                                    <div className="grid gap-1.5">
+                                        <span className={cn("font-semibold", activity.completed && "line-through text-muted-foreground")}>
+                                            {activity.activity}
+                                        </span>
+                                        <p className="text-sm text-muted-foreground">{activity.time}</p>
+                                    </div>
+                                </div>
+                                <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+                                    <Button variant="ghost" size="icon" onClick={() => handleEdit(activity)}>
+                                        <Edit className="h-4 w-4"/>
+                                    </Button>
+                                    <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => handleDelete(activity.id)}>
+                                        <Trash2 className="h-4 w-4"/>
+                                    </Button>
                                 </div>
                             </div>
                         ))}
@@ -102,7 +148,7 @@ export default function DailyActivitiesPage() {
                 </div>
                 <h1 className="text-4xl font-bold font-headline">Weekly Activities</h1>
                 <p className="text-muted-foreground mt-2 max-w-2xl">
-                    View and manage your saved daily plans for the week. Stay focused and productive!
+                    View, manage, and edit your daily plans for the week. Stay focused and productive!
                 </p>
             </div>
             

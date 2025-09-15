@@ -13,6 +13,9 @@ type ActivitiesContextType = {
   loading: boolean;
   savePlanForDay: (day: DayOfWeek, activities: Omit<DailyActivity, 'id' | 'completed'>[]) => void;
   updateActivitiesForDay: (day: DayOfWeek, activities: DailyActivity[]) => void;
+  addActivity: (day: DayOfWeek, activity: Omit<DailyActivity, 'id' | 'completed'>) => void;
+  deleteActivity: (day: DayOfWeek, activityId: string) => void;
+  toggleActivity: (day: DayOfWeek, activityId: string) => void;
 };
 
 const ActivitiesContext = createContext<ActivitiesContextType | undefined>(undefined);
@@ -39,8 +42,13 @@ export function ActivitiesProvider({ children }: { children: ReactNode }) {
     }
   }, [error, toast]);
 
-  const savePlanForDay = async (day: DayOfWeek, activities: Omit<DailyActivity, 'id' | 'completed'>[]) => {
+  const updateFirestore = async (newWeeklyActivities: WeeklyActivities) => {
     if (!activitiesRef) return;
+    await setDoc(activitiesRef, newWeeklyActivities, { merge: true });
+    setWeeklyActivities(newWeeklyActivities);
+  }
+
+  const savePlanForDay = (day: DayOfWeek, activities: Omit<DailyActivity, 'id' | 'completed'>[]) => {
     const newActivities: DailyActivity[] = activities.map((a, index) => ({
         ...a, 
         id: `${Date.now()}-${index}`,
@@ -52,22 +60,44 @@ export function ActivitiesProvider({ children }: { children: ReactNode }) {
       [day]: newActivities,
     };
     
-    await setDoc(activitiesRef, newWeeklyActivities);
-    setWeeklyActivities(newWeeklyActivities);
+    updateFirestore(newWeeklyActivities);
   }
   
-  const updateActivitiesForDay = async (day: DayOfWeek, activities: DailyActivity[]) => {
-    if (!activitiesRef) return;
+  const updateActivitiesForDay = (day: DayOfWeek, activities: DailyActivity[]) => {
     const newWeeklyActivities = {
       ...weeklyActivities,
       [day]: activities,
     };
-    await setDoc(activitiesRef, newWeeklyActivities);
-    setWeeklyActivities(newWeeklyActivities);
+    updateFirestore(newWeeklyActivities);
+  }
+
+  const addActivity = (day: DayOfWeek, activity: Omit<DailyActivity, 'id' | 'completed'>) => {
+    const newActivity: DailyActivity = {
+        ...activity,
+        id: Date.now().toString(),
+        completed: false
+    };
+    const dayActivities = weeklyActivities[day] || [];
+    const newDayActivities = [...dayActivities, newActivity];
+    updateActivitiesForDay(day, newDayActivities);
+  };
+
+  const deleteActivity = (day: DayOfWeek, activityId: string) => {
+    const dayActivities = weeklyActivities[day] || [];
+    const newDayActivities = dayActivities.filter(act => act.id !== activityId);
+    updateActivitiesForDay(day, newDayActivities);
+  }
+  
+  const toggleActivity = (day: DayOfWeek, activityId: string) => {
+    const dayActivities = weeklyActivities[day] || [];
+    const newDayActivities = dayActivities.map(act => 
+        act.id === activityId ? { ...act, completed: !act.completed } : act
+    );
+    updateActivitiesForDay(day, newDayActivities);
   }
 
   return (
-    <ActivitiesContext.Provider value={{ weeklyActivities, loading, savePlanForDay, updateActivitiesForDay }}>
+    <ActivitiesContext.Provider value={{ weeklyActivities, loading, savePlanForDay, updateActivitiesForDay, addActivity, deleteActivity, toggleActivity }}>
       {children}
     </ActivitiesContext.Provider>
   );

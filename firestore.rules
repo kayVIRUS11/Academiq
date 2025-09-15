@@ -1,15 +1,47 @@
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Allow users to read and write their own data
+    // Allow users to read and write their own user document
     match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read, update, delete: if request.auth.uid == userId;
+      allow create: if request.auth.uid != null;
     }
 
-    // Lock down all other collections by default
-    match /{document=**} {
-      allow read, write: if false;
+    // Collections where the document ID is the user's UID
+    match /flashcardSets/{userId} {
+      allow read, write: if request.auth.uid == userId;
+    }
+    match /dailyActivities/{userId} {
+      allow read, write: if request.auth.uid == userId;
+    }
+    match /weeklyPlans/{userId} {
+      allow read, write: if request.auth.uid == userId;
+    }
+
+    // Collections where documents have a 'uid' field for ownership
+    match /courses/{docId} {
+      allow read, write: if request.auth.uid == resource.data.uid;
+      allow create: if request.auth.uid != null;
+    }
+    match /goals/{docId} {
+      allow read, write: if request.auth.uid == resource.data.uid;
+      allow create: if request.auth.uid != null;
+    }
+    match /notes/{docId} {
+      allow read, write: if request.auth.uid == resource.data.uid;
+      allow create: if request.auth.uid != null;
+    }
+     match /study-sessions/{docId} {
+      allow read, write: if request.auth.uid == resource.data.uid;
+      allow create: if request.auth.uid != null;
+    }
+     match /tasks/{docId} {
+      allow read, write: if request.auth.uid == resource.data.uid;
+      allow create: if request.auth.uid != null;
+    }
+     match /timetable/{docId} {
+      allow read, write: if request.auth.uid == resource.data.uid;
+      allow create: if request.auth.uid != null;
     }
   }
 }
