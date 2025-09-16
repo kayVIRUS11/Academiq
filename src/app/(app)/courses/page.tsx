@@ -1,3 +1,4 @@
+
 'use client';
 
 import { BookCopy } from 'lucide-react';
@@ -9,11 +10,6 @@ import { useCourses } from '@/context/courses-context';
 
 export default function CoursesPage() {
   const { courses, addCourse, updateCourse, deleteCourse, loading } = useCourses();
-
-  const handleUpdateCourse = async (updatedCourse: Course) => {
-    const { id, uid, ...updateData } = updatedCourse;
-    await updateCourse(id, updateData);
-  }
 
   return (
     <div className="space-y-6">
@@ -34,7 +30,7 @@ export default function CoursesPage() {
       ) : (
         <CourseList 
           courses={courses} 
-          onUpdateCourse={handleUpdateCourse} 
+          onUpdateCourse={updateCourse} 
           onDeleteCourse={deleteCourse}
         />
       )}

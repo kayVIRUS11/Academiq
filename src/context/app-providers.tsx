@@ -1,3 +1,4 @@
+
 'use client';
 
 import React from 'react';
@@ -12,6 +13,7 @@ import { CoursesProvider } from './courses-context';
 import { Course } from '@/lib/types';
 import { SidebarProvider } from '@/hooks/use-sidebar';
 import { SidebarLayout } from '@/components/sidebar-layout';
+import { useOnlineStatus } from '@/hooks/use-online-status';
 
 export function AppProviders({
   children,
@@ -21,6 +23,7 @@ export function AppProviders({
   courses: Course[];
 }) {
     const { user, loading } = useAuth();
+    const isOnline = useOnlineStatus(); // Initialize hook to listen for status changes
     
     if (loading || !user) {
         return (

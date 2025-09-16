@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Course } from '@/lib/types';
@@ -5,6 +6,8 @@ import React, { createContext, useContext, useState, ReactNode, useCallback } fr
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import { supabase } from '@/lib/supabase';
+import { useOnlineStatus } from '@/hooks/use-online-status';
+import { queueRequest } from '@/lib/offline-sync';
 
 type CoursesContextType = {
   courses: Course[];
@@ -20,57 +23,129 @@ const CoursesContext = createContext<CoursesContextType | undefined>(undefined);
 export function CoursesProvider({ children, initialCourses }: { children: ReactNode, initialCourses: Course[] }) {
   const [courses, setCourses] = useState<Course[]>(initialCourses || []);
   const [loading, setLoading] = useState(false);
-
   const { toast } = useToast();
   const { user } = useAuth();
+  const isOnline = useOnlineStatus();
+
+  const fetchCourses = useCallback(async () => {
+    if (!user) return;
+    setLoading(true);
+    const { data, error } = await supabase.from('courses').select('*').eq('uid', user.id);
+    if (error) {
+      toast({ title: 'Error loading courses', description: error.message, variant: 'destructive'});
+    } else {
+      setCourses(data.map(c => ({...c, courseCode: c.course_code})) as Course[]);
+    }
+    setLoading(false);
+  }, [user, toast]);
+
   
   const addCourse = async (newCourseData: Omit<Course, 'id' | 'uid'>) => {
     if (!user) {
         toast({ title: 'You must be logged in', variant: 'destructive' });
         return;
     }
-    setLoading(true);
+
+    const tempId = `temp-${Date.now()}`;
+    const newCourse: Course = { ...newCourseData, id: tempId, uid: user.id };
+
+    // Optimistic UI update
+    setCourses(prev => [...prev, newCourse]);
+    toast({ title: 'Course added!' });
+
+    if (!isOnline) {
+      const { courseCode, ...rest } = newCourseData;
+      const body = { ...rest, course_code: courseCode, uid: user.id };
+      await queueRequest(
+        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/courses`,
+        'POST',
+        body,
+        { 
+          'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=minimal',
+         }
+      );
+      return;
+    }
+    
     const { courseCode, ...rest } = newCourseData;
     const { data, error } = await supabase.from('courses').insert({ ...rest, course_code: courseCode, uid: user.id }).select();
     
     if (error) {
       console.error(error);
       toast({ title: 'Error adding course', variant: 'destructive' });
+      // Revert optimistic update
+      setCourses(prev => prev.filter(c => c.id !== tempId));
     } else {
-      const addedCourse = data[0];
-      setCourses(prev => [...prev, {...addedCourse, courseCode: addedCourse.course_code}]);
-      toast({ title: 'Course added!' });
+        // Refetch to get the real ID from the database
+        fetchCourses();
     }
-    setLoading(false);
   };
 
   const updateCourse = async (id: string, updatedData: Partial<Omit<Course, 'id' | 'uid'>>) => {
-    setLoading(true);
+    const originalCourses = [...courses];
+    // Optimistic update
+    setCourses(prev => prev.map(c => c.id === id ? { ...c, ...updatedData } : c));
+
+    if (!isOnline) {
+        const { courseCode, ...rest } = updatedData;
+        const body = { ...rest, course_code: courseCode };
+        await queueRequest(
+            `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/courses?id=eq.${id}`,
+            'PUT',
+            body,
+            { 
+                'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+                'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!}`,
+                'Content-Type': 'application/json',
+                'Prefer': 'return=minimal',
+            }
+        );
+        toast({ title: 'Course updated locally.' });
+        return;
+    }
+
     const { courseCode, ...rest } = updatedData;
-    const { data, error } = await supabase.from('courses').update({ ...rest, course_code: courseCode }).eq('id', id).select();
+    const { error } = await supabase.from('courses').update({ ...rest, course_code: courseCode }).eq('id', id);
     
     if (error) {
       console.error(error);
       toast({ title: 'Error updating course', description: error.message, variant: 'destructive' });
+      setCourses(originalCourses); // Revert on error
     } else {
-      const newCourse = data[0];
-      setCourses(prev => prev.map(c => c.id === id ? {...newCourse, courseCode: newCourse.course_code} : c));
       toast({ title: 'Course updated!' });
     }
-    setLoading(false);
   }
 
   const deleteCourse = async (id: string) => {
-    setLoading(true);
+    const originalCourses = [...courses];
+    // Optimistic delete
+    setCourses(prev => prev.filter(c => c.id !== id));
+    
+    if (!isOnline) {
+        await queueRequest(
+            `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/courses?id=eq.${id}`,
+            'DELETE',
+            {},
+            { 
+                'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+                'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!}`,
+            }
+        );
+        toast({ title: 'Course deleted locally.'});
+        return;
+    }
+
     const { error } = await supabase.from('courses').delete().eq('id', id);
     if (error) {
         console.error(error);
         toast({ title: 'Error deleting course', description: error.message, variant: 'destructive' });
+        setCourses(originalCourses); // Revert on error
     } else {
-        setCourses(prev => prev.filter(c => c.id !== id));
         toast({ title: 'Course deleted!' });
     }
-    setLoading(false);
   }
 
   const getCourse = useCallback((id: string) => {

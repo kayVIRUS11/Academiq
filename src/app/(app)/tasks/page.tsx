@@ -1,3 +1,4 @@
+
 'use client';
 
 import { ListTodo } from 'lucide-react';
@@ -10,6 +11,8 @@ import { useAuth } from '@/context/auth-context';
 import { supabase } from '@/lib/supabase';
 import { useState, useEffect, useCallback } from 'react';
 import { useCourses } from '@/context/courses-context';
+import { useOnlineStatus } from '@/hooks/use-online-status';
+import { queueRequest } from '@/lib/offline-sync';
 
 export default function TasksPage() {
   const { toast } = useToast();
@@ -17,6 +20,7 @@ export default function TasksPage() {
   const { courses } = useCourses();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
+  const isOnline = useOnlineStatus();
 
   const fetchTasks = useCallback(async () => {
     if (!user) return;
@@ -34,66 +38,147 @@ export default function TasksPage() {
     fetchTasks();
   }, [fetchTasks]);
 
-  const handleAddTask = async (newTask: Omit<Task, 'id' | 'completed' | 'uid'>) => {
+  const handleAddTask = async (newTaskData: Omit<Task, 'id' | 'completed' | 'uid'>) => {
     if (!user) {
         toast({ title: 'You must be logged in', variant: 'destructive' });
         return;
     }
-    const { dueDate, courseId, ...rest } = newTask;
-    const { data, error } = await supabase.from('tasks').insert({
+    const tempId = `temp-${Date.now()}`;
+    const newTask: Task = {
+        ...newTaskData,
+        id: tempId,
+        uid: user.id,
+        completed: false
+    };
+
+    setTasks(prev => [...prev, newTask]);
+    toast({ title: 'Task added!' });
+
+    if (!isOnline) {
+        const { dueDate, courseId, ...rest } = newTaskData;
+        const body = { ...rest, due_date: dueDate, course_id: courseId, uid: user.id, completed: false };
+        await queueRequest(
+            `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/tasks`,
+            'POST',
+            body,
+            { 
+                'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+                'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!}`,
+                'Content-Type': 'application/json',
+                'Prefer': 'return=minimal',
+            }
+        );
+        return;
+    }
+
+    const { dueDate, courseId, ...rest } = newTaskData;
+    const { error } = await supabase.from('tasks').insert({
         ...rest,
         due_date: dueDate,
         course_id: courseId,
         completed: false,
         uid: user.id,
-      }).select();
+      });
 
     if (error) {
       console.error(error);
       toast({ title: 'Error adding task', variant: 'destructive' });
+      // Revert optimistic update
+      setTasks(prev => prev.filter(t => t.id !== tempId));
     } else {
-      const addedTask = data[0];
-      setTasks(prev => [...prev, {...addedTask, dueDate: addedTask.due_date, courseId: addedTask.course_id}]);
-      toast({ title: 'Task added!' });
+      // Re-fetch to get the real ID, or ideally get it from response
+      fetchTasks();
     }
   };
 
   const handleUpdateTask = async (updatedTask: Task) => {
+    const originalTasks = [...tasks];
+    setTasks(prev => prev.map(t => t.id === updatedTask.id ? updatedTask : t));
+
+    if (!isOnline) {
+        const { id, uid, dueDate, courseId, ...taskData } = updatedTask;
+        const body = { ...taskData, due_date: dueDate, course_id: courseId };
+        await queueRequest(
+            `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/tasks?id=eq.${id}`,
+            'PUT',
+            body,
+            { 
+                'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+                'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!}`,
+                'Content-Type': 'application/json',
+                'Prefer': 'return=minimal',
+            }
+        );
+        toast({ title: 'Task updated locally.' });
+        return;
+    }
+
     try {
       const { id, uid, dueDate, courseId, ...taskData } = updatedTask;
-      const { data, error } = await supabase.from('tasks').update({ ...taskData, due_date: dueDate, course_id: courseId }).eq('id', id).select();
+      const { error } = await supabase.from('tasks').update({ ...taskData, due_date: dueDate, course_id: courseId }).eq('id', id);
       if (error) throw error;
-      const newTask = data[0];
-      setTasks(prev => prev.map(t => t.id === id ? {...newTask, dueDate: newTask.due_date, courseId: newTask.course_id} : t));
       toast({ title: 'Task updated.' });
     } catch (e: any) {
       console.error(e);
       toast({ title: 'Error updating task', description: e.message, variant: 'destructive' });
+      setTasks(originalTasks); // Revert
     }
   };
 
   const handleDeleteTask = async (taskId: string) => {
+    const originalTasks = [...tasks];
+    setTasks(prev => prev.filter(t => t.id !== taskId));
+
+    if (!isOnline) {
+        await queueRequest(
+            `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/tasks?id=eq.${taskId}`,
+            'DELETE',
+            {},
+            { 
+                'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+                'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!}`,
+            }
+        );
+        toast({ title: 'Task deleted locally.' });
+        return;
+    }
+
     try {
       await supabase.from('tasks').delete().eq('id', taskId);
-      setTasks(prev => prev.filter(t => t.id !== taskId));
       toast({ title: 'Task deleted.' });
     } catch (e: any) {
       console.error(e);
       toast({ title: 'Error deleting task', description: e.message, variant: 'destructive' });
+      setTasks(originalTasks); // Revert
     }
   };
   
-  const handleToggleTask = async (taskId: string) => {
+  const handleToggleTask = async (taskId: string, currentStatus: boolean) => {
+     const originalTasks = [...tasks];
+     setTasks(prev => prev.map(t => t.id === taskId ? { ...t, completed: !currentStatus } : t));
+
+     if(!isOnline) {
+        await queueRequest(
+            `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/tasks?id=eq.${taskId}`,
+            'PUT',
+            { completed: !currentStatus },
+            { 
+                'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+                'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!}`,
+                'Content-Type': 'application/json',
+                'Prefer': 'return=minimal',
+            }
+        );
+        return;
+     }
+
     try {
-      const task = tasks.find(t => t.id === taskId);
-      if (!task) return;
-      const { data, error } = await supabase.from('tasks').update({ completed: !task.completed }).eq('id', taskId).select();
+      const { error } = await supabase.from('tasks').update({ completed: !currentStatus }).eq('id', taskId);
       if (error) throw error;
-      const updatedTask = data[0];
-      setTasks(prev => prev.map(t => t.id === taskId ? {...updatedTask, dueDate: updatedTask.due_date, courseId: updatedTask.course_id} : t));
     } catch (e: any) {
       console.error(e);
       toast({ title: 'Error toggling task', description: e.message, variant: 'destructive' });
+      setTasks(originalTasks); // Revert
     }
   };
   
@@ -118,7 +203,10 @@ export default function TasksPage() {
           tasks={tasks} 
           onUpdateTask={handleUpdateTask} 
           onDeleteTask={handleDeleteTask}
-          onToggleTask={handleToggleTask}
+          onToggleTask={(id) => {
+            const task = tasks.find(t => t.id === id);
+            if (task) handleToggleTask(id, task.completed);
+          }}
           courses={courses}
         />
       )}
