@@ -1,21 +1,20 @@
 'use client';
 
-import { useSidebar } from '@/hooks/use-sidebar.tsx';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useSidebar } from '@/hooks/use-sidebar';
 import { cn } from '@/lib/utils';
 import { SidebarNav } from './sidebar-nav';
 import { Sheet, SheetContent } from './ui/sheet';
 import { Button } from './ui/button';
 import { PanelLeftClose } from 'lucide-react';
+import { Logo } from './logo';
 
 export function Sidebar() {
-  const { isOpen, setOpen, toggle } = useSidebar();
-  const isMobile = useIsMobile();
+  const { isOpen, setOpen, toggle, isMobile } = useSidebar();
 
   if (isMobile) {
     return (
       <Sheet open={isOpen} onOpenChange={setOpen}>
-        <SheetContent side="left" className="p-0 pt-12 w-72">
+        <SheetContent side="left" className="p-0 pt-12 w-72" showCloseButton={true}>
           <SidebarNav onLinkClick={() => setOpen(false)} />
         </SheetContent>
       </Sheet>
@@ -25,8 +24,8 @@ export function Sidebar() {
   return (
     <aside
       className={cn(
-        'fixed inset-y-0 left-0 z-40 h-full flex-col border-r bg-background transition-all duration-300 ease-in-out hidden md:flex',
-        isOpen ? 'w-72' : 'w-20'
+        'fixed inset-y-0 left-0 z-40 h-full flex-col border-r bg-background transition-transform duration-300 ease-in-out hidden md:flex',
+        isOpen ? 'translate-x-0 w-72' : '-translate-x-full w-0'
       )}
     >
       <div className="flex h-full max-h-screen flex-col">
@@ -35,7 +34,8 @@ export function Sidebar() {
         </div>
         <div className="p-4 border-t">
           <Button variant="ghost" className="w-full justify-center" size="icon" onClick={toggle}>
-            <PanelLeftClose className={cn('transition-transform', isOpen && 'rotate-180')} />
+            <PanelLeftClose className={cn('transition-transform', !isOpen && 'rotate-180')} />
+            <span className="sr-only">Toggle Sidebar</span>
           </Button>
         </div>
       </div>

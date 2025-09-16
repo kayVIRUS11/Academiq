@@ -1,23 +1,23 @@
 'use client';
 
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { useIsMobile } from './use-mobile';
 
 type SidebarContextType = {
   isOpen: boolean;
   setOpen: (isOpen: boolean) => void;
   toggle: () => void;
+  isMobile: boolean;
 };
 
 const SidebarContext = createContext<SidebarContextType | undefined>(undefined);
 
 export function SidebarProvider({ children }: { children: ReactNode }) {
   const isMobile = useIsMobile();
-  // Default to open on desktop, closed on mobile
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(!isMobile);
 
-  React.useEffect(() => {
-    // This effect runs on the client after hydration
+  useEffect(() => {
+    // Adjust sidebar state when switching between mobile and desktop views
     setIsOpen(!isMobile);
   }, [isMobile]);
 
@@ -25,7 +25,7 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
   const setOpen = (value: boolean) => setIsOpen(value);
 
   return (
-    <SidebarContext.Provider value={{ isOpen, setOpen, toggle }}>
+    <SidebarContext.Provider value={{ isOpen, setOpen, toggle, isMobile }}>
       {children}
     </SidebarContext.Provider>
   );
