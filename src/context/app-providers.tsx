@@ -15,13 +15,12 @@ import { Course } from '@/lib/types';
 import { Header } from '@/components/header';
 import { cn } from '@/lib/utils';
 import { SidebarNav } from '@/components/sidebar-nav';
-import { Sheet, SheetContent } from '@/components/ui/sheet';
 
 
 function AppShell({ children, courses }: { children: React.ReactNode, courses: Course[]}) {
     const { user, loading } = useAuth();
     const router = useRouter();
-    const { open, setOpen, isMobile } = useSidebar();
+    const { open, isMobile } = useSidebar();
 
     React.useEffect(() => {
         if (!loading && !user) {
@@ -29,45 +28,46 @@ function AppShell({ children, courses }: { children: React.ReactNode, courses: C
         }
     }, [user, loading, router]);
     
+    if (loading || !user) {
+        return (
+            <div className="flex h-screen items-center justify-center">
+                <Loader2 className="h-16 w-16 animate-spin text-primary" />
+            </div>
+        );
+    }
+    
     return (
         <div className="flex min-h-screen w-full flex-col bg-background">
-            {isMobile ? (
-                <Sheet open={open} onOpenChange={setOpen}>
-                    <SheetContent side="left" className="sm:max-w-xs pt-12">
-                        <SidebarNav />
-                    </SheetContent>
-                </Sheet>
-            ) : (
-                <div className={cn("fixed inset-y-0 left-0 z-40 flex flex-col border-r bg-background transition-[width] duration-300", open ? "w-72" : "w-0")}>
+            {!isMobile && (
+                 <aside className={cn(
+                    "fixed inset-y-0 left-0 z-40 hidden h-full flex-col border-r bg-background transition-all duration-300 sm:flex",
+                    open ? "w-72" : "w-0"
+                )}>
                    {open && (
-                     <div className="flex flex-col h-full p-4 pt-6 overflow-y-auto">
-                        <SidebarNav />
+                     <div className="flex h-full max-h-screen flex-col gap-2 p-4">
+                        <div className="flex-1 overflow-y-auto">
+                            <SidebarNav />
+                        </div>
                      </div>
                    )}
-                </div>
+                </aside>
             )}
-            <div className={cn("flex flex-col transition-[padding] duration-300", !isMobile && open ? "pl-72" : "pl-0")}>
+            <div className={cn("flex flex-col sm:gap-4 sm:py-4", !isMobile && open ? "sm:pl-72" : "sm:pl-0")}>
                 <Header />
                 <main className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8 bg-muted/40 animate-in fade-in-50">
-                    {loading || !user ? (
-                        <div className="flex h-[calc(100vh-theme(space.20))] items-center justify-center">
-                            <Loader2 className="h-16 w-16 animate-spin text-primary" />
-                        </div>
-                    ) : (
-                        <CoursesProvider initialCourses={courses}>
-                            <ActivitiesProvider>
-                                <NotesProvider>
-                                    <FlashcardsProvider>
-                                        <WeeklyPlanProvider>
-                                            <PomodoroProvider>
-                                                {children}
-                                            </PomodoroProvider>
-                                        </WeeklyPlanProvider>
-                                    </FlashcardsProvider>
-                                </NotesProvider>
-                            </ActivitiesProvider>
-                        </CoursesProvider>
-                    )}
+                    <CoursesProvider initialCourses={courses}>
+                        <ActivitiesProvider>
+                            <NotesProvider>
+                                <FlashcardsProvider>
+                                    <WeeklyPlanProvider>
+                                        <PomodoroProvider>
+                                            {children}
+                                        </PomodoroProvider>
+                                    </WeeklyPlanProvider>
+                                </FlashcardsProvider>
+                            </NotesProvider>
+                        </ActivitiesProvider>
+                    </CoursesProvider>
                 </main>
             </div>
         </div>
