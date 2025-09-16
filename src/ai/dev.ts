@@ -1,5 +1,5 @@
 import { config } from 'dotenv';
-config();
+config({ path: './.env' });
 
 import '@/ai/flows/summarize-uploaded-file.ts';
 import '@/ai/flows/generate-study-guide.ts';
