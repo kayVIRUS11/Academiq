@@ -9,7 +9,7 @@ const withPWA = require('next-pwa')({
   runtimeCaching: [
     {
       urlPattern: ({ request }) => request.mode === 'navigate',
-      handler: 'StaleWhileRevalidate',
+      handler: 'NetworkFirst',
       options: {
         cacheName: 'pages',
         expiration: {
@@ -18,6 +18,32 @@ const withPWA = require('next-pwa')({
         },
       },
     },
+    {
+        urlPattern: /\.(?:js|css|woff2|png|svg|jpg|jpeg)$/,
+        handler: 'StaleWhileRevalidate',
+        options: {
+          cacheName: 'static-assets',
+          expiration: {
+            maxEntries: 100,
+            maxAgeSeconds: 7 * 24 * 60 * 60, // 7 Days
+          },
+        },
+    },
+    {
+        urlPattern: ({url}) => url.protocol.startsWith('https:'),
+        handler: 'NetworkFirst',
+        options: {
+            cacheName: 'api-and-images',
+            networkTimeoutSeconds: 10,
+            expiration: {
+                maxEntries: 60,
+                maxAgeSeconds: 24 * 60 * 60, // 1 day
+            },
+            cacheableResponse: {
+                statuses: [0, 200],
+            },
+        },
+    }
   ],
 });
 
