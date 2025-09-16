@@ -38,9 +38,9 @@ function AppShell({ children, courses }: { children: React.ReactNode, courses: C
                     </SheetContent>
                 </Sheet>
             ) : (
-                <div className={cn("fixed inset-y-0 left-0 z-40 flex-col border-r bg-background transition-[width] duration-300", open ? "w-72" : "w-0")}>
+                <div className={cn("fixed inset-y-0 left-0 z-40 flex flex-col border-r bg-background transition-[width] duration-300", open ? "w-72" : "w-0")}>
                    {open && (
-                     <div className="p-4 pt-6">
+                     <div className="flex flex-col h-full p-4 pt-6 overflow-y-auto">
                         <SidebarNav />
                      </div>
                    )}
