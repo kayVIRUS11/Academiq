@@ -19,6 +19,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
 import { useCourses } from '@/context/courses-context';
+import { useSidebar } from '@/hooks/use-sidebar';
 
 export default function NotesPage() {
     const { 
@@ -42,6 +43,7 @@ export default function NotesPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { addFlashcardSet } = useFlashcards();
+  const { isOpen: isSidebarOpen } = useSidebar();
 
   const selectedNote = notes.find(note => note.id === selectedNoteId) || null;
 
@@ -147,67 +149,15 @@ export default function NotesPage() {
   
   if (error) return <p className="text-destructive p-4">Error: {error.message}</p>
 
-  const editorPanel = (
-    <div className={cn("flex-1 flex flex-col", isMobile && !selectedNoteId ? "hidden" : "flex")}>
-      {selectedNote ? (
-        <>
-          <div className="flex items-center justify-end gap-2 p-4 border-b flex-wrap">
-            {isMobile && (
-              <Button variant="ghost" size="icon" className="mr-auto" onClick={() => setSelectedNoteId(null)}>
-                <ArrowLeft />
-                <span className="sr-only">Back to list</span>
-              </Button>
-            )}
-            <div className="flex-1" />
-            <Button variant="outline" size="sm" asChild>
-                <Link href="/ai-tools/flashcards">
-                    <Eye className="mr-2"/>
-                    View Sets
-                </Link>
-            </Button>
-            <Button onClick={handleGenerateFlashcards} disabled={isSummarizing || isGeneratingFlashcards} variant="outline" size="sm">
-              {isGeneratingFlashcards ? ( <Sparkles className="mr-2 animate-spin" /> ) : ( <Blocks className="mr-2" /> )}
-              {isGeneratingFlashcards ? 'Generating...' : 'Generate Flashcards'}
-            </Button>
-            <Button onClick={handleSummarize} disabled={isSummarizing || isGeneratingFlashcards} variant="outline" size="sm">
-              {isSummarizing ? ( <Sparkles className="mr-2 animate-spin" /> ) : ( <BrainCircuit className="mr-2" /> )}
-              {isSummarizing ? 'Summarizing...' : 'AI Summary'}
-            </Button>
-            <Button variant="destructive" size="icon" onClick={() => setIsDeleting(true)}>
-              <Trash2 className="h-5 w-5" />
-              <span className="sr-only">Delete Note</span>
-            </Button>
-          </div>
-          <div className="flex-1 p-4 overflow-y-auto">
-            <NoteEditor note={selectedNote} onUpdate={handleUpdateNote} key={selectedNoteId} />
-          </div>
-        </>
-      ) : (
-          <div className="flex-1 flex items-center justify-center p-4">
-            <Card className="w-full h-full flex items-center justify-center border-dashed">
-                <CardContent className="text-center p-6">
-                <NotebookText className="mx-auto h-12 w-12 text-muted-foreground" />
-                <h2 className="mt-4 text-xl font-semibold">No Note Selected</h2>
-                <p className="mt-2 text-sm text-muted-foreground">
-                    Select a note from the list, or create a new one.
-                </p>
-                <Button className="mt-6" onClick={handleAddNote}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Create New Note
-                </Button>
-                </CardContent>
-            </Card>
-          </div>
-      )}
-    </div>
-  );
+  const sidebarWidth = isMobile ? '100%' : (isSidebarOpen ? '22rem' : '20rem');
+  const mainContentWidth = `calc(100% - ${sidebarWidth})`;
 
   return (
-    <div className="flex h-[calc(100vh-theme(space.20))]">
+    <div className="flex h-[calc(100vh-theme(space.20))] -m-4 sm:-m-6">
       <aside className={cn(
-        "border-r flex flex-col",
-        isMobile ? (selectedNoteId ? "hidden" : "w-full") : "w-80 lg:w-96"
-      )}>
+        "border-r flex-col bg-background",
+        isMobile ? (selectedNoteId ? "hidden" : "w-full flex") : "flex"
+      )} style={{ width: isMobile ? '100%' : (isSidebarOpen ? '24rem' : '22rem')}}>
         <div className="flex items-center justify-between p-4 border-b">
           <h1 className="text-xl font-bold font-headline flex items-center gap-2">
             <NotebookText className="w-6 h-6" />
@@ -236,8 +186,60 @@ export default function NotesPage() {
         </div>
       </aside>
 
-      <main className="flex-1 flex flex-col bg-muted/30">
-        {editorPanel}
+      <main className={cn(
+        "flex-col bg-muted/30",
+        isMobile ? (selectedNoteId ? 'flex w-full' : 'hidden') : 'flex flex-1'
+        )}>
+        {selectedNote ? (
+            <>
+            <div className="flex items-center justify-end gap-2 p-4 border-b bg-background flex-wrap">
+                {isMobile && (
+                <Button variant="ghost" size="icon" className="mr-auto" onClick={() => setSelectedNoteId(null)}>
+                    <ArrowLeft />
+                    <span className="sr-only">Back to list</span>
+                </Button>
+                )}
+                <div className="flex-1" />
+                <Button variant="outline" size="sm" asChild>
+                    <Link href="/ai-tools/flashcards">
+                        <Eye className="mr-2"/>
+                        View Sets
+                    </Link>
+                </Button>
+                <Button onClick={handleGenerateFlashcards} disabled={isSummarizing || isGeneratingFlashcards} variant="outline" size="sm">
+                {isGeneratingFlashcards ? ( <Sparkles className="mr-2 animate-spin" /> ) : ( <Blocks className="mr-2" /> )}
+                {isGeneratingFlashcards ? 'Generating...' : 'Generate Flashcards'}
+                </Button>
+                <Button onClick={handleSummarize} disabled={isSummarizing || isGeneratingFlashcards} variant="outline" size="sm">
+                {isSummarizing ? ( <Sparkles className="mr-2 animate-spin" /> ) : ( <BrainCircuit className="mr-2" /> )}
+                {isSummarizing ? 'Summarizing...' : 'AI Summary'}
+                </Button>
+                <Button variant="destructive" size="icon" onClick={() => setIsDeleting(true)}>
+                <Trash2 className="h-5 w-5" />
+                <span className="sr-only">Delete Note</span>
+                </Button>
+            </div>
+            <div className="flex-1 p-4 overflow-y-auto">
+                <NoteEditor note={selectedNote} onUpdate={handleUpdateNote} key={selectedNoteId} />
+            </div>
+            </>
+        ) : (
+            <div className="flex-1 flex items-center justify-center p-4">
+                <Card className="w-full h-full flex items-center justify-center border-dashed">
+                    <CardContent className="text-center p-6">
+                    <NotebookText className="mx-auto h-12 w-12 text-muted-foreground" />
+                    <h2 className="mt-4 text-xl font-semibold">No Note Selected</h2>
+                    <p className="mt-2 text-sm text-muted-foreground">
+                        Select a note from the list, or create a new one.
+                    </p>
+                    <Button className="mt-6" onClick={handleAddNote}>
+                        <Plus className="mr-2 h-4 w-4" />
+                        Create New Note
+                    </Button>
+                    </CardContent>
+                </Card>
+            </div>
+        )}
       </main>
 
       <AlertDialog open={isDeleting} onOpenChange={setIsDeleting}>
