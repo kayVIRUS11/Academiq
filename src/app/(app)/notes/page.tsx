@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { Course, Note } from '@/lib/types';
 import { NoteList } from '@/components/notes/note-list';
 import { NoteEditor } from '@/components/notes/note-editor';
-import { Plus, NotebookText, Trash2, FilePlus, BrainCircuit, Sparkles, ArrowLeft, Blocks } from 'lucide-react';
+import { Plus, NotebookText, Trash2, FilePlus, BrainCircuit, Sparkles, ArrowLeft, Blocks, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
@@ -22,6 +22,7 @@ import { collection, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/context/auth-context';
+import Link from 'next/link';
 
 export default function NotesPage() {
     const { 
@@ -166,13 +167,19 @@ export default function NotesPage() {
               </Button>
             )}
             <div className="flex-1" />
-            <Button onClick={handleSummarize} disabled={isSummarizing || isGeneratingFlashcards} variant="outline" size="sm">
-              {isSummarizing ? ( <Sparkles className="mr-2 animate-spin" /> ) : ( <BrainCircuit className="mr-2" /> )}
-              {isSummarizing ? 'Summarizing...' : 'AI Summary'}
+            <Button variant="outline" size="sm" asChild>
+                <Link href="/ai-tools/flashcards">
+                    <Eye className="mr-2"/>
+                    View Sets
+                </Link>
             </Button>
             <Button onClick={handleGenerateFlashcards} disabled={isSummarizing || isGeneratingFlashcards} variant="outline" size="sm">
               {isGeneratingFlashcards ? ( <Sparkles className="mr-2 animate-spin" /> ) : ( <Blocks className="mr-2" /> )}
-              {isGeneratingFlashcards ? 'Generating...' : 'Flashcards'}
+              {isGeneratingFlashcards ? 'Generating...' : 'Generate Flashcards'}
+            </Button>
+            <Button onClick={handleSummarize} disabled={isSummarizing || isGeneratingFlashcards} variant="outline" size="sm">
+              {isSummarizing ? ( <Sparkles className="mr-2 animate-spin" /> ) : ( <BrainCircuit className="mr-2" /> )}
+              {isSummarizing ? 'Summarizing...' : 'AI Summary'}
             </Button>
             <Button variant="destructive" size="icon" onClick={() => setIsDeleting(true)}>
               <Trash2 className="h-5 w-5" />
