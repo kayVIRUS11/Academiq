@@ -16,14 +16,14 @@ import { Checkbox } from '../ui/checkbox';
 import { format, formatDistanceToNow, isPast } from 'date-fns';
 import { Badge } from '../ui/badge';
 import { cn } from '@/lib/utils';
-import { useAuth } from '@/context/auth-context';
-import { supabase } from '@/lib/supabase';
+import { useCourses } from '@/context/courses-context';
 
 type TaskItemProps = {
   task: Task;
   onUpdate: (task: Task) => void;
   onDelete: (id: string) => void;
   onToggle: (id: string) => void;
+  courses: Course[];
 };
 
 const priorityStyles = {
@@ -32,27 +32,11 @@ const priorityStyles = {
     Low: 'bg-green-500/20 text-green-700 border-green-500/30 hover:bg-green-500/30',
 }
 
-export function TaskItem({ task, onUpdate, onDelete, onToggle }: TaskItemProps) {
+export function TaskItem({ task, onUpdate, onDelete, onToggle, courses }: TaskItemProps) {
   const [isEditing, setIsEditing] = useState(false);
-  const { user } = useAuth();
-  const [course, setCourse] = useState<Course | null>(null);
+  const { getCourse } = useCourses();
 
-  useEffect(() => {
-    const fetchCourse = async () => {
-        if (!task.courseId || !user) {
-            setCourse(null);
-            return;
-        };
-        const { data } = await supabase.from('courses').select('*').eq('id', task.courseId).single();
-        if (data) {
-            setCourse({...data, courseCode: data.course_code} as Course);
-        } else {
-            setCourse(null);
-        }
-    }
-    fetchCourse();
-  }, [task.courseId, user]);
-
+  const course = task.courseId ? getCourse(task.courseId) : null;
   const dueDate = new Date(task.dueDate);
 
   const getDueDateLabel = () => {
@@ -107,6 +91,7 @@ export function TaskItem({ task, onUpdate, onDelete, onToggle }: TaskItemProps) 
         isOpen={isEditing}
         onOpenChange={setIsEditing}
         onUpdateTask={onUpdate}
+        courses={courses}
       />
     </>
   );

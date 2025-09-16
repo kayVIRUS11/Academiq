@@ -13,8 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Course } from '@/lib/types';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useAuth } from '@/context/auth-context';
-import { supabase } from '@/lib/supabase';
+import { useCourses } from '@/context/courses-context';
 
 export function StudyGuideForm() {
   const [file, setFile] = useState<File | null>(null);
@@ -23,23 +22,8 @@ export function StudyGuideForm() {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const { addNote } = useNotes();
-  const { user } = useAuth();
+  const { courses, loading: coursesLoading } = useCourses();
   
-  const [courses, setCourses] = useState<Course[]>([]);
-  const [coursesLoading, setCoursesLoading] = useState(true);
-
-  const fetchCourses = useCallback(async () => {
-    if(!user) return;
-    setCoursesLoading(true);
-    const { data, error } = await supabase.from('courses').select('*').eq('uid', user.id);
-    if(error) toast({ title: "Error fetching courses", variant: 'destructive'});
-    else setCourses(data as Course[]);
-    setCoursesLoading(false);
-  }, [user, toast]);
-
-  useEffect(() => {
-    fetchCourses();
-  }, [fetchCourses]);
 
   const handleFileSelect = (selectedFile: File | null) => {
     setFile(selectedFile);

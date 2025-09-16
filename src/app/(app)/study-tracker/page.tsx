@@ -22,14 +22,15 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/context/auth-context';
 import { mergeWeeklyPlans } from '@/ai/flows/merge-weekly-study-plan';
 import { supabase } from '@/lib/supabase';
+import { useCourses } from '@/context/courses-context';
 
 export default function StudyTrackerPage() {
   const { plan: existingPlan, setPlan } = useWeeklyPlan();
+  const { courses } = useCourses();
   const router = useRouter();
   const { toast } = useToast();
   const { user } = useAuth();
 
-  const [courses, setCourses] = useState<Course[]>([]);
   const [timetable, setTimetable] = useState<TimetableEntry[]>([]);
   const [sessions, setSessions] = useState<StudySession[]>([]);
   const [loading, setLoading] = useState(true);
@@ -37,13 +38,11 @@ export default function StudyTrackerPage() {
   const fetchData = useCallback(async () => {
     if(!user) return;
     setLoading(true);
-    const [coursesRes, timetableRes, sessionsRes] = await Promise.all([
-        supabase.from('courses').select('*').eq('uid', user.id),
+    const [timetableRes, sessionsRes] = await Promise.all([
         supabase.from('timetable').select('*').eq('uid', user.id),
         supabase.from('study-sessions').select('*').eq('uid', user.id),
     ]);
 
-    if(coursesRes.error) toast({title: "Error loading courses", variant: 'destructive'}); else setCourses(coursesRes.data.map(c => ({...c, courseCode: c.course_code})) as Course[]);
     if(timetableRes.error) toast({title: "Error loading timetable", variant: 'destructive'}); else setTimetable(timetableRes.data.map(e => ({...e, courseId: e.course_id, startTime: e.start_time, endTime: e.end_time})) as TimetableEntry[]);
     if(sessionsRes.error) toast({title: "Error loading sessions", variant: 'destructive'}); else setSessions(sessionsRes.data.map(s => ({...s, courseId: s.course_id})) as StudySession[]);
 
@@ -73,7 +72,7 @@ export default function StudyTrackerPage() {
         }).select();
         if(error) throw error;
         const newSession = data[0];
-        setSessions(prev => [...prev, {...newSession, courseId: newSession.course_id} as StudySession]);
+        setSessions(prev => [...prev, {...newSession, courseId: newSession.course_id}]);
         toast({title: 'Session logged!'});
     } catch(e: any) {
         console.error(e);
@@ -87,7 +86,7 @@ export default function StudyTrackerPage() {
         const {data: updatedData, error} = await supabase.from('study-sessions').update({ ...data, course_id: courseId }).eq('id', id).select();
         if (error) throw error;
         const newSession = updatedData[0];
-        setSessions(prev => prev.map(s => s.id === id ? {...newSession, courseId: newSession.course_id} as StudySession : s));
+        setSessions(prev => prev.map(s => s.id === id ? {...newSession, courseId: newSession.course_id} : s));
         toast({title: 'Session updated.'});
     } catch(e: any) {
         console.error(e);

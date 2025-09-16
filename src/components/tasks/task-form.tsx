@@ -26,8 +26,6 @@ import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { Task, Course } from '@/lib/types';
-import { useAuth } from '@/context/auth-context';
-import { supabase } from '@/lib/supabase';
 import { useState, useEffect } from 'react';
 
 const taskFormSchema = z.object({
@@ -43,24 +41,15 @@ type TaskFormProps = {
   onSubmit: (values: TaskFormValues) => void;
   defaultValues?: Partial<Task> & { dueDate?: Date };
   submitButtonText?: string;
+  courses: Course[];
 };
 
 export function TaskForm({
   onSubmit,
   defaultValues,
   submitButtonText = 'Save Task',
+  courses,
 }: TaskFormProps) {
-  const { user } = useAuth();
-  const [courses, setCourses] = useState<Course[]>([]);
-
-  useEffect(() => {
-    const fetchCourses = async () => {
-        if (!user) return;
-        const { data } = await supabase.from('courses').select('*').eq('uid', user.id);
-        if (data) setCourses(data.map(c => ({...c, courseCode: c.course_code})) as Course[]);
-    }
-    fetchCourses();
-  }, [user]);
 
   const form = useForm<TaskFormValues>({
     resolver: zodResolver(taskFormSchema),

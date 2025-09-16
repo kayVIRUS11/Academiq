@@ -1,6 +1,6 @@
 'use client';
 
-import { Task } from '@/lib/types';
+import { Task, Course } from '@/lib/types';
 import { TaskItem } from './task-item';
 import { TaskFilters, FilterState } from './task-filters';
 import { useState } from 'react';
@@ -11,9 +11,10 @@ type TaskListProps = {
   onUpdateTask: (task: Task) => void;
   onDeleteTask: (id: string) => void;
   onToggleTask: (id: string) => void;
+  courses: Course[];
 };
 
-export function TaskList({ tasks, onUpdateTask, onDeleteTask, onToggleTask }: TaskListProps) {
+export function TaskList({ tasks, onUpdateTask, onDeleteTask, onToggleTask, courses }: TaskListProps) {
   const [filters, setFilters] = useState<FilterState>({
     status: 'pending',
     priority: 'all',
@@ -34,7 +35,7 @@ export function TaskList({ tasks, onUpdateTask, onDeleteTask, onToggleTask }: Ta
 
   return (
     <div className="space-y-4">
-      <TaskFilters filters={filters} onFilterChange={handleFilterChange} />
+      <TaskFilters filters={filters} onFilterChange={handleFilterChange} courses={courses}/>
       
       {filteredTasks.length > 0 ? (
         <div className="space-y-4">
@@ -45,6 +46,7 @@ export function TaskList({ tasks, onUpdateTask, onDeleteTask, onToggleTask }: Ta
               onUpdate={onUpdateTask} 
               onDelete={onDeleteTask}
               onToggle={onToggleTask}
+              courses={courses}
             />
           ))}
         </div>

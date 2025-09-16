@@ -11,34 +11,19 @@ import { useAuth } from "@/context/auth-context";
 import { useState, useEffect, useCallback } from "react";
 import { StudyPlanItemDialog } from "./study-plan-item-dialog";
 import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
-import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
+import { useCourses } from "@/context/courses-context";
 
 const days: DayOfWeek[] = [DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday, DayOfWeek.Thursday, DayOfWeek.Friday, DayOfWeek.Saturday, DayOfWeek.Sunday];
 
 export default function WeeklyPlanPage() {
     const { plan, loading, addPlanItem, updatePlanItem, deletePlanItem } = useWeeklyPlan();
     const { user } = useAuth();
+    const { courses, loading: coursesLoading } = useCourses();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingItem, setEditingItem] = useState<StudyPlanItem | null>(null);
     const [dialogDay, setDialogDay] = useState<DayOfWeek>(DayOfWeek.Monday);
 	const { toast } = useToast();
-
-    const [courses, setCourses] = useState<Course[]>([]);
-    const [coursesLoading, setCoursesLoading] = useState(true);
-
-    const fetchCourses = useCallback(async () => {
-      if (!user) return;
-      setCoursesLoading(true);
-      const { data, error } = await supabase.from('courses').select('*').eq('uid', user.id);
-      if (error) toast({ title: "Error fetching courses", variant: 'destructive'});
-      else setCourses(data as Course[]);
-      setCoursesLoading(false);
-    }, [user, toast]);
-
-    useEffect(() => {
-      fetchCourses();
-    }, [fetchCourses]);
 
     const getCourseColor = (courseName: string) => {
         return courses.find(c => c.name === courseName)?.color || '#ccc';

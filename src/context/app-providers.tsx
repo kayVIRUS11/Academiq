@@ -10,8 +10,16 @@ import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import { SidebarProvider } from '@/components/ui/sidebar';
+import { CoursesProvider } from './courses-context';
+import { Course } from '@/lib/types';
 
-export function AppProviders({ children }: { children: React.ReactNode }) {
+export function AppProviders({
+  children,
+  courses,
+}: {
+  children: React.ReactNode;
+  courses: Course[];
+}) {
   const { user, loading } = useAuth();
   const router = useRouter();
 
@@ -31,17 +39,19 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
 
   return (
     <SidebarProvider>
-      <ActivitiesProvider>
-        <NotesProvider>
-          <FlashcardsProvider>
-            <WeeklyPlanProvider>
-              <PomodoroProvider>
-                {children}
-              </PomodoroProvider>
-            </WeeklyPlanProvider>
-          </FlashcardsProvider>
-        </NotesProvider>
-      </ActivitiesProvider>
+      <CoursesProvider initialCourses={courses}>
+        <ActivitiesProvider>
+          <NotesProvider>
+            <FlashcardsProvider>
+              <WeeklyPlanProvider>
+                <PomodoroProvider>
+                  {children}
+                </PomodoroProvider>
+              </WeeklyPlanProvider>
+            </FlashcardsProvider>
+          </NotesProvider>
+        </ActivitiesProvider>
+      </CoursesProvider>
     </SidebarProvider>
   );
 }

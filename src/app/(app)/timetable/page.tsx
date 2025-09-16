@@ -9,28 +9,24 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/context/auth-context';
 import { supabase } from '@/lib/supabase';
 import { useState, useEffect, useCallback } from 'react';
+import { useCourses } from '@/context/courses-context';
 
 export default function TimetablePage() {
   const { toast } = useToast();
   const { user } = useAuth();
+  const { courses } = useCourses();
   
-  const [courses, setCourses] = useState<Course[]>([]);
   const [entries, setEntries] = useState<TimetableEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchData = useCallback(async () => {
     if (!user) return;
     setLoading(true);
-    const [coursesRes, timetableRes] = await Promise.all([
-      supabase.from('courses').select('*').eq('uid', user.id),
-      supabase.from('timetable').select('*').eq('uid', user.id)
-    ]);
 
-    if (coursesRes.error) toast({ title: 'Error fetching courses', description: coursesRes.error.message, variant: 'destructive' });
-    else setCourses(coursesRes.data.map(c => ({...c, courseCode: c.course_code})) as Course[]);
+    const { data: timetableRes, error: timetableError } = await supabase.from('timetable').select('*').eq('uid', user.id);
 
-    if (timetableRes.error) toast({ title: 'Error fetching timetable', description: timetableRes.error.message, variant: 'destructive' });
-    else setEntries(timetableRes.data.map(e => ({...e, courseId: e.course_id, startTime: e.start_time, endTime: e.end_time})) as TimetableEntry[]);
+    if (timetableError) toast({ title: 'Error fetching timetable', description: timetableError.message, variant: 'destructive' });
+    else setEntries(timetableRes.map(e => ({...e, courseId: e.course_id, startTime: e.start_time, endTime: e.end_time})));
     
     setLoading(false);
   }, [user, toast]);
@@ -56,7 +52,7 @@ export default function TimetablePage() {
       }).select();
       if (error) throw error;
       const newEntry = data[0];
-      setEntries(prev => [...prev, {...newEntry, courseId: newEntry.course_id, startTime: newEntry.start_time, endTime: newEntry.end_time} as TimetableEntry]);
+      setEntries(prev => [...prev, {...newEntry, courseId: newEntry.course_id, startTime: newEntry.start_time, endTime: newEntry.end_time}]);
       toast({ title: 'Class added!' });
     } catch (e: any) {
       console.error(e);
@@ -75,7 +71,7 @@ export default function TimetablePage() {
        }).eq('id', id).select();
       if (error) throw error;
       const newEntry = data[0];
-      setEntries(prev => prev.map(e => e.id === id ? {...newEntry, courseId: newEntry.course_id, startTime: newEntry.start_time, endTime: newEntry.end_time} as TimetableEntry : e));
+      setEntries(prev => prev.map(e => e.id === id ? {...newEntry, courseId: newEntry.course_id, startTime: newEntry.start_time, endTime: newEntry.end_time} : e));
       toast({ title: 'Class updated.' });
     } catch (e: any) {
       console.error(e);

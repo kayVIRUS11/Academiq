@@ -15,6 +15,7 @@ import { useWeeklyPlan } from '../../weekly-plan/weekly-plan-context';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/context/auth-context';
 import { supabase } from '@/lib/supabase';
+import { useCourses } from '@/context/courses-context';
 
 const days: DayOfWeek[] = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
@@ -27,24 +28,22 @@ export function DailyPlannerForm() {
   const { toast } = useToast();
   const { plan: weeklyPlan } = useWeeklyPlan();
   const { user } = useAuth();
+  const { courses, getCourse, loading: coursesLoading } = useCourses();
 
   const [tasks, setTasks] = useState<Task[]>([]);
   const [timetable, setTimetable] = useState<TimetableEntry[]>([]);
-  const [courses, setCourses] = useState<Course[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
 
   const fetchData = useCallback(async () => {
     if (!user) return;
     setDataLoading(true);
-    const [tasksRes, timetableRes, coursesRes] = await Promise.all([
+    const [tasksRes, timetableRes] = await Promise.all([
       supabase.from('tasks').select('*').eq('uid', user.id),
       supabase.from('timetable').select('*').eq('uid', user.id),
-      supabase.from('courses').select('*').eq('uid', user.id),
     ]);
 
     if (tasksRes.error) toast({title: "Error loading tasks", variant: 'destructive'}); else setTasks(tasksRes.data as Task[]);
     if (timetableRes.error) toast({title: "Error loading timetable", variant: 'destructive'}); else setTimetable(timetableRes.data as TimetableEntry[]);
-    if (coursesRes.error) toast({title: "Error loading courses", variant: 'destructive'}); else setCourses(coursesRes.data as Course[]);
     setDataLoading(false);
   }, [user, toast]);
 
@@ -53,7 +52,7 @@ export function DailyPlannerForm() {
   }, [fetchData]);
 
 
-  const getCourseName = (id: string) => courses.find(c => c.id === id)?.name || 'Unknown Course';
+  const getCourseName = (id: string) => getCourse(id)?.name || 'Unknown Course';
 
   const handleGeneratePlan = async () => {
     if (!selectedDay) {
@@ -114,7 +113,7 @@ export function DailyPlannerForm() {
   return (
     <>
       <div className="space-y-6">
-      {dataLoading ? <Skeleton className="h-24 w-full" /> : (
+      {dataLoading || coursesLoading ? <Skeleton className="h-24 w-full" /> : (
         <>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">

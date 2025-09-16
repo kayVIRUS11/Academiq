@@ -12,13 +12,14 @@ import {
 } from '@/components/ui/sheet';
 import { Plus } from 'lucide-react';
 import { TaskForm } from './task-form';
-import { Task } from '@/lib/types';
+import { Task, Course } from '@/lib/types';
 
 type AddTaskProps = {
   onAddTask: (task: Omit<Task, 'id' | 'completed' | 'uid'>) => void;
+  courses: Course[];
 };
 
-export function AddTask({ onAddTask }: AddTaskProps) {
+export function AddTask({ onAddTask, courses }: AddTaskProps) {
   const [open, setOpen] = useState(false);
 
   const handleSubmit = (values: any) => {
@@ -45,7 +46,7 @@ export function AddTask({ onAddTask }: AddTaskProps) {
           </SheetDescription>
         </SheetHeader>
         <div className="py-4">
-          <TaskForm onSubmit={handleSubmit} submitButtonText="Add Task" />
+          <TaskForm onSubmit={handleSubmit} submitButtonText="Add Task" courses={courses} />
         </div>
       </SheetContent>
     </Sheet>

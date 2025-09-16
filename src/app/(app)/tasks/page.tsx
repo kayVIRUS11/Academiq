@@ -9,10 +9,12 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/context/auth-context';
 import { supabase } from '@/lib/supabase';
 import { useState, useEffect, useCallback } from 'react';
+import { useCourses } from '@/context/courses-context';
 
 export default function TasksPage() {
   const { toast } = useToast();
   const { user } = useAuth();
+  const { courses } = useCourses();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -23,7 +25,7 @@ export default function TasksPage() {
     if (error) {
       toast({ title: 'Error fetching tasks', description: error.message, variant: 'destructive' });
     } else {
-      setTasks(data.map(t => ({...t, dueDate: t.due_date, courseId: t.course_id })) as Task[]);
+      setTasks(data.map(t => ({...t, dueDate: t.due_date, courseId: t.course_id })));
     }
     setLoading(false);
   }, [user, toast]);
@@ -51,7 +53,7 @@ export default function TasksPage() {
       toast({ title: 'Error adding task', variant: 'destructive' });
     } else {
       const addedTask = data[0];
-      setTasks(prev => [...prev, {...addedTask, dueDate: addedTask.due_date, courseId: addedTask.course_id} as Task]);
+      setTasks(prev => [...prev, {...addedTask, dueDate: addedTask.due_date, courseId: addedTask.course_id}]);
       toast({ title: 'Task added!' });
     }
   };
@@ -62,7 +64,7 @@ export default function TasksPage() {
       const { data, error } = await supabase.from('tasks').update({ ...taskData, due_date: dueDate, course_id: courseId }).eq('id', id).select();
       if (error) throw error;
       const newTask = data[0];
-      setTasks(prev => prev.map(t => t.id === id ? {...newTask, dueDate: newTask.due_date, courseId: newTask.course_id} as Task : t));
+      setTasks(prev => prev.map(t => t.id === id ? {...newTask, dueDate: newTask.due_date, courseId: newTask.course_id} : t));
       toast({ title: 'Task updated.' });
     } catch (e: any) {
       console.error(e);
@@ -88,7 +90,7 @@ export default function TasksPage() {
       const { data, error } = await supabase.from('tasks').update({ completed: !task.completed }).eq('id', taskId).select();
       if (error) throw error;
       const updatedTask = data[0];
-      setTasks(prev => prev.map(t => t.id === taskId ? {...updatedTask, dueDate: updatedTask.due_date, courseId: updatedTask.course_id} as Task : t));
+      setTasks(prev => prev.map(t => t.id === taskId ? {...updatedTask, dueDate: updatedTask.due_date, courseId: updatedTask.course_id} : t));
     } catch (e: any) {
       console.error(e);
       toast({ title: 'Error toggling task', description: e.message, variant: 'destructive' });
@@ -102,7 +104,7 @@ export default function TasksPage() {
           <ListTodo className="w-8 h-8" />
           Task Management
         </h1>
-        <AddTask onAddTask={handleAddTask} />
+        <AddTask onAddTask={handleAddTask} courses={courses} />
       </div>
       
       {loading ? (
@@ -117,6 +119,7 @@ export default function TasksPage() {
           onUpdateTask={handleUpdateTask} 
           onDeleteTask={handleDeleteTask}
           onToggleTask={handleToggleTask}
+          courses={courses}
         />
       )}
     </div>

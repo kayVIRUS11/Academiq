@@ -1,6 +1,6 @@
 'use client';
 
-import { Task } from '@/lib/types';
+import { Task, Course } from '@/lib/types';
 import {
   Dialog,
   DialogContent,
@@ -15,9 +15,10 @@ type EditTaskProps = {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   onUpdateTask: (task: Task) => void;
+  courses: Course[];
 };
 
-export function EditTask({ task, isOpen, onOpenChange, onUpdateTask }: EditTaskProps) {
+export function EditTask({ task, isOpen, onOpenChange, onUpdateTask, courses }: EditTaskProps) {
   const handleSubmit = (values: any) => {
     onUpdateTask({ 
       ...task, 
@@ -40,6 +41,7 @@ export function EditTask({ task, isOpen, onOpenChange, onUpdateTask }: EditTaskP
           onSubmit={handleSubmit}
           defaultValues={{...task, dueDate: new Date(task.dueDate)}}
           submitButtonText="Save Changes"
+          courses={courses}
         />
       </DialogContent>
     </Dialog>

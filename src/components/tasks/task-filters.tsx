@@ -9,9 +9,7 @@ import {
 } from '@/components/ui/select';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Course } from '@/lib/types';
-import { useAuth } from '@/context/auth-context';
-import { supabase } from '@/lib/supabase';
-import { useEffect, useState } from 'react';
+import { useCourses } from '@/context/courses-context';
 
 export type FilterState = {
   status: 'all' | 'pending' | 'completed';
@@ -22,20 +20,10 @@ export type FilterState = {
 type TaskFiltersProps = {
   filters: FilterState;
   onFilterChange: (filters: Partial<FilterState>) => void;
+  courses: Course[];
 };
 
-export function TaskFilters({ filters, onFilterChange }: TaskFiltersProps) {
-  const { user } = useAuth();
-  const [courses, setCourses] = useState<Course[]>([]);
-
-  useEffect(() => {
-    const fetchCourses = async () => {
-        if (!user) return;
-        const { data } = await supabase.from('courses').select('*').eq('uid', user.id);
-        if (data) setCourses(data as Course[]);
-    }
-    fetchCourses();
-  }, [user]);
+export function TaskFilters({ filters, onFilterChange, courses }: TaskFiltersProps) {
 
   return (
     <div className="flex flex-col md:flex-row gap-4">
