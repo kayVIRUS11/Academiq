@@ -10,7 +10,6 @@ import {
   Sparkles,
   Target,
   Timer,
-  Donut,
   ChevronDown,
   ClipboardCheck,
   CalendarCheck,
@@ -18,12 +17,6 @@ import {
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
 import {
   Collapsible,
   CollapsibleContent,
@@ -34,7 +27,6 @@ import { useSidebar } from './ui/sidebar';
 import { Logo } from './logo';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
-import { Button } from './ui/button';
 import { useState } from 'react';
 
 const navItems = [
@@ -79,49 +71,25 @@ export function SidebarNav() {
   }) => {
     const isActive = pathname === href;
 
-    if (isMobile) {
-      return (
-        <Link
-          href={href}
-          onClick={handleLinkClick}
-          className={cn(
-            'flex items-center gap-4 px-2.5',
-            isActive
-              ? 'text-foreground'
-              : 'text-muted-foreground hover:text-foreground'
-          )}
-        >
-          <Icon className="h-5 w-5" />
-          {label}
-        </Link>
-      );
-    }
-
     return (
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Link
+        <Link
             href={href}
             onClick={handleLinkClick}
             className={cn(
-              'flex h-9 w-9 items-center justify-center rounded-lg transition-colors hover:text-foreground md:h-8 md:w-8',
-              isActive
-                ? 'bg-accent text-accent-foreground'
-                : 'text-muted-foreground'
+            'flex items-center gap-4 px-2.5',
+            isActive
+                ? 'text-foreground'
+                : 'text-muted-foreground hover:text-foreground'
             )}
-          >
+        >
             <Icon className="h-5 w-5" />
-            <span className="sr-only">{label}</span>
-          </Link>
-        </TooltipTrigger>
-        <TooltipContent side="right">{label}</TooltipContent>
-      </Tooltip>
+            {label}
+        </Link>
     );
   };
 
-  if (isMobile) {
-    return (
-      <nav className="grid gap-6 text-lg font-medium">
+  return (
+    <nav className="grid gap-6 text-lg font-medium">
         <Logo className="mb-4" />
         {navItems.map((item) => (
           <NavLink {...item} key={item.href} />
@@ -162,28 +130,6 @@ export function SidebarNav() {
         <div className="mt-auto grid gap-6">
             <NavLink href="/settings" icon={User} label="Account" />
         </div>
-      </nav>
-    );
-  }
-
-  return (
-    <TooltipProvider>
-      <nav className="flex flex-col items-center gap-4 px-2 sm:py-5">
-        <Link
-          href="/dashboard"
-          className="group flex h-9 w-9 shrink-0 items-center justify-center gap-2 rounded-full bg-primary text-lg font-semibold text-primary-foreground md:h-8 md:w-8 md:text-base"
-        >
-          <Donut className="h-4 w-4 transition-all group-hover:scale-110" />
-          <span className="sr-only">Academiq</span>
-        </Link>
-        {navItems.map((item) => (
-          <NavLink {...item} key={item.href} />
-        ))}
-      </nav>
-      <nav className="mt-auto flex flex-col items-center gap-4 px-2 sm:py-5">
-        <NavLink href="/ai-tools" icon={Sparkles} label="AI Tools" />
-        <NavLink href="/settings" icon={User} label="Account" />
-      </nav>
-    </TooltipProvider>
+    </nav>
   );
 }

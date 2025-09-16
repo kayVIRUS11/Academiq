@@ -14,22 +14,39 @@ import { CoursesProvider } from './courses-context';
 import { Course } from '@/lib/types';
 import { Header } from '@/components/header';
 import { cn } from '@/lib/utils';
+import { SidebarNav } from '@/components/sidebar-nav';
+import { Sheet, SheetContent } from '@/components/ui/sheet';
 
 
 function AppShell({ children, courses }: { children: React.ReactNode, courses: Course[]}) {
     const { user, loading } = useAuth();
     const router = useRouter();
-    const { open, isMobile } = useSidebar();
+    const { open, setOpen, isMobile } = useSidebar();
 
     React.useEffect(() => {
         if (!loading && !user) {
-        router.push('/login');
+            router.push('/login');
         }
     }, [user, loading, router]);
     
     return (
         <div className="flex min-h-screen w-full flex-col bg-background">
-            <div className={cn("flex flex-col transition-[padding]", !isMobile && open ? "sm:pl-64" : "sm:pl-14")}>
+            {isMobile ? (
+                <Sheet open={open} onOpenChange={setOpen}>
+                    <SheetContent side="left" className="sm:max-w-xs pt-12">
+                        <SidebarNav />
+                    </SheetContent>
+                </Sheet>
+            ) : (
+                <div className={cn("fixed inset-y-0 left-0 z-40 flex-col border-r bg-background transition-[width] duration-300", open ? "w-72" : "w-0")}>
+                   {open && (
+                     <div className="p-4 pt-6">
+                        <SidebarNav />
+                     </div>
+                   )}
+                </div>
+            )}
+            <div className={cn("flex flex-col transition-[padding] duration-300", !isMobile && open ? "pl-72" : "pl-0")}>
                 <Header />
                 <main className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8 bg-muted/40 animate-in fade-in-50">
                     {loading || !user ? (

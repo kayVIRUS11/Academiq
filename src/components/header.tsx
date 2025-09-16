@@ -1,7 +1,7 @@
 'use client';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from './ui/button';
-import { Donut } from 'lucide-react';
+import { Donut, Menu } from 'lucide-react';
 import { useSidebar } from './ui/sidebar';
 import { SidebarNav } from './sidebar-nav';
 
@@ -10,20 +10,10 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
-        <Sheet open={open} onOpenChange={setOpen}>
-          <SheetTrigger asChild>
-            <Button size="icon" variant="outline">
-              <Donut />
-              <span className="sr-only">Toggle Menu</span>
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="left" className="sm:max-w-xs pt-12">
-            <SheetHeader>
-                <SheetTitle className="sr-only">Main Menu</SheetTitle>
-            </SheetHeader>
-            <SidebarNav />
-          </SheetContent>
-        </Sheet>
+        <Button size="icon" variant="outline" onClick={() => setOpen(!open)}>
+            <Menu />
+            <span className="sr-only">Toggle Menu</span>
+        </Button>
     </header>
   );
 }
