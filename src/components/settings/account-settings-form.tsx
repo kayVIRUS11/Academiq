@@ -1,4 +1,3 @@
-
 'use client';
 
 import { z } from 'zod';
@@ -27,13 +26,13 @@ export function AccountSettingsForm() {
   const form = useForm<AccountSettingsFormValues>({
     resolver: zodResolver(accountSettingsSchema),
     defaultValues: {
-      displayName: user?.displayName || '',
+      displayName: user?.user_metadata.full_name || '',
     },
   });
 
   useEffect(() => {
-    if (user?.displayName) {
-      form.reset({ displayName: user.displayName });
+    if (user?.user_metadata.full_name) {
+      form.reset({ displayName: user.user_metadata.full_name });
     }
   }, [user, form]);
 

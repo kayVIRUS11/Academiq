@@ -38,20 +38,13 @@ export default function SignupPage() {
         }
         setIsLoading(true);
         setError(null);
-        try {
-            await signUpWithEmail(email, password, name);
+        const { error } = await signUpWithEmail(email, password, name);
+        if (error) {
+            setError(error.message);
+        } else {
             setSuccess(true);
-        } catch (err: any) {
-            if (err.code === 'auth/email-already-in-use') {
-                setError('An account with this email address already exists.');
-            } else if (err.code === 'auth/weak-password') {
-                setError('The password is too weak. Please choose a stronger password.');
-            } else {
-                setError('An unexpected error occurred. Please try again.');
-            }
-        } finally {
-            setIsLoading(false);
         }
+        setIsLoading(false);
     };
 
     if (user) {
@@ -63,7 +56,7 @@ export default function SignupPage() {
             <>
                 <CardHeader className="text-center">
                     <CardTitle>Check your inbox</CardTitle>
-                    <CardDescription>We've sent a verification link to <span className="font-bold">{email}</span>. Please click the link to activate your account.</CardDescription>
+                    <CardDescription>We've sent a confirmation link to <span className="font-bold">{email}</span>. Please click the link to activate your account.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <Button asChild className="w-full">
@@ -73,7 +66,6 @@ export default function SignupPage() {
             </>
         )
     }
-
 
     return (
         <>

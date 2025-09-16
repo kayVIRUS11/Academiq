@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -23,7 +22,7 @@ export default function SettingsPage() {
                 </h1>
                 {user && (
                     <p className="text-muted-foreground mt-1">
-                        {user.displayName} &middot; {user.email}
+                        {user.user_metadata.full_name} &middot; {user.email}
                     </p>
                 )}
             </div>

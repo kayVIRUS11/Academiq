@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { NotesProvider } from '@/app/(app)/notes/notes-context';
 import { ActivitiesProvider } from '@/app/(app)/daily-activities/activities-context';
 import { FlashcardsProvider } from '@/app/(app)/ai-tools/flashcards/flashcards-context';
@@ -15,7 +15,7 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const router = useRouter();
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (!loading && !user) {
       router.push('/login');
     }
