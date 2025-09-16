@@ -1,7 +1,7 @@
 require('dotenv').config({ path: './.env' });
 
 import type {NextConfig} from 'next';
-import { withSerwist } from "@serwist/next";
+import withSerwist from "@serwist/next";
 
 const nextConfig: NextConfig = {
   /* config options here */
@@ -43,8 +43,9 @@ const nextConfig: NextConfig = {
   }
 };
 
-export default withSerwist({
-  ...nextConfig,
+const serwist = withSerwist({
   swSrc: "src/app/sw.ts",
   swDest: "public/sw.js",
 });
+
+export default serwist(nextConfig);
