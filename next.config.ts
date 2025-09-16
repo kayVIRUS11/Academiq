@@ -1,6 +1,7 @@
 require('dotenv').config({ path: './.env' });
 
 import type {NextConfig} from 'next';
+import { withSerwist } from "@serwist/next";
 
 const nextConfig: NextConfig = {
   /* config options here */
@@ -37,13 +38,13 @@ const nextConfig: NextConfig = {
     config.resolve.alias.canvas = false;
     return config;
   },
-  env: {
-    NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
-    NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-  },
   serverActions: {
     bodySizeLimit: '4.5mb',
   }
 };
 
-export default nextConfig;
+export default withSerwist({
+  ...nextConfig,
+  swSrc: "src/app/sw.ts",
+  swDest: "public/sw.js",
+});
