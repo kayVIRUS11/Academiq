@@ -23,6 +23,11 @@ export function SidebarProvider({ children }: { children: React.ReactNode }) {
   const isMobile = useIsMobile();
   const [open, setOpen] = React.useState(false);
 
+  React.useEffect(() => {
+    setOpen(!isMobile);
+  }, [isMobile]);
+
+
   const contextValue = React.useMemo(
     () => ({
       open,
