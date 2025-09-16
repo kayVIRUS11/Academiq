@@ -2,18 +2,33 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Target } from "lucide-react";
-import { useCollection } from 'react-firebase-hooks/firestore';
-import { collection, query, where } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 import { Goal } from "@/lib/types";
 import { Skeleton } from "../ui/skeleton";
 import { useAuth } from "@/context/auth-context";
+import { supabase } from "@/lib/supabase";
+import { useEffect, useState, useCallback } from "react";
+import { toast } from "@/hooks/use-toast";
 
 export function GoalsOverview() {
   const { user } = useAuth();
-  const goalsQuery = user ? query(collection(db, 'goals'), where('uid', '==', user.uid)) : null;
-  const [goalsSnapshot, loading] = useCollection(goalsQuery);
-  const goals = goalsSnapshot?.docs.map(d => ({id: d.id, ...d.data()})) as Goal[] || [];
+  const [goals, setGoals] = useState<Goal[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchGoals = useCallback(async () => {
+    if (!user) return;
+    setLoading(true);
+    const { data, error } = await supabase.from('goals').select('*').eq('uid', user.id).limit(3);
+    if (error) {
+      toast({ title: 'Error fetching goals', description: error.message, variant: 'destructive' });
+    } else {
+      setGoals(data as Goal[]);
+    }
+    setLoading(false);
+  }, [user, toast]);
+
+  useEffect(() => {
+    fetchGoals();
+  }, [fetchGoals]);
   
   return (
     <Card>

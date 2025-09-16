@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Task, Course } from '@/lib/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,13 +13,11 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { EditTask } from './edit-task';
 import { Checkbox } from '../ui/checkbox';
-import { format, formatDistanceToNow } from 'date-fns';
+import { format, formatDistanceToNow, isPast } from 'date-fns';
 import { Badge } from '../ui/badge';
 import { cn } from '@/lib/utils';
-import { useCollection } from 'react-firebase-hooks/firestore';
-import { collection, query, where } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 import { useAuth } from '@/context/auth-context';
+import { supabase } from '@/lib/supabase';
 
 type TaskItemProps = {
   task: Task;
@@ -37,17 +35,21 @@ const priorityStyles = {
 export function TaskItem({ task, onUpdate, onDelete, onToggle }: TaskItemProps) {
   const [isEditing, setIsEditing] = useState(false);
   const { user } = useAuth();
-  
-  const coursesQuery = user ? query(collection(db, 'courses'), where('uid', '==', user.uid)) : null;
-  const [coursesSnapshot] = useCollection(coursesQuery);
-  const courses = coursesSnapshot?.docs.map(d => ({id: d.id, ...d.data()})) as Course[] || [];
-  const course = task.courseId ? courses.find(c => c.id === task.courseId) : null;
+  const [course, setCourse] = useState<Course | null>(null);
+
+  useEffect(() => {
+    const fetchCourse = async () => {
+        if (!task.courseId || !user) return;
+        const { data } = await supabase.from('courses').select('*').eq('id', task.courseId).single();
+        if (data) setCourse(data as Course);
+    }
+    fetchCourse();
+  }, [task.courseId, user]);
 
   const dueDate = new Date(task.dueDate);
 
   const getDueDateLabel = () => {
-    const now = new Date();
-    if (dueDate < now && !task.completed) return `Overdue by ${formatDistanceToNow(dueDate, { addSuffix: false })}`;
+    if (isPast(dueDate) && !task.completed) return `Overdue`;
     return `Due in ${formatDistanceToNow(dueDate, { addSuffix: false })}`;
   }
 
@@ -70,7 +72,7 @@ export function TaskItem({ task, onUpdate, onDelete, onToggle }: TaskItemProps) 
                 </Badge>
                 {course && <Badge variant="secondary">{course.name}</Badge>}
                 <p className="text-xs text-muted-foreground">{format(dueDate, 'PPP')}</p>
-                {!task.completed && <p className="text-xs text-red-500">{getDueDateLabel()}</p>}
+                {!task.completed && <p className={cn("text-xs", isPast(dueDate) ? "text-red-500" : "text-muted-foreground")}>{getDueDateLabel()}</p>}
             </div>
           </div>
 

@@ -1,12 +1,10 @@
 'use client';
 
 import { DailyActivity, WeeklyActivities, DayOfWeek } from '@/lib/types';
-import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import { useDocument } from 'react-firebase-hooks/firestore';
-import { doc, setDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/lib/supabase';
 
 type ActivitiesContextType = {
   weeklyActivities: WeeklyActivities;
@@ -24,34 +22,42 @@ export function ActivitiesProvider({ children }: { children: ReactNode }) {
   const [weeklyActivities, setWeeklyActivities] = useState<WeeklyActivities>({});
   const { user } = useAuth();
   const { toast } = useToast();
-  
-  const activitiesRef = user ? doc(db, 'dailyActivities', user.uid) : null;
-  const [activitiesSnapshot, loading, error] = useDocument(activitiesRef);
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (activitiesSnapshot?.exists()) {
-        const data = activitiesSnapshot.data();
-        // Ensure all days have an array, even if empty, to prevent rendering issues.
-        const sanitizedData = Object.keys(data).reduce((acc, day) => {
-            acc[day as DayOfWeek] = data[day as DayOfWeek] || [];
-            return acc;
-        }, {} as WeeklyActivities)
-        setWeeklyActivities(sanitizedData);
+  const fetchActivities = useCallback(async () => {
+    if (!user) return;
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('user_data')
+      .select('daily_activities')
+      .eq('uid', user.id)
+      .single();
+    
+    if (error && error.code !== 'PGRST116') {
+      toast({ title: 'Error loading daily plans', description: error.message, variant: 'destructive'});
     } else {
-        setWeeklyActivities({});
+      const activities = data?.daily_activities || {};
+      const sanitizedData = Object.keys(activities).reduce((acc, day) => {
+            acc[day as DayOfWeek] = activities[day as DayOfWeek] || [];
+            return acc;
+        }, {} as WeeklyActivities);
+      setWeeklyActivities(sanitizedData);
     }
-  }, [activitiesSnapshot]);
+    setLoading(false);
+  }, [user, toast]);
 
   useEffect(() => {
-    if (error) {
-        toast({ title: 'Error loading daily plans', description: error.message, variant: 'destructive'});
-    }
-  }, [error, toast]);
+    fetchActivities();
+  }, [fetchActivities]);
 
-  const updateFirestore = async (newWeeklyActivities: WeeklyActivities) => {
-    if (!activitiesRef) return;
-    await setDoc(activitiesRef, newWeeklyActivities, { merge: true });
-    setWeeklyActivities(newWeeklyActivities);
+  const updateSupabase = async (newWeeklyActivities: WeeklyActivities) => {
+    if (!user) return;
+    const { error } = await supabase
+      .from('user_data')
+      .upsert({ uid: user.id, daily_activities: newWeeklyActivities }, { onConflict: 'uid' });
+    if (error) {
+      toast({ title: 'Error saving daily plan', description: error.message, variant: 'destructive' });
+    }
   }
 
   const savePlanForDay = (day: DayOfWeek, activities: Omit<DailyActivity, 'id' | 'completed'>[]) => {
@@ -66,7 +72,8 @@ export function ActivitiesProvider({ children }: { children: ReactNode }) {
       [day]: newActivities,
     };
     
-    updateFirestore(newWeeklyActivities);
+    setWeeklyActivities(newWeeklyActivities);
+    updateSupabase(newWeeklyActivities);
   }
   
   const updateActivitiesForDay = (day: DayOfWeek, activities: DailyActivity[]) => {
@@ -74,7 +81,8 @@ export function ActivitiesProvider({ children }: { children: ReactNode }) {
       ...weeklyActivities,
       [day]: activities,
     };
-    updateFirestore(newWeeklyActivities);
+    setWeeklyActivities(newWeeklyActivities);
+    updateSupabase(newWeeklyActivities);
   }
 
   const addActivity = (day: DayOfWeek, activity: Omit<DailyActivity, 'id' | 'completed' | 'suggestions'>) => {

@@ -2,25 +2,40 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { Calendar } from "lucide-react";
-import { useCollection } from 'react-firebase-hooks/firestore';
-import { collection, query, where } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
-import { Course, TimetableEntry } from "@/lib/types";
 import { Skeleton } from "../ui/skeleton";
 import { useAuth } from "@/context/auth-context";
+import { Course, TimetableEntry } from "@/lib/types";
+import { supabase } from "@/lib/supabase";
+import { useState, useEffect, useCallback } from "react";
+import { toast } from "@/hooks/use-toast";
 
 export function TodaysSchedule() {
     const { user } = useAuth();
-    const coursesQuery = user ? query(collection(db, 'courses'), where('uid', '==', user.uid)) : null;
-    const timetableQuery = user ? query(collection(db, 'timetable'), where('uid', '==', user.uid)) : null;
+    const [courses, setCourses] = useState<Course[]>([]);
+    const [timetable, setTimetable] = useState<TimetableEntry[]>([]);
+    const [loading, setLoading] = useState(true);
 
-    const [coursesSnapshot, coursesLoading] = useCollection(coursesQuery);
-    const [timetableSnapshot, timetableLoading] = useCollection(timetableQuery);
+    const fetchData = useCallback(async () => {
+        if (!user) return;
+        setLoading(true);
+        const [coursesRes, timetableRes] = await Promise.all([
+          supabase.from('courses').select('*').eq('uid', user.id),
+          supabase.from('timetable').select('*').eq('uid', user.id)
+        ]);
+    
+        if (coursesRes.error) toast({ title: 'Error fetching courses', description: coursesRes.error.message, variant: 'destructive' });
+        else setCourses(coursesRes.data as Course[]);
+    
+        if (timetableRes.error) toast({ title: 'Error fetching timetable', description: timetableRes.error.message, variant: 'destructive' });
+        else setTimetable(timetableRes.data as TimetableEntry[]);
+        
+        setLoading(false);
+      }, [user, toast]);
+    
+    useEffect(() => {
+        fetchData();
+    }, [fetchData]);
 
-    const loading = coursesLoading || timetableLoading;
-
-    const courses = coursesSnapshot?.docs.map(doc => ({ id: doc.id, ...doc.data() } as Course)) || [];
-    const timetable = timetableSnapshot?.docs.map(doc => ({ id: doc.id, ...doc.data() } as TimetableEntry)) || [];
 
     const today = new Date().toLocaleDateString('en-US', { weekday: 'long' });
     const todaysClasses = timetable.filter(entry => entry.day === today);
@@ -44,7 +59,7 @@ export function TodaysSchedule() {
             </div>
         ) : todaysClasses.length > 0 ? (
             <div className="space-y-4">
-                {todaysClasses.map(entry => {
+                {todaysClasses.sort((a,b) => a.startTime.localeCompare(b.startTime)).map(entry => {
                     const course = getCourse(entry.courseId);
                     return (
                         <div key={entry.id} className="flex items-center gap-4 p-3 rounded-lg bg-secondary">

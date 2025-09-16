@@ -1,7 +1,6 @@
-
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Course, Note } from '@/lib/types';
 import { NoteList } from '@/components/notes/note-list';
 import { NoteEditor } from '@/components/notes/note-editor';
@@ -17,12 +16,10 @@ import { useNotes } from './notes-context';
 import { useFlashcards } from '../ai-tools/flashcards/flashcards-context';
 import { generateFlashcards } from '@/ai/flows/generate-flashcards';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useCollection } from 'react-firebase-hooks/firestore';
-import { collection, query, where } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/context/auth-context';
 import Link from 'next/link';
+import { supabase } from '@/lib/supabase';
 
 export default function NotesPage() {
     const { 
@@ -37,15 +34,28 @@ export default function NotesPage() {
     } = useNotes();
     const { user } = useAuth();
     
-    const coursesQuery = user ? query(collection(db, 'courses'), where('uid', '==', user.uid)) : null;
-    const [coursesSnapshot, coursesLoading] = useCollection(coursesQuery);
-    const courses = coursesSnapshot?.docs.map(d => ({id: d.id, ...d.data()})) as Course[] || [];
+    const [courses, setCourses] = useState<Course[]>([]);
+    const [coursesLoading, setCoursesLoading] = useState(true);
+	const { toast } = useToast();
+
+    const fetchCourses = useCallback(async () => {
+      if(!user) return;
+      setCoursesLoading(true);
+      const { data, error } = await supabase.from('courses').select('*').eq('uid', user.id);
+      if(error) toast({ title: "Error fetching courses", variant: 'destructive'});
+      else setCourses(data as Course[]);
+      setCoursesLoading(false);
+    }, [user, toast]);
+  
+    useEffect(() => {
+      fetchCourses();
+    }, [fetchCourses]);
+
 
   const [isDeleting, setIsDeleting] = useState(false);
   const [isSummarizing, setIsSummarizing] = useState(false);
   const [isGeneratingFlashcards, setIsGeneratingFlashcards] = useState(false);
   
-  const { toast } = useToast();
   const isMobile = useIsMobile();
   const router = useRouter();
   const searchParams = useSearchParams();

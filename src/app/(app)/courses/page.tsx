@@ -4,64 +4,74 @@ import { BookCopy } from 'lucide-react';
 import { Course } from '@/lib/types';
 import { AddCourse } from '@/components/courses/add-course';
 import { CourseList } from '@/components/courses/course-list';
-import { useCollection } from 'react-firebase-hooks/firestore';
-import { collection, addDoc, updateDoc, deleteDoc, doc, query, where } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/context/auth-context';
+import { supabase } from '@/lib/supabase';
+import { useState, useEffect, useCallback } from 'react';
 
 export default function CoursesPage() {
   const { toast } = useToast();
   const { user } = useAuth();
-  
-  const coursesQuery = user ? query(collection(db, 'courses'), where('uid', '==', user.uid)) : null;
-  const [coursesSnapshot, loading, error] = useCollection(coursesQuery);
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const courses: Course[] = loading || !coursesSnapshot 
-    ? [] 
-    : coursesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Course));
+  const fetchCourses = useCallback(async () => {
+    if (!user) return;
+    setLoading(true);
+    const { data, error } = await supabase.from('courses').select('*').eq('uid', user.id);
+    if (error) {
+      toast({ title: 'Error fetching courses', description: error.message, variant: 'destructive' });
+    } else {
+      setCourses(data as Course[]);
+    }
+    setLoading(false);
+  }, [user, toast]);
+
+  useEffect(() => {
+    fetchCourses();
+  }, [fetchCourses]);
 
   const handleAddCourse = async (newCourse: Omit<Course, 'id' | 'uid'>) => {
     if (!user) {
         toast({ title: 'You must be logged in', variant: 'destructive' });
         return;
     }
-    try {
-      await addDoc(collection(db, 'courses'), { ...newCourse, uid: user.uid });
-      toast({ title: 'Course added!' });
-    } catch (error) {
+    const { data, error } = await supabase.from('courses').insert({ ...newCourse, uid: user.id }).select();
+    if (error) {
       console.error(error);
       toast({ title: 'Error adding course', variant: 'destructive' });
+    } else {
+      setCourses(prev => [...prev, data[0]]);
+      toast({ title: 'Course added!' });
     }
   };
 
   const handleUpdateCourse = async (updatedCourse: Course) => {
     try {
-      const courseRef = doc(db, 'courses', updatedCourse.id);
       const { id, ...courseData } = updatedCourse;
-      await updateDoc(courseRef, courseData);
+      const { data, error } = await supabase.from('courses').update(courseData).eq('id', id).select();
+       if (error) throw error;
+      setCourses(prev => prev.map(c => c.id === id ? data[0] : c));
       toast({ title: 'Course updated!' });
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      toast({ title: 'Error updating course', variant: 'destructive' });
+      toast({ title: 'Error updating course', description: error.message, variant: 'destructive' });
     }
   };
 
   const handleDeleteCourse = async (courseId: string) => {
     try {
-      await deleteDoc(doc(db, 'courses', courseId));
+      const { error } = await supabase.from('courses').delete().eq('id', courseId);
+      if (error) throw error;
+      setCourses(prev => prev.filter(c => c.id !== courseId));
       toast({ title: 'Course deleted!' });
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      toast({ title: 'Error deleting course', variant: 'destructive' });
+      toast({ title: 'Error deleting course', description: error.message, variant: 'destructive' });
     }
   };
   
-  if (error) {
-    return <p className="text-destructive">Error: {error.message}</p>
-  }
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">

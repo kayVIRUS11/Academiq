@@ -4,67 +4,76 @@ import { Target } from 'lucide-react';
 import { Goal } from '@/lib/types';
 import { GoalList } from '@/components/goals/goal-list';
 import { AddGoal } from '@/components/goals/add-goal';
-import { useCollection } from 'react-firebase-hooks/firestore';
-import { collection, addDoc, updateDoc, deleteDoc, doc, query, where } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/context/auth-context';
+import { supabase } from '@/lib/supabase';
+import { useState, useEffect, useCallback } from 'react';
 
 export default function GoalsPage() {
   const { toast } = useToast();
   const { user } = useAuth();
+  const [goals, setGoals] = useState<Goal[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const goalsQuery = user ? query(collection(db, 'goals'), where('uid', '==', user.uid)) : null;
-  const [goalsSnapshot, loading, error] = useCollection(goalsQuery);
+  const fetchGoals = useCallback(async () => {
+    if (!user) return;
+    setLoading(true);
+    const { data, error } = await supabase.from('goals').select('*').eq('uid', user.id);
+    if (error) {
+      toast({ title: 'Error fetching goals', description: error.message, variant: 'destructive' });
+    } else {
+      setGoals(data as Goal[]);
+    }
+    setLoading(false);
+  }, [user, toast]);
 
-  const goals: Goal[] = loading || !goalsSnapshot
-    ? []
-    : goalsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Goal));
+  useEffect(() => {
+    fetchGoals();
+  }, [fetchGoals]);
 
   const handleAddGoal = async (newGoal: Omit<Goal, 'id' | 'progress' | 'uid'>) => {
     if (!user) {
         toast({ title: 'You must be logged in', variant: 'destructive' });
         return;
     }
-    try {
-      await addDoc(collection(db, 'goals'), {
+    const { data, error } = await supabase.from('goals').insert({
         ...newGoal,
         progress: 0,
-        uid: user.uid,
-      });
-      toast({ title: 'Goal added!' });
-    } catch (error) {
+        uid: user.id,
+      }).select();
+    if (error) {
       console.error(error);
       toast({ title: 'Error adding goal', variant: 'destructive' });
+    } else {
+      setGoals(prev => [...prev, data[0]]);
+      toast({ title: 'Goal added!' });
     }
   };
 
   const handleUpdateGoal = async (updatedGoal: Goal) => {
     try {
-      const goalRef = doc(db, 'goals', updatedGoal.id);
       const { id, ...goalData } = updatedGoal;
-      await updateDoc(goalRef, goalData);
+      const { data, error } = await supabase.from('goals').update(goalData).eq('id', id).select();
+      if (error) throw error;
+      setGoals(prev => prev.map(g => g.id === id ? data[0] : g));
       toast({ title: 'Goal updated!' });
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      toast({ title: 'Error updating goal', variant: 'destructive' });
+      toast({ title: 'Error updating goal', description: error.message, variant: 'destructive' });
     }
   };
 
   const handleDeleteGoal = async (goalId: string) => {
     try {
-      await deleteDoc(doc(db, 'goals', goalId));
+      await supabase.from('goals').delete().eq('id', goalId);
+      setGoals(prev => prev.filter(g => g.id !== goalId));
       toast({ title: 'Goal deleted!' });
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      toast({ title: 'Error deleting goal', variant: 'destructive' });
+      toast({ title: 'Error deleting goal', description: error.message, variant: 'destructive' });
     }
   };
-
-  if (error) {
-    return <p className="text-destructive">Error: {error.message}</p>
-  }
 
   return (
     <div className="space-y-6">

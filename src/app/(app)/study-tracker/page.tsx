@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Timer, BrainCircuit, Loader2, Save } from 'lucide-react';
 import { StudySession, TimetableEntry, Course, StudyPlanItem } from '@/lib/types';
 import { AddStudySession } from '@/components/study-tracker/add-study-session';
@@ -18,12 +18,10 @@ import { useToast } from '@/hooks/use-toast';
 import { generateWeeklyStudyPlan } from '@/ai/flows/generate-weekly-study-plan';
 import { useWeeklyPlan } from '../weekly-plan/weekly-plan-context';
 import { useRouter } from 'next/navigation';
-import { useCollection } from 'react-firebase-hooks/firestore';
-import { collection, updateDoc, deleteDoc, doc, query, where, addDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/context/auth-context';
 import { mergeWeeklyPlans } from '@/ai/flows/merge-weekly-study-plan';
+import { supabase } from '@/lib/supabase';
 
 export default function StudyTrackerPage() {
   const { plan: existingPlan, setPlan } = useWeeklyPlan();
@@ -31,19 +29,30 @@ export default function StudyTrackerPage() {
   const { toast } = useToast();
   const { user } = useAuth();
 
-  const coursesQuery = user ? query(collection(db, 'courses'), where('uid', '==', user.uid)) : null;
-  const timetableQuery = user ? query(collection(db, 'timetable'), where('uid', '==', user.uid)) : null;
-  const sessionsQuery = user ? query(collection(db, 'study-sessions'), where('uid', '==', user.uid)) : null;
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [timetable, setTimetable] = useState<TimetableEntry[]>([]);
+  const [sessions, setSessions] = useState<StudySession[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const [coursesSnapshot, coursesLoading] = useCollection(coursesQuery);
-  const [timetableSnapshot, timetableLoading] = useCollection(timetableQuery);
-  const [sessionsSnapshot, sessionsLoading] = useCollection(sessionsQuery);
-  
-  const courses = coursesSnapshot?.docs.map(d => ({id: d.id, ...d.data()})) as Course[] || [];
-  const timetable = timetableSnapshot?.docs.map(d => ({id: d.id, ...d.data()})) as TimetableEntry[] || [];
-  const sessions = sessionsSnapshot?.docs.map(d => ({id: d.id, ...d.data()})) as StudySession[] || [];
-  
-  const loading = coursesLoading || timetableLoading || sessionsLoading;
+  const fetchData = useCallback(async () => {
+    if(!user) return;
+    setLoading(true);
+    const [coursesRes, timetableRes, sessionsRes] = await Promise.all([
+        supabase.from('courses').select('*').eq('uid', user.id),
+        supabase.from('timetable').select('*').eq('uid', user.id),
+        supabase.from('study-sessions').select('*').eq('uid', user.id),
+    ]);
+
+    if(coursesRes.error) toast({title: "Error loading courses", variant: 'destructive'}); else setCourses(coursesRes.data as Course[]);
+    if(timetableRes.error) toast({title: "Error loading timetable", variant: 'destructive'}); else setTimetable(timetableRes.data as TimetableEntry[]);
+    if(sessionsRes.error) toast({title: "Error loading sessions", variant: 'destructive'}); else setSessions(sessionsRes.data as StudySession[]);
+
+    setLoading(false);
+  }, [user, toast]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const [isGenerating, setIsGenerating] = useState(false);
   const [isMerging, setIsMerging] = useState(false);
@@ -56,35 +65,40 @@ export default function StudyTrackerPage() {
         return;
     }
     try {
-        await addDoc(collection(db, 'study-sessions'), {
+        const { data, error } = await supabase.from('study-sessions').insert({
             ...newSessionData,
-            uid: user.uid,
-        });
+            uid: user.id,
+        }).select();
+        if(error) throw error;
+        setSessions(prev => [...prev, data[0]]);
         toast({title: 'Session logged!'});
-    } catch(e) {
+    } catch(e: any) {
         console.error(e);
-        toast({title: 'Error logging session', variant: 'destructive'});
+        toast({title: 'Error logging session', description: e.message, variant: 'destructive'});
     }
   };
 
   const handleUpdateSession = async (updatedSession: StudySession) => {
     try {
         const { id, ...data } = updatedSession;
-        await updateDoc(doc(db, 'study-sessions', id), data);
+        const {data: updatedData, error} = await supabase.from('study-sessions').update(data).eq('id', id).select();
+        if (error) throw error;
+        setSessions(prev => prev.map(s => s.id === id ? updatedData[0] : s));
         toast({title: 'Session updated.'});
-    } catch(e) {
+    } catch(e: any) {
         console.error(e);
-        toast({title: 'Error updating session', variant: 'destructive'});
+        toast({title: 'Error updating session', description: e.message, variant: 'destructive'});
     }
   };
 
   const handleDeleteSession = async (sessionId: string) => {
     try {
-        await deleteDoc(doc(db, 'study-sessions', sessionId));
+        await supabase.from('study-sessions').delete().eq('id', sessionId);
+        setSessions(prev => prev.filter(s => s.id !== sessionId));
         toast({title: 'Session deleted.'});
-    } catch(e) {
+    } catch(e: any) {
         console.error(e);
-        toast({title: 'Error deleting session', variant: 'destructive'});
+        toast({title: 'Error deleting session', description: e.message, variant: 'destructive'});
     }
   };
 

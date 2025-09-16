@@ -8,11 +8,10 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { db } from '@/lib/firebase';
 import { Course } from '@/lib/types';
-import { collection, query, where } from 'firebase/firestore';
-import { useCollection } from 'react-firebase-hooks/firestore';
 import { useAuth } from '@/context/auth-context';
+import { supabase } from '@/lib/supabase';
+import { useEffect, useState } from 'react';
 
 export type FilterState = {
   status: 'all' | 'pending' | 'completed';
@@ -27,9 +26,16 @@ type TaskFiltersProps = {
 
 export function TaskFilters({ filters, onFilterChange }: TaskFiltersProps) {
   const { user } = useAuth();
-  const coursesQuery = user ? query(collection(db, 'courses'), where('uid', '==', user.uid)) : null;
-  const [coursesSnapshot] = useCollection(coursesQuery);
-  const courses = coursesSnapshot?.docs.map(d => ({id: d.id, ...d.data()})) as Course[] || [];
+  const [courses, setCourses] = useState<Course[]>([]);
+
+  useEffect(() => {
+    const fetchCourses = async () => {
+        if (!user) return;
+        const { data } = await supabase.from('courses').select('*').eq('uid', user.id);
+        if (data) setCourses(data as Course[]);
+    }
+    fetchCourses();
+  }, [user]);
 
   return (
     <div className="flex flex-col md:flex-row gap-4">

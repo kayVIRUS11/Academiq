@@ -4,60 +4,75 @@ import { ListTodo } from 'lucide-react';
 import { Task } from '@/lib/types';
 import { TaskList } from '@/components/tasks/task-list';
 import { AddTask } from '@/components/tasks/add-task';
-import { useCollection } from 'react-firebase-hooks/firestore';
-import { collection, addDoc, updateDoc, deleteDoc, doc, query, where } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/context/auth-context';
+import { supabase } from '@/lib/supabase';
+import { useState, useEffect, useCallback } from 'react';
 
 export default function TasksPage() {
   const { toast } = useToast();
   const { user } = useAuth();
-  
-  const tasksQuery = user ? query(collection(db, 'tasks'), where('uid', '==', user.uid)) : null;
-  const [tasksSnapshot, loading, error] = useCollection(tasksQuery);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const tasks: Task[] = loading || !tasksSnapshot
-    ? []
-    : tasksSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task));
+  const fetchTasks = useCallback(async () => {
+    if (!user) return;
+    setLoading(true);
+    const { data, error } = await supabase.from('tasks').select('*').eq('uid', user.id);
+    if (error) {
+      toast({ title: 'Error fetching tasks', description: error.message, variant: 'destructive' });
+    } else {
+      setTasks(data as Task[]);
+    }
+    setLoading(false);
+  }, [user, toast]);
+
+  useEffect(() => {
+    fetchTasks();
+  }, [fetchTasks]);
 
   const handleAddTask = async (newTask: Omit<Task, 'id' | 'completed' | 'uid'>) => {
     if (!user) {
         toast({ title: 'You must be logged in', variant: 'destructive' });
         return;
     }
-    try {
-      await addDoc(collection(db, 'tasks'), {
+    const { data, error } = await supabase.from('tasks').insert({
         ...newTask,
         completed: false,
-        uid: user.uid,
-      });
-      toast({ title: 'Task added!' });
-    } catch (e) {
-      console.error(e);
+        uid: user.id,
+      }).select();
+
+    if (error) {
+      console.error(error);
       toast({ title: 'Error adding task', variant: 'destructive' });
+    } else {
+      setTasks(prev => [...prev, data[0]]);
+      toast({ title: 'Task added!' });
     }
   };
 
   const handleUpdateTask = async (updatedTask: Task) => {
     try {
       const { id, ...taskData } = updatedTask;
-      await updateDoc(doc(db, 'tasks', id), taskData);
+      const { data, error } = await supabase.from('tasks').update(taskData).eq('id', id).select();
+      if (error) throw error;
+      setTasks(prev => prev.map(t => t.id === id ? data[0] : t));
       toast({ title: 'Task updated.' });
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
-      toast({ title: 'Error updating task', variant: 'destructive' });
+      toast({ title: 'Error updating task', description: e.message, variant: 'destructive' });
     }
   };
 
   const handleDeleteTask = async (taskId: string) => {
     try {
-      await deleteDoc(doc(db, 'tasks', taskId));
+      await supabase.from('tasks').delete().eq('id', taskId);
+      setTasks(prev => prev.filter(t => t.id !== taskId));
       toast({ title: 'Task deleted.' });
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
-      toast({ title: 'Error deleting task', variant: 'destructive' });
+      toast({ title: 'Error deleting task', description: e.message, variant: 'destructive' });
     }
   };
   
@@ -65,17 +80,15 @@ export default function TasksPage() {
     try {
       const task = tasks.find(t => t.id === taskId);
       if (!task) return;
-      await updateDoc(doc(db, 'tasks', taskId), { completed: !task.completed });
-    } catch (e) {
+      const { data, error } = await supabase.from('tasks').update({ completed: !task.completed }).eq('id', taskId).select();
+      if (error) throw error;
+      setTasks(prev => prev.map(t => t.id === taskId ? data[0] : t));
+    } catch (e: any) {
       console.error(e);
-      toast({ title: 'Error toggling task', variant: 'destructive' });
+      toast({ title: 'Error toggling task', description: e.message, variant: 'destructive' });
     }
   };
   
-  if (error) {
-    return <p className="text-destructive">Error: {error.message}</p>
-  }
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">

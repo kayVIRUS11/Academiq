@@ -1,12 +1,10 @@
 'use client';
 
 import { Note } from '@/lib/types';
-import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import { useCollection } from 'react-firebase-hooks/firestore';
-import { collection, addDoc, updateDoc, deleteDoc, doc, query, where } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
+import { supabase } from '@/lib/supabase';
 
 type NotesContextType = {
   notes: Note[];
@@ -23,45 +21,56 @@ const NotesContext = createContext<NotesContextType | undefined>(undefined);
 
 export function NotesProvider({ children }: { children: ReactNode }) {
   const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
+  const [notes, setNotes] = useState<Note[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | undefined>();
+
   const { toast } = useToast();
   const { user } = useAuth();
-
-  const notesQuery = user ? query(collection(db, 'notes'), where('uid', '==', user.uid)) : null;
-  const [notesSnapshot, loading, error] = useCollection(notesQuery);
   
-  const notes: Note[] = loading || !notesSnapshot 
-    ? [] 
-    : notesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Note));
+  const fetchNotes = useCallback(async () => {
+    if (!user) return;
+    setLoading(true);
+    const { data, error } = await supabase.from('notes').select('*').eq('uid', user.id);
+    if(error) {
+      setError(error as any);
+      toast({ title: 'Error loading notes', description: error.message, variant: 'destructive' });
+    } else {
+      setNotes(data as Note[]);
+    }
+    setLoading(false);
+  }, [user, toast]);
 
   useEffect(() => {
-    if (error) {
-      toast({ title: 'Error loading notes', description: error.message, variant: 'destructive' });
-    }
-  }, [error, toast]);
+    fetchNotes();
+  }, [fetchNotes]);
 
 
   const addNote = async (newNoteData: Omit<Note, 'id' | 'createdAt' | 'uid'>): Promise<Note> => {
     if (!user) throw new Error("User not authenticated");
-    try {
-      const docRef = await addDoc(collection(db, 'notes'), {
+    
+    const { data, error } = await supabase.from('notes').insert({
         ...newNoteData,
-        uid: user.uid,
+        uid: user.id,
         createdAt: new Date().toISOString(),
-      });
-      const newNote = { ...newNoteData, uid: user.uid, id: docRef.id, createdAt: new Date().toISOString() };
-      toast({ title: 'Note added!' });
-      return newNote;
-    } catch (e) {
-      console.error(e);
-      toast({ title: 'Error adding note', variant: 'destructive' });
-      throw e;
+      }).select();
+
+    if (error) {
+        console.error(error);
+        toast({ title: 'Error adding note', variant: 'destructive' });
+        throw error;
     }
+    const newNote = data[0] as Note;
+    setNotes(prev => [...prev, newNote]);
+    toast({ title: 'Note added!' });
+    return newNote;
   };
 
   const updateNote = async (id: string, updatedData: Partial<Omit<Note, 'id' | 'createdAt' | 'uid'>>) => {
     try {
-        const noteRef = doc(db, 'notes', id);
-        await updateDoc(noteRef, updatedData);
+        const { error } = await supabase.from('notes').update(updatedData).eq('id', id);
+        if (error) throw error;
+        setNotes(prev => prev.map(n => n.id === id ? {...n, ...updatedData} : n));
     } catch(e) {
         // We don't toast here as it's noisy on auto-save
         console.error("Error updating note:", e);
@@ -70,11 +79,13 @@ export function NotesProvider({ children }: { children: ReactNode }) {
 
   const deleteNote = async (id: string) => {
     try {
-        await deleteDoc(doc(db, 'notes', id));
+        const { error } = await supabase.from('notes').delete().eq('id', id);
+        if (error) throw error;
+        setNotes(prev => prev.filter(n => n.id !== id));
         toast({ title: 'Note deleted.' });
-    } catch(e) {
+    } catch(e: any) {
         console.error(e);
-        toast({ title: 'Error deleting note.', variant: 'destructive'});
+        toast({ title: 'Error deleting note.', description: e.message, variant: 'destructive'});
     }
   }
 

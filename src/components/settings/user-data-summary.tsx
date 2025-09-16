@@ -5,10 +5,9 @@ import { useNotes } from "@/app/(app)/notes/notes-context";
 import { useFlashcards } from "@/app/(app)/ai-tools/flashcards/flashcards-context";
 import { useDailyActivities } from "@/app/(app)/daily-activities/activities-context";
 import { BookCopy, BrainCircuit, Calendar, ListTodo, NotebookText, Target, ClipboardCheck } from "lucide-react";
-import { useCollection } from "react-firebase-hooks/firestore";
-import { collection, query, where } from "firebase/firestore";
-import { db } from "@/lib/firebase";
 import { useAuth } from "@/context/auth-context";
+import { supabase } from "@/lib/supabase";
+import { useEffect, useState, useCallback } from "react";
 
 export function UserDataSummary() {
     const { user } = useAuth();
@@ -16,22 +15,42 @@ export function UserDataSummary() {
     const { flashcardSets } = useFlashcards();
     const { weeklyActivities } = useDailyActivities();
     
-    const coursesQuery = user ? query(collection(db, 'courses'), where('uid', '==', user.uid)) : null;
-    const tasksQuery = user ? query(collection(db, 'tasks'), where('uid', '==', user.uid)) : null;
-    const goalsQuery = user ? query(collection(db, 'goals'), where('uid', '==', user.uid)) : null;
-    const sessionsQuery = user ? query(collection(db, 'study-sessions'), where('uid', '==', user.uid)) : null;
+    const [counts, setCounts] = useState({
+        courses: 0,
+        tasks: 0,
+        goals: 0,
+        sessions: 0,
+    });
 
-    const [courses] = useCollection(coursesQuery);
-    const [tasks] = useCollection(tasksQuery);
-    const [goals] = useCollection(goalsQuery);
-    const [sessions] = useCollection(sessionsQuery);
+    const fetchCounts = useCallback(async () => {
+        if (!user) return;
+
+        const [courses, tasks, goals, sessions] = await Promise.all([
+            supabase.from('courses').select('id', { count: 'exact', head: true }).eq('uid', user.id),
+            supabase.from('tasks').select('id', { count: 'exact', head: true }).eq('uid', user.id),
+            supabase.from('goals').select('id', { count: 'exact', head: true }).eq('uid', user.id),
+            supabase.from('study-sessions').select('id', { count: 'exact', head: true }).eq('uid', user.id),
+        ]);
+
+        setCounts({
+            courses: courses.count || 0,
+            tasks: tasks.count || 0,
+            goals: goals.count || 0,
+            sessions: sessions.count || 0,
+        });
+
+    }, [user]);
+
+    useEffect(() => {
+        fetchCounts();
+    }, [fetchCounts]);
     
     const stats = [
-        { label: "Courses", value: courses?.docs.length || 0, icon: BookCopy },
-        { label: "Tasks", value: tasks?.docs.length || 0, icon: ListTodo },
-        { label: "Goals", value: goals?.docs.length || 0, icon: Target },
+        { label: "Courses", value: counts.courses, icon: BookCopy },
+        { label: "Tasks", value: counts.tasks, icon: ListTodo },
+        { label: "Goals", value: counts.goals, icon: Target },
         { label: "Notes", value: notes.length, icon: NotebookText },
-        { label: "Study Sessions Logged", value: sessions?.docs.length || 0, icon: Calendar },
+        { label: "Study Sessions Logged", value: counts.sessions, icon: Calendar },
         { label: "Flashcard Sets", value: flashcardSets.length, icon: BrainCircuit },
         { label: "Planned Days", value: Object.keys(weeklyActivities).length, icon: ClipboardCheck },
     ];

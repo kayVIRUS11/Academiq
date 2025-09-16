@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Loader2, Sparkles, FilePlus } from 'lucide-react';
@@ -12,11 +12,9 @@ import { marked } from 'marked';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Course } from '@/lib/types';
 import { Label } from '@/components/ui/label';
-import { useCollection } from 'react-firebase-hooks/firestore';
-import { collection, query, where } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/context/auth-context';
+import { supabase } from '@/lib/supabase';
 
 export function StudyGuideForm() {
   const [file, setFile] = useState<File | null>(null);
@@ -27,9 +25,21 @@ export function StudyGuideForm() {
   const { addNote } = useNotes();
   const { user } = useAuth();
   
-  const coursesQuery = user ? query(collection(db, 'courses'), where('uid', '==', user.uid)) : null;
-  const [coursesSnapshot, coursesLoading] = useCollection(coursesQuery);
-  const courses = coursesSnapshot?.docs.map(d => ({id: d.id, ...d.data()})) as Course[] || [];
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [coursesLoading, setCoursesLoading] = useState(true);
+
+  const fetchCourses = useCallback(async () => {
+    if(!user) return;
+    setCoursesLoading(true);
+    const { data, error } = await supabase.from('courses').select('*').eq('uid', user.id);
+    if(error) toast({ title: "Error fetching courses", variant: 'destructive'});
+    else setCourses(data as Course[]);
+    setCoursesLoading(false);
+  }, [user, toast]);
+
+  useEffect(() => {
+    fetchCourses();
+  }, [fetchCourses]);
 
   const handleFileSelect = (selectedFile: File | null) => {
     setFile(selectedFile);

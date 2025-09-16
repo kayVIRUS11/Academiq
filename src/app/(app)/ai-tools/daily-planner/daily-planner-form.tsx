@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Loader2, Sparkles, Save } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -12,11 +12,9 @@ import { DayOfWeek, Course, Task, TimetableEntry } from '@/lib/types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { useWeeklyPlan } from '../../weekly-plan/weekly-plan-context';
-import { useCollection } from 'react-firebase-hooks/firestore';
-import { collection, query, where } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/context/auth-context';
+import { supabase } from '@/lib/supabase';
 
 const days: DayOfWeek[] = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
@@ -30,19 +28,30 @@ export function DailyPlannerForm() {
   const { plan: weeklyPlan } = useWeeklyPlan();
   const { user } = useAuth();
 
-  const tasksQuery = user ? query(collection(db, 'tasks'), where('uid', '==', user.uid)) : null;
-  const timetableQuery = user ? query(collection(db, 'timetable'), where('uid', '==', user.uid)) : null;
-  const coursesQuery = user ? query(collection(db, 'courses'), where('uid', '==', user.uid)) : null;
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [timetable, setTimetable] = useState<TimetableEntry[]>([]);
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [dataLoading, setDataLoading] = useState(true);
 
-  const [tasksSnapshot, tasksLoading] = useCollection(tasksQuery);
-  const [timetableSnapshot, timetableLoading] = useCollection(timetableQuery);
-  const [coursesSnapshot, coursesLoading] = useCollection(coursesQuery);
+  const fetchData = useCallback(async () => {
+    if (!user) return;
+    setDataLoading(true);
+    const [tasksRes, timetableRes, coursesRes] = await Promise.all([
+      supabase.from('tasks').select('*').eq('uid', user.id),
+      supabase.from('timetable').select('*').eq('uid', user.id),
+      supabase.from('courses').select('*').eq('uid', user.id),
+    ]);
 
-  const loading = tasksLoading || timetableLoading || coursesLoading;
+    if (tasksRes.error) toast({title: "Error loading tasks", variant: 'destructive'}); else setTasks(tasksRes.data as Task[]);
+    if (timetableRes.error) toast({title: "Error loading timetable", variant: 'destructive'}); else setTimetable(timetableRes.data as TimetableEntry[]);
+    if (coursesRes.error) toast({title: "Error loading courses", variant: 'destructive'}); else setCourses(coursesRes.data as Course[]);
+    setDataLoading(false);
+  }, [user, toast]);
 
-  const tasks = tasksSnapshot?.docs.map(d => ({id: d.id, ...d.data()})) as Task[] || [];
-  const timetable = timetableSnapshot?.docs.map(d => ({id: d.id, ...d.data()})) as TimetableEntry[] || [];
-  const courses = coursesSnapshot?.docs.map(d => ({id: d.id, ...d.data()})) as Course[] || [];
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
 
   const getCourseName = (id: string) => courses.find(c => c.id === id)?.name || 'Unknown Course';
 
@@ -105,7 +114,7 @@ export function DailyPlannerForm() {
   return (
     <>
       <div className="space-y-6">
-      {loading ? <Skeleton className="h-24 w-full" /> : (
+      {dataLoading ? <Skeleton className="h-24 w-full" /> : (
         <>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">

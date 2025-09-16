@@ -4,31 +4,58 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Task } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { ListTodo } from "lucide-react";
-import { useCollection } from "react-firebase-hooks/firestore";
-import { collection, doc, updateDoc, query, where } from "firebase/firestore";
-import { db } from "@/lib/firebase";
 import { Skeleton } from "../ui/skeleton";
 import { useAuth } from "@/context/auth-context";
+import { supabase } from "@/lib/supabase";
+import { useState, useEffect, useCallback } from "react";
+import { toast } from "@/hooks/use-toast";
 
 export function TasksDueToday() {
   const { user } = useAuth();
-  const today = new Date();
-  today.setHours(0,0,0,0);
-  
-  const tasksQuery = user ? query(collection(db, 'tasks'), where('uid', '==', user.uid)) : null;
-  const [tasksSnapshot, loading] = useCollection(tasksQuery);
-  
-  const tasksDueToday = tasksSnapshot?.docs.map(doc => ({id: doc.id, ...doc.data()}) as Task)
-    .filter(task => {
-        const dueDate = new Date(task.dueDate);
-        dueDate.setHours(0,0,0,0);
-        return dueDate.getTime() === today.getTime();
-    }) || [];
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchTasks = useCallback(async () => {
+    if (!user) return;
+    setLoading(true);
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    const todayISO = today.toISOString().slice(0,10);
+    
+    const { data, error } = await supabase
+      .from('tasks')
+      .select('*')
+      .eq('uid', user.id)
+      .eq('dueDate', todayISO);
+
+    if (error) {
+        toast({ title: "Error fetching today's tasks", description: error.message, variant: 'destructive' });
+    } else {
+        setTasks(data as Task[]);
+    }
+    setLoading(false);
+  }, [user, toast]);
+
+  useEffect(() => {
+    fetchTasks();
+  }, [fetchTasks]);
+
 
   const handleTaskToggle = async (taskId: string, currentStatus: boolean) => {
-    const taskRef = doc(db, 'tasks', taskId);
-    await updateDoc(taskRef, { completed: !currentStatus });
+    const { data, error } = await supabase
+        .from('tasks')
+        .update({ completed: !currentStatus })
+        .eq('id', taskId)
+        .select();
+    
+    if (error) {
+        toast({ title: 'Error updating task', description: error.message, variant: 'destructive' });
+    } else {
+        setTasks(prev => prev.map(t => t.id === taskId ? data[0] as Task : t));
+    }
   };
+
+  const tasksDueToday = tasks;
 
   return (
     <Card className="col-span-1">

@@ -26,10 +26,9 @@ import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { Task, Course } from '@/lib/types';
-import { useCollection } from 'react-firebase-hooks/firestore';
-import { collection, query, where } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 import { useAuth } from '@/context/auth-context';
+import { supabase } from '@/lib/supabase';
+import { useState, useEffect } from 'react';
 
 const taskFormSchema = z.object({
   title: z.string().min(3, { message: 'Title must be at least 3 characters.' }),
@@ -52,9 +51,16 @@ export function TaskForm({
   submitButtonText = 'Save Task',
 }: TaskFormProps) {
   const { user } = useAuth();
-  const coursesQuery = user ? query(collection(db, 'courses'), where('uid', '==', user.uid)) : null;
-  const [coursesSnapshot] = useCollection(coursesQuery);
-  const courses = coursesSnapshot?.docs.map(d => ({id: d.id, ...d.data()})) as Course[] || [];
+  const [courses, setCourses] = useState<Course[]>([]);
+
+  useEffect(() => {
+    const fetchCourses = async () => {
+        if (!user) return;
+        const { data } = await supabase.from('courses').select('*').eq('uid', user.id);
+        if (data) setCourses(data as Course[]);
+    }
+    fetchCourses();
+  }, [user]);
 
   const form = useForm<TaskFormValues>({
     resolver: zodResolver(taskFormSchema),
@@ -68,7 +74,7 @@ export function TaskForm({
 
   function handleFormSubmit(values: TaskFormValues) {
     if (values.courseId === 'none') {
-        delete values.courseId;
+        values.courseId = undefined;
     }
     onSubmit(values);
   }

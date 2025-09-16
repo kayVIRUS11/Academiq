@@ -1,12 +1,10 @@
 'use client';
 
-import { StudyPlanItem, DayOfWeek } from '@/lib/types';
-import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import { useDocument } from 'react-firebase-hooks/firestore';
-import { doc, setDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { StudyPlanItem } from '@/lib/types';
+import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/lib/supabase';
 
 type WeeklyPlanContextType = {
   plan: StudyPlanItem[];
@@ -23,55 +21,64 @@ export function WeeklyPlanProvider({ children }: { children: ReactNode }) {
   const [plan, setPlanState] = useState<StudyPlanItem[]>([]);
   const { user } = useAuth();
   const { toast } = useToast();
-  
-  const planRef = user ? doc(db, 'weeklyPlans', user.uid) : null;
-  const [planSnapshot, loading, error] = useDocument(planRef);
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (planSnapshot?.exists()) {
-      const data = planSnapshot.data();
-      setPlanState(data.plan || []);
+  const fetchPlan = useCallback(async () => {
+    if (!user) return;
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('user_data')
+      .select('weekly_plan')
+      .eq('uid', user.id)
+      .single();
+    
+    if (error && error.code !== 'PGRST116') {
+      toast({ title: 'Error loading weekly plan', description: error.message, variant: 'destructive'});
     } else {
-        setPlanState([]);
+      setPlanState(data?.weekly_plan || []);
     }
-  }, [planSnapshot]);
+    setLoading(false);
+  }, [user, toast]);
 
   useEffect(() => {
-    if (error) {
-        toast({ title: 'Error loading weekly plan', description: error.message, variant: 'destructive'});
-    }
-  }, [error, toast]);
+    fetchPlan();
+  }, [fetchPlan]);
 
-  const updateFirestore = async (newPlan: StudyPlanItem[]) => {
-    if (!planRef) return;
-    await setDoc(planRef, { plan: newPlan });
+  const updateSupabase = async (newPlan: StudyPlanItem[]) => {
+    if (!user) return;
+    const { error } = await supabase
+        .from('user_data')
+        .upsert({ uid: user.id, weekly_plan: newPlan }, { onConflict: 'uid' });
+    if (error) {
+        toast({ title: 'Error saving weekly plan', description: error.message, variant: 'destructive'});
+    }
   }
   
   const setPlan = (newPlanData: Omit<StudyPlanItem, 'id'>[]) => {
     const newPlanWithIds = newPlanData.map(item => ({...item, id: `${Date.now()}-${Math.random()}`}));
     setPlanState(newPlanWithIds);
-    updateFirestore(newPlanWithIds);
+    updateSupabase(newPlanWithIds);
   };
 
   const addPlanItem = (item: Omit<StudyPlanItem, 'id'>) => {
     const newItem = { ...item, id: Date.now().toString() };
     const newPlan = [...plan, newItem];
     setPlanState(newPlan);
-    updateFirestore(newPlan);
+    updateSupabase(newPlan);
     toast({ title: 'Study block added!' });
   }
 
   const updatePlanItem = (id: string, item: Omit<StudyPlanItem, 'id'>) => {
     const newPlan = plan.map(p => p.id === id ? { ...item, id } : p);
     setPlanState(newPlan);
-    updateFirestore(newPlan);
+    updateSupabase(newPlan);
     toast({ title: 'Study block updated!' });
   }
 
   const deletePlanItem = (id: string) => {
     const newPlan = plan.filter(p => p.id !== id);
     setPlanState(newPlan);
-    updateFirestore(newPlan);
+    updateSupabase(newPlan);
     toast({ title: 'Study block deleted.' });
   }
 
