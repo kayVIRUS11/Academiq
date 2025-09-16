@@ -43,7 +43,7 @@ export default function NotesPage() {
       setCoursesLoading(true);
       const { data, error } = await supabase.from('courses').select('*').eq('uid', user.id);
       if(error) toast({ title: "Error fetching courses", variant: 'destructive'});
-      else setCourses(data as Course[]);
+      else setCourses(data.map(c => ({...c, courseCode: c.course_code})) as Course[]);
       setCoursesLoading(false);
     }, [user, toast]);
   

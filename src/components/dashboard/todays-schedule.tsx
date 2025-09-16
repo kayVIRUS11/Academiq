@@ -24,10 +24,10 @@ export function TodaysSchedule() {
         ]);
     
         if (coursesRes.error) toast({ title: 'Error fetching courses', description: coursesRes.error.message, variant: 'destructive' });
-        else setCourses(coursesRes.data as Course[]);
+        else setCourses(coursesRes.data.map(c => ({...c, courseCode: c.course_code})) as Course[]);
     
         if (timetableRes.error) toast({ title: 'Error fetching timetable', description: timetableRes.error.message, variant: 'destructive' });
-        else setTimetable(timetableRes.data as TimetableEntry[]);
+        else setTimetable(timetableRes.data.map(e => ({...e, courseId: e.course_id, startTime: e.start_time, endTime: e.end_time})) as TimetableEntry[]);
         
         setLoading(false);
       }, [user, toast]);

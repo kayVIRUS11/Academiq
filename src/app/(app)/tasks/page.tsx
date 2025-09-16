@@ -23,7 +23,7 @@ export default function TasksPage() {
     if (error) {
       toast({ title: 'Error fetching tasks', description: error.message, variant: 'destructive' });
     } else {
-      setTasks(data as Task[]);
+      setTasks(data.map(t => ({...t, dueDate: t.due_date, courseId: t.course_id })) as Task[]);
     }
     setLoading(false);
   }, [user, toast]);
@@ -37,8 +37,11 @@ export default function TasksPage() {
         toast({ title: 'You must be logged in', variant: 'destructive' });
         return;
     }
+    const { dueDate, courseId, ...rest } = newTask;
     const { data, error } = await supabase.from('tasks').insert({
-        ...newTask,
+        ...rest,
+        due_date: dueDate,
+        course_id: courseId,
         completed: false,
         uid: user.id,
       }).select();
@@ -47,17 +50,19 @@ export default function TasksPage() {
       console.error(error);
       toast({ title: 'Error adding task', variant: 'destructive' });
     } else {
-      setTasks(prev => [...prev, data[0]]);
+      const addedTask = data[0];
+      setTasks(prev => [...prev, {...addedTask, dueDate: addedTask.due_date, courseId: addedTask.course_id} as Task]);
       toast({ title: 'Task added!' });
     }
   };
 
   const handleUpdateTask = async (updatedTask: Task) => {
     try {
-      const { id, ...taskData } = updatedTask;
-      const { data, error } = await supabase.from('tasks').update(taskData).eq('id', id).select();
+      const { id, uid, dueDate, courseId, ...taskData } = updatedTask;
+      const { data, error } = await supabase.from('tasks').update({ ...taskData, due_date: dueDate, course_id: courseId }).eq('id', id).select();
       if (error) throw error;
-      setTasks(prev => prev.map(t => t.id === id ? data[0] : t));
+      const newTask = data[0];
+      setTasks(prev => prev.map(t => t.id === id ? {...newTask, dueDate: newTask.due_date, courseId: newTask.course_id} as Task : t));
       toast({ title: 'Task updated.' });
     } catch (e: any) {
       console.error(e);
@@ -82,7 +87,8 @@ export default function TasksPage() {
       if (!task) return;
       const { data, error } = await supabase.from('tasks').update({ completed: !task.completed }).eq('id', taskId).select();
       if (error) throw error;
-      setTasks(prev => prev.map(t => t.id === taskId ? data[0] : t));
+      const updatedTask = data[0];
+      setTasks(prev => prev.map(t => t.id === taskId ? {...updatedTask, dueDate: updatedTask.due_date, courseId: updatedTask.course_id} as Task : t));
     } catch (e: any) {
       console.error(e);
       toast({ title: 'Error toggling task', description: e.message, variant: 'destructive' });

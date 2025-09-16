@@ -54,7 +54,7 @@ export function StudySessionForm({
     resolver: zodResolver(sessionFormSchema),
     defaultValues: {
       courseId: defaultValues?.courseId,
-      date: defaultValues?.date ?? new Date(),
+      date: defaultValues?.date ? new Date(defaultValues.date) : new Date(),
       duration: defaultValues?.duration ?? 60,
       notes: defaultValues?.notes ?? '',
     },

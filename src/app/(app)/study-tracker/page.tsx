@@ -43,9 +43,9 @@ export default function StudyTrackerPage() {
         supabase.from('study-sessions').select('*').eq('uid', user.id),
     ]);
 
-    if(coursesRes.error) toast({title: "Error loading courses", variant: 'destructive'}); else setCourses(coursesRes.data as Course[]);
-    if(timetableRes.error) toast({title: "Error loading timetable", variant: 'destructive'}); else setTimetable(timetableRes.data as TimetableEntry[]);
-    if(sessionsRes.error) toast({title: "Error loading sessions", variant: 'destructive'}); else setSessions(sessionsRes.data as StudySession[]);
+    if(coursesRes.error) toast({title: "Error loading courses", variant: 'destructive'}); else setCourses(coursesRes.data.map(c => ({...c, courseCode: c.course_code})) as Course[]);
+    if(timetableRes.error) toast({title: "Error loading timetable", variant: 'destructive'}); else setTimetable(timetableRes.data.map(e => ({...e, courseId: e.course_id, startTime: e.start_time, endTime: e.end_time})) as TimetableEntry[]);
+    if(sessionsRes.error) toast({title: "Error loading sessions", variant: 'destructive'}); else setSessions(sessionsRes.data.map(s => ({...s, courseId: s.course_id})) as StudySession[]);
 
     setLoading(false);
   }, [user, toast]);
@@ -65,12 +65,15 @@ export default function StudyTrackerPage() {
         return;
     }
     try {
+        const { courseId, ...rest } = newSessionData;
         const { data, error } = await supabase.from('study-sessions').insert({
-            ...newSessionData,
+            ...rest,
+            course_id: courseId,
             uid: user.id,
         }).select();
         if(error) throw error;
-        setSessions(prev => [...prev, data[0]]);
+        const newSession = data[0];
+        setSessions(prev => [...prev, {...newSession, courseId: newSession.course_id} as StudySession]);
         toast({title: 'Session logged!'});
     } catch(e: any) {
         console.error(e);
@@ -80,10 +83,11 @@ export default function StudyTrackerPage() {
 
   const handleUpdateSession = async (updatedSession: StudySession) => {
     try {
-        const { id, ...data } = updatedSession;
-        const {data: updatedData, error} = await supabase.from('study-sessions').update(data).eq('id', id).select();
+        const { id, uid, courseId, ...data } = updatedSession;
+        const {data: updatedData, error} = await supabase.from('study-sessions').update({ ...data, course_id: courseId }).eq('id', id).select();
         if (error) throw error;
-        setSessions(prev => prev.map(s => s.id === id ? updatedData[0] : s));
+        const newSession = updatedData[0];
+        setSessions(prev => prev.map(s => s.id === id ? {...newSession, courseId: newSession.course_id} as StudySession : s));
         toast({title: 'Session updated.'});
     } catch(e: any) {
         console.error(e);

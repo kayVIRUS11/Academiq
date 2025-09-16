@@ -36,7 +36,7 @@ export function NotesProvider({ children }: { children: ReactNode }) {
       setError(error as any);
       toast({ title: 'Error loading notes', description: error.message, variant: 'destructive' });
     } else {
-      setNotes(data as Note[]);
+      setNotes(data.map(n => ({...n, courseId: n.course_id, createdAt: n.created_at })) as Note[]);
     }
     setLoading(false);
   }, [user, toast]);
@@ -49,10 +49,11 @@ export function NotesProvider({ children }: { children: ReactNode }) {
   const addNote = async (newNoteData: Omit<Note, 'id' | 'createdAt' | 'uid'>): Promise<Note> => {
     if (!user) throw new Error("User not authenticated");
     
+    const { courseId, ...rest } = newNoteData;
     const { data, error } = await supabase.from('notes').insert({
-        ...newNoteData,
+        ...rest,
+        course_id: courseId,
         uid: user.id,
-        createdAt: new Date().toISOString(),
       }).select();
 
     if (error) {
@@ -60,7 +61,8 @@ export function NotesProvider({ children }: { children: ReactNode }) {
         toast({ title: 'Error adding note', variant: 'destructive' });
         throw error;
     }
-    const newNote = data[0] as Note;
+    const newNoteRaw = data[0];
+    const newNote = {...newNoteRaw, courseId: newNoteRaw.course_id, createdAt: newNoteRaw.created_at } as Note;
     setNotes(prev => [...prev, newNote]);
     toast({ title: 'Note added!' });
     return newNote;
@@ -68,7 +70,8 @@ export function NotesProvider({ children }: { children: ReactNode }) {
 
   const updateNote = async (id: string, updatedData: Partial<Omit<Note, 'id' | 'createdAt' | 'uid'>>) => {
     try {
-        const { error } = await supabase.from('notes').update(updatedData).eq('id', id);
+        const { courseId, ...rest } = updatedData;
+        const { error } = await supabase.from('notes').update({ ...rest, course_id: courseId }).eq('id', id);
         if (error) throw error;
         setNotes(prev => prev.map(n => n.id === id ? {...n, ...updatedData} : n));
     } catch(e) {

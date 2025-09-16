@@ -39,9 +39,16 @@ export function TaskItem({ task, onUpdate, onDelete, onToggle }: TaskItemProps) 
 
   useEffect(() => {
     const fetchCourse = async () => {
-        if (!task.courseId || !user) return;
+        if (!task.courseId || !user) {
+            setCourse(null);
+            return;
+        };
         const { data } = await supabase.from('courses').select('*').eq('id', task.courseId).single();
-        if (data) setCourse(data as Course);
+        if (data) {
+            setCourse({...data, courseCode: data.course_code} as Course);
+        } else {
+            setCourse(null);
+        }
     }
     fetchCourse();
   }, [task.courseId, user]);

@@ -143,7 +143,7 @@ export function TimetableEntryForm({
             <FormItem>
               <FormLabel>Location (Optional)</FormLabel>
               <FormControl>
-                <Input placeholder="e.g., Room 301" {...field} />
+                <Input placeholder="e.g., Room 301" {...field} value={field.value || ''}/>
               </FormControl>
               <FormMessage />
             </FormItem>

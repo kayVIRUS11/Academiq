@@ -57,7 +57,7 @@ export function TaskForm({
     const fetchCourses = async () => {
         if (!user) return;
         const { data } = await supabase.from('courses').select('*').eq('uid', user.id);
-        if (data) setCourses(data as Course[]);
+        if (data) setCourses(data.map(c => ({...c, courseCode: c.course_code})) as Course[]);
     }
     fetchCourses();
   }, [user]);

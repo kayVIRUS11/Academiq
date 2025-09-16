@@ -23,7 +23,7 @@ export default function CoursesPage() {
     if (error) {
       toast({ title: 'Error fetching courses', description: error.message, variant: 'destructive' });
     } else {
-      setCourses(data as Course[]);
+      setCourses(data.map(c => ({...c, courseCode: c.course_code})) as Course[]);
     }
     setLoading(false);
   }, [user, toast]);
@@ -37,22 +37,25 @@ export default function CoursesPage() {
         toast({ title: 'You must be logged in', variant: 'destructive' });
         return;
     }
-    const { data, error } = await supabase.from('courses').insert({ ...newCourse, uid: user.id }).select();
+    const { courseCode, ...rest } = newCourse;
+    const { data, error } = await supabase.from('courses').insert({ ...rest, course_code: courseCode, uid: user.id }).select();
     if (error) {
       console.error(error);
       toast({ title: 'Error adding course', variant: 'destructive' });
     } else {
-      setCourses(prev => [...prev, data[0]]);
+      const addedCourse = data[0];
+      setCourses(prev => [...prev, {...addedCourse, courseCode: addedCourse.course_code} as Course]);
       toast({ title: 'Course added!' });
     }
   };
 
   const handleUpdateCourse = async (updatedCourse: Course) => {
     try {
-      const { id, ...courseData } = updatedCourse;
-      const { data, error } = await supabase.from('courses').update(courseData).eq('id', id).select();
+      const { id, uid, courseCode, ...courseData } = updatedCourse;
+      const { data, error } = await supabase.from('courses').update({ ...courseData, course_code: courseCode }).eq('id', id).select();
        if (error) throw error;
-      setCourses(prev => prev.map(c => c.id === id ? data[0] : c));
+      const newCourse = data[0];
+      setCourses(prev => prev.map(c => c.id === id ? {...newCourse, courseCode: newCourse.course_code} as Course : c));
       toast({ title: 'Course updated!' });
     } catch (error: any) {
       console.error(error);
@@ -66,7 +69,8 @@ export default function CoursesPage() {
       if (error) throw error;
       setCourses(prev => prev.filter(c => c.id !== courseId));
       toast({ title: 'Course deleted!' });
-    } catch (error: any) {
+    } catch (error: any)
+{
       console.error(error);
       toast({ title: 'Error deleting course', description: error.message, variant: 'destructive' });
     }

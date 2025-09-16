@@ -26,12 +26,12 @@ export function TasksDueToday() {
       .from('tasks')
       .select('*')
       .eq('uid', user.id)
-      .eq('dueDate', todayISO);
+      .eq('due_date', todayISO);
 
     if (error) {
         toast({ title: "Error fetching today's tasks", description: error.message, variant: 'destructive' });
     } else {
-        setTasks(data as Task[]);
+        setTasks(data.map(t => ({...t, dueDate: t.due_date, courseId: t.course_id})) as Task[]);
     }
     setLoading(false);
   }, [user, toast]);
@@ -51,7 +51,8 @@ export function TasksDueToday() {
     if (error) {
         toast({ title: 'Error updating task', description: error.message, variant: 'destructive' });
     } else {
-        setTasks(prev => prev.map(t => t.id === taskId ? data[0] as Task : t));
+        const updatedTask = data[0];
+        setTasks(prev => prev.map(t => t.id === taskId ? {...updatedTask, dueDate: updatedTask.due_date, courseId: updatedTask.course_id} as Task : t));
     }
   };
 
