@@ -12,7 +12,7 @@ import { CoursesProvider } from './courses-context';
 import { Course } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { Sidebar } from '@/components/sidebar';
-import { SidebarProvider, useSidebar } from '@/hooks/use-sidebar';
+import { SidebarProvider, useSidebar } from '@/hooks/use-sidebar.tsx';
 import { Header } from '@/components/header';
 
 function AppShell({ children }: { children: React.ReactNode }) {

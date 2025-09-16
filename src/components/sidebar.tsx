@@ -1,6 +1,6 @@
 'use client';
 
-import { useSidebar } from '@/hooks/use-sidebar';
+import { useSidebar } from '@/hooks/use-sidebar.tsx';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 import { SidebarNav } from './sidebar-nav';
