@@ -23,9 +23,7 @@ import {
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
 
-import { useSidebar } from './ui/sidebar';
 import { Logo } from './logo';
-import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
 
@@ -48,17 +46,13 @@ const aiTools = [
   { href: '/ai-tools/study-guide', label: 'Study Guide Generator' },
 ];
 
-export function SidebarNav() {
-  const pathname = usePathname();
-  const { setOpen } = useSidebar();
-  const isMobile = useIsMobile();
-  const [isAiToolsOpen, setIsAiToolsOpen] = useState(pathname.startsWith('/ai-tools'));
+type SidebarNavProps = {
+  onLinkClick?: () => void;
+}
 
-  const handleLinkClick = () => {
-    if (isMobile) {
-        setOpen(false);
-    }
-  };
+export function SidebarNav({ onLinkClick }: SidebarNavProps) {
+  const pathname = usePathname();
+  const [isAiToolsOpen, setIsAiToolsOpen] = useState(pathname.startsWith('/ai-tools'));
 
   const NavLink = ({
     href,
@@ -74,7 +68,7 @@ export function SidebarNav() {
     return (
         <Link
             href={href}
-            onClick={handleLinkClick}
+            onClick={onLinkClick}
             className={cn(
             'flex items-center gap-4 px-2.5',
             isActive
@@ -114,7 +108,7 @@ export function SidebarNav() {
                 <Link
                   key={tool.href}
                   href={tool.href}
-                  onClick={handleLinkClick}
+                  onClick={onLinkClick}
                   className={cn(
                     'text-muted-foreground hover:text-foreground',
                     pathname === tool.href && 'text-foreground'

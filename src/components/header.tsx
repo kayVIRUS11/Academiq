@@ -2,18 +2,22 @@
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from './ui/button';
 import { Menu } from 'lucide-react';
-import { useSidebar } from './ui/sidebar';
 import { SidebarNav } from './sidebar-nav';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useState } from 'react';
 
-export function Header() {
-  const { open, setOpen } = useSidebar();
+type HeaderProps = {
+  toggleSidebar?: () => void;
+}
+
+export function Header({ toggleSidebar }: HeaderProps) {
   const isMobile = useIsMobile();
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
 
   if (isMobile) {
     return (
         <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
-            <Sheet>
+            <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
                 <SheetTrigger asChild>
                     <Button size="icon" variant="outline">
                         <Menu />
@@ -21,7 +25,7 @@ export function Header() {
                     </Button>
                 </SheetTrigger>
                 <SheetContent side="left" className="sm:max-w-xs pt-12">
-                    <SidebarNav />
+                    <SidebarNav onLinkClick={() => setIsSheetOpen(false)} />
                 </SheetContent>
             </Sheet>
         </header>
@@ -29,8 +33,8 @@ export function Header() {
   }
 
   return (
-    <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
-        <Button size="icon" variant="outline" onClick={() => setOpen(!open)}>
+    <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm.bg-transparent sm:px-6">
+        <Button size="icon" variant="outline" onClick={toggleSidebar}>
             <Menu />
             <span className="sr-only">Toggle Menu</span>
         </Button>
