@@ -132,7 +132,7 @@ export function SavePlanDialog({ isOpen, onOpenChange, plan, defaultDay }: SaveP
             <div className="flex gap-2">
                 <Button variant="secondary" onClick={handleMerge} disabled={isMerging}>
                     {isMerging && <Loader2 className="mr-2 animate-spin" />}
-                    Merge with Existing
+                    {isMerging ? 'Merging...' : 'Merge with Existing'}
                 </Button>
                 <Button onClick={() => handleSave(true)} disabled={!selectedDay || isMerging}>Replace Existing</Button>
             </div>
