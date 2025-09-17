@@ -1,7 +1,7 @@
 
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { NotesProvider } from '@/app/(app)/notes/notes-context';
 import { ActivitiesProvider } from '@/app/(app)/daily-activities/activities-context';
 import { FlashcardsProvider } from '@/app/(app)/ai-tools/flashcards/flashcards-context';
@@ -22,6 +22,17 @@ export function AppProviders({
   courses: Course[];
 }) {
     const { user, loading } = useAuth();
+
+    useEffect(() => {
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+          navigator.serviceWorker
+            .register("/sw.js")
+            .then((reg) => console.log("Service Worker registered:", reg))
+            .catch((err) => console.error("Service Worker registration failed:", err));
+        });
+      }
+    }, []);
     
     if (loading || !user) {
         return (
