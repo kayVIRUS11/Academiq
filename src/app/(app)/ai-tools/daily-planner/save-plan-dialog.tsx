@@ -27,7 +27,7 @@ import { Loader2 } from 'lucide-react';
 type SavePlanDialogProps = {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  plan: Omit<DailyActivity, 'completed'>[];
+  plan: Omit<DailyActivity, 'id' | 'completed'>[];
   defaultDay?: DayOfWeek;
 };
 
@@ -105,7 +105,7 @@ export function SavePlanDialog({ isOpen, onOpenChange, plan, defaultDay }: SaveP
         <DialogHeader>
           <DialogTitle>Save Your Plan</DialogTitle>
           <DialogDescription>
-            {existingPlan 
+            {existingPlan && existingPlan.length > 0
                 ? `A plan already exists for ${selectedDay}. How would you like to save this new plan?`
                 : "Select which day of the week you would like to save this plan for."
             }
@@ -113,7 +113,7 @@ export function SavePlanDialog({ isOpen, onOpenChange, plan, defaultDay }: SaveP
         </DialogHeader>
         <div className="py-4">
           <Select onValueChange={(value: DayOfWeek) => setSelectedDay(value)} value={selectedDay || undefined}>
-            <SelectTrigger disabled={!!existingPlan}>
+            <SelectTrigger disabled={!!(existingPlan && existingPlan.length > 0)}>
               <SelectValue placeholder="Select a day" />
             </SelectTrigger>
             <SelectContent>
@@ -127,7 +127,7 @@ export function SavePlanDialog({ isOpen, onOpenChange, plan, defaultDay }: SaveP
         </div>
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
-          {existingPlan ? (
+          {existingPlan && existingPlan.length > 0 ? (
             <div className="flex gap-2">
                 <Button variant="secondary" onClick={handleMerge} disabled={isMerging}>
                     {isMerging && <Loader2 className="mr-2 animate-spin" />}

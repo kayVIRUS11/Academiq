@@ -14,6 +14,7 @@ import { z } from 'genkit';
 const ActivitySchema = z.object({
     time: z.string().describe('The time for the activity, e.g., "09:00 - 10:30".'),
     activity: z.string().describe('The description of the activity.'),
+    suggestions: z.string().optional().describe('Actionable tips, reminders, or suggestions for the activity.'),
 });
 
 const MergeDailyPlansInputSchema = z.object({
@@ -43,15 +44,16 @@ const prompt = ai.definePrompt({
   3.  **Maintain Chronological Order:** The final merged plan must be sorted by time from the beginning to the end of the day.
   4.  **Do Not Drop Important Items:** Ensure all unique and important activities from both plans are included in the final output.
   5.  **Be Logical:** Create a schedule that flows naturally.
+  6.  **Preserve Suggestions**: If an activity from either plan has a "suggestions" field, it should be preserved in the final merged activity. If both have suggestions for a merged activity, combine them intelligently.
 
   **Existing Plan:**
   {{#each existingPlan}}
-  - {{this.time}}: {{this.activity}}
+  - {{this.time}}: {{this.activity}} {{#if this.suggestions}} (Suggestion: {{this.suggestions}}) {{/if}}
   {{/each}}
 
   **New Plan to Merge:**
   {{#each newPlan}}
-  - {{this.time}}: {{this.activity}}
+  - {{this.time}}: {{this.activity}} {{#if this.suggestions}} (Suggestion: {{this.suggestions}}) {{/if}}
   {{/each}}
 
   Generate the merged plan.
