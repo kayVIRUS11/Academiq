@@ -22,9 +22,6 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.j
 
 type ContentPart = { text: string } | { media: { url: string } };
 
-const MAX_IMAGES_TO_PROCESS = 5;
-
-
 export function FileSummarizer() {
   const [file, setFile] = useState<File | null>(null);
   const [summary, setSummary] = useState('');
@@ -67,36 +64,30 @@ export function FileSummarizer() {
     }
   
     // Extract images
-    const imagePromises: Promise<{ name: string; data: string; type: string }>[] = [];
-    let imageCount = 0;
+    const imagePromises: Promise<{ name: string; data: string; type: string } | null>[] = [];
     zip.folder('ppt/media')?.forEach((relativePath, file) => {
-        if (imageCount < MAX_IMAGES_TO_PROCESS) {
-            const extension = relativePath.split('.').pop()?.toLowerCase();
-            if (['jpeg', 'jpg', 'png', 'gif'].includes(extension || '')) {
-                imagePromises.push(
-                file.async('base64').then(data => ({
-                    name: relativePath,
-                    data,
-                    type: `image/${extension}`,
-                }))
-                );
-                imageCount++;
-            }
+        const extension = relativePath.split('.').pop()?.toLowerCase();
+        if (['jpeg', 'jpg', 'png', 'gif'].includes(extension || '')) {
+            imagePromises.push(
+              file.async('base64').then(data => ({
+                name: relativePath,
+                data,
+                type: `image/${extension}`,
+              })).catch(e => {
+                console.warn(`Could not process image ${relativePath} in pptx:`, e);
+                return null;
+              })
+            );
         }
     });
-
-    if (imageCount >= MAX_IMAGES_TO_PROCESS) {
-        toast({
-            title: 'Image Limit Reached',
-            description: `Only the first ${MAX_IMAGES_TO_PROCESS} images will be processed to ensure performance.`,
-        });
-    }
   
     const images = await Promise.all(imagePromises);
     for (const image of images) {
-      contentParts.push({
-        media: { url: `data:${image.type};base64,${image.data}` },
-      });
+      if (image) {
+        contentParts.push({
+          media: { url: `data:${image.type};base64,${image.data}` },
+        });
+      }
     }
   
     return contentParts;
@@ -107,58 +98,44 @@ export function FileSummarizer() {
     const arrayBuffer = await file.arrayBuffer();
     const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
     const contentParts: ContentPart[] = [];
-    let imageCount = 0;
 
     for (let i = 1; i <= pdf.numPages; i++) {
-        const page = await pdf.getPage(i);
-        const textContent = await page.getTextContent();
-        const pageText = textContent.items.map(item => 'str' in item ? item.str : '').join(' ');
-        
-        if (pageText.trim()) {
-            contentParts.push({ text: `Page ${i} Content: ${pageText}\n` });
-        }
+        try {
+            const page = await pdf.getPage(i);
+            const textContent = await page.getTextContent();
+            const pageText = textContent.items.map(item => 'str' in item ? item.str : '').join(' ');
+            
+            if (pageText.trim()) {
+                contentParts.push({ text: `Page ${i} Content: ${pageText}\n` });
+            }
 
-        if (imageCount < MAX_IMAGES_TO_PROCESS) {
             const opList = await page.getOperatorList();
             for (let j = 0; j < opList.fnArray.length; j++) {
                 if (opList.fnArray[j] === pdfjsLib.OPS.paintImageXObject) {
-                    if (imageCount >= MAX_IMAGES_TO_PROCESS) break;
-
                     try {
                         const objId = opList.argsArray[j][0];
                         const img = await page.objs.get(objId);
                         
                         if (img && img.data) {
-                            const imageBytes = new Uint8Array(img.data.length);
-                            for (let k = 0; k < img.data.length; k++) {
-                                imageBytes[k] = img.data[k];
-                            }
-
-                            // Convert to Base64
-                            let binary = '';
-                            const len = imageBytes.byteLength;
-                            for (let k = 0; k < len; k++) {
-                                binary += String.fromCharCode(imageBytes[k]);
-                            }
-                            const base64 = btoa(binary);
+                            // Using a direct Uint8Array to base64 conversion can be more robust
+                            const base64 = btoa(new Uint8Array(img.data).reduce((data, byte) => data + String.fromCharCode(byte), ''));
                             
                             const mimeType = img.kind === pdfjsLib.ImageKind.JPEG ? 'image/jpeg' : 'image/png';
                             contentParts.push({ media: { url: `data:${mimeType};base64,${base64}` } });
-                            imageCount++;
                         }
                     } catch (e) {
-                        console.warn("Could not process an image in the PDF.", e);
+                        console.warn(`Could not process an image on page ${i} of the PDF.`, e);
                     }
                 }
             }
+        } catch (pageError) {
+            console.error(`Error processing page ${i}:`, pageError);
+            toast({
+                title: `Could not process page ${i}`,
+                description: 'The summarization will continue with the content extracted so far.',
+                variant: 'destructive',
+            });
         }
-    }
-    
-    if (imageCount >= MAX_IMAGES_TO_PROCESS && pdf.numPages > 1) {
-        toast({
-            title: 'Image Limit Reached',
-            description: `Only the first ${MAX_IMAGES_TO_PROCESS} images from the document will be analyzed.`,
-        });
     }
 
     return contentParts;
@@ -295,3 +272,5 @@ export function FileSummarizer() {
     </div>
   );
 }
+
+    
