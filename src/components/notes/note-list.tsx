@@ -47,7 +47,7 @@ export function NoteList({ notes, selectedNoteId, onSelectNote, courses }: NoteL
           >
             <h3 className="font-semibold truncate">{note.title}</h3>
             <p className="text-sm text-muted-foreground truncate">{getPlainText(note.content) || 'No content'}</p>
-            <div className="flex items-center justify-between mt-2">
+            <div className="flex items-center justify-between flex-wrap gap-x-2 mt-2">
               <span className="text-xs text-muted-foreground">
                 {formatDistanceToNow(new Date(note.createdAt), { addSuffix: true })}
               </span>
