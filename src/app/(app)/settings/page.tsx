@@ -10,6 +10,7 @@ import { ThemeToggle } from "@/components/settings/theme-toggle";
 import { useAuth } from "@/context/auth-context";
 import { AccountSettingsForm } from "@/components/settings/account-settings-form";
 import { useInstallPrompt } from "@/context/install-prompt-context";
+import { PomodoroSettings } from "@/components/settings/pomodoro-settings";
 
 export default function SettingsPage() {
   const { user } = useAuth();
@@ -32,6 +33,8 @@ export default function SettingsPage() {
         </div>
         
         <AccountSettingsForm />
+
+        <PomodoroSettings />
         
         <UserDataSummary />
 
