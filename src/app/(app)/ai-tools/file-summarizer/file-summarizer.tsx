@@ -15,6 +15,7 @@ import { useNotes } from '@/app/(app)/notes/notes-context';
 import { ToastAction } from '@/components/ui/toast';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { marked } from 'marked';
 
 // Required by pdfjs-dist
 pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
@@ -215,7 +216,7 @@ export function FileSummarizer() {
             parts,
             fileType,
           });
-        setSummary(result.summary);
+        setSummary(marked.parse(result.summary) as string);
         toast({
             title: 'Success!',
             description: 'Your file has been summarized.',

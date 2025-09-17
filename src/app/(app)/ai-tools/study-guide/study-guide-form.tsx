@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -13,6 +14,7 @@ import { Course } from '@/lib/types';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useCourses } from '@/context/courses-context';
+import { marked } from 'marked';
 
 export function StudyGuideForm() {
   const [file, setFile] = useState<File | null>(null);
@@ -64,7 +66,7 @@ export function StudyGuideForm() {
         schemeOfWorkDataUri: dataUri,
       });
 
-      setStudyGuide(result.studyGuide);
+      setStudyGuide(marked.parse(result.studyGuide) as string);
       toast({
         title: 'Success!',
         description: `Your study guide for ${selectedCourse.name} is ready.`,
