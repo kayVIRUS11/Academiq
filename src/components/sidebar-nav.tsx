@@ -121,7 +121,7 @@ export function SidebarNav({ isCollapsed = false, onLinkClick }: SidebarNavProps
 
   return (
     <div className="flex h-full flex-col p-2">
-        <nav className="grid gap-1 text-base font-medium flex-1 overflow-y-auto py-2">
+        <nav className={cn("grid gap-1 text-base font-medium flex-1 overflow-y-auto py-2", "scrollbar-hide")}>
             {navItems.map((item) => <NavLink {...item} key={item.href} />)}
             <hr className="my-2" />
             <div className={cn("px-3 py-2 text-sm font-semibold text-muted-foreground transition-opacity flex items-center gap-2", isCollapsed ? "justify-center" : "justify-start")}>
