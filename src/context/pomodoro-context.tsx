@@ -2,7 +2,6 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode, useRef } from 'react';
-import { useAuth } from './auth-context';
 
 type TimerMode = 'pomodoro' | 'shortBreak' | 'longBreak';
 
@@ -36,6 +35,31 @@ export function PomodoroProvider({ children }: { children: ReactNode }) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const originalTitleRef = useRef(typeof document !== 'undefined' ? document.title : '');
 
+  const playAlarm = useCallback(() => {
+    // Stop any previously playing alarm to prevent overlap
+    if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+    }
+
+    if (typeof window !== 'undefined') {
+      const audio = new Audio(ALARM_SOUND_PATH);
+      audio.play().catch(e => console.error("Error playing audio:", e));
+      audioRef.current = audio;
+
+      // Set a timeout to stop this specific audio instance
+      setTimeout(() => {
+        if (audio) {
+            audio.pause();
+            audio.currentTime = 0;
+        }
+        if (audioRef.current === audio) {
+            audioRef.current = null;
+        }
+      }, ALARM_DURATION_MS);
+    }
+  }, []);
+
   const stopAlarm = useCallback(() => {
     if (audioRef.current) {
       audioRef.current.pause();
@@ -44,26 +68,11 @@ export function PomodoroProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const playAlarm = useCallback(() => {
-    stopAlarm(); // Stop any previous alarm
-    if (typeof window !== 'undefined') {
-      const audio = new Audio(ALARM_SOUND_PATH);
-      audio.play().catch(e => console.error("Error playing audio:", e));
-      audioRef.current = audio;
-
-      // Stop the sound after a specific duration
-      setTimeout(() => {
-        stopAlarm();
-      }, ALARM_DURATION_MS);
-    }
-  }, [stopAlarm]);
-
   const switchMode = useCallback((newMode: TimerMode) => {
-    stopAlarm();
     setIsActive(false);
     setMode(newMode);
     setTimeLeft(times[newMode]);
-  }, [stopAlarm]);
+  }, []);
 
   // Timer logic
   useEffect(() => {
