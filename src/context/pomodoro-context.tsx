@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode, useRef } from 'react';
@@ -41,11 +42,11 @@ export function PomodoroProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   
   useEffect(() => {
-    // Initialize audio on the client-side
+    // Initialize or update audio on the client-side
     const selectedSoundId = user?.user_metadata?.pomodoro_sound || 'alarm';
     const sound = alarmSounds.find(s => s.id === selectedSoundId) || alarmSounds[0];
     audioRef.current = new Audio(sound.path);
-  }, [user]);
+  }, [user?.user_metadata?.pomodoro_sound]);
 
   const switchMode = useCallback((newMode: TimerMode) => {
     setIsActive(false);
