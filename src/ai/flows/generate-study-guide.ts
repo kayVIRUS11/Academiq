@@ -55,10 +55,28 @@ const generateStudyGuideFlow = ai.defineFlow(
   {
     name: 'generateStudyGuideFlow',
     inputSchema: GenerateStudyGuideInputSchema,
-    outputSchema: GenerateStudyGuideOutputSchema,
+    outputSchema: GenerateStudyGudieOutputSchema,
   },
-  async input => {
-    const {output} = await prompt(input);
-    return output!;
+  async (input) => {
+    const maxRetries = 3;
+    let attempt = 0;
+    while (attempt < maxRetries) {
+      try {
+        const { output } = await prompt(input);
+        return output!;
+      } catch (error: any) {
+        attempt++;
+        if (attempt >= maxRetries) {
+          console.error('Final attempt failed:', error);
+          throw new Error(
+            'The AI model is currently overloaded. Please try again in a few moments.'
+          );
+        }
+        console.log(`Attempt ${attempt} failed. Retrying in 2 seconds...`);
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+      }
+    }
+    // This part should not be reachable, but it satisfies TypeScript's need for a return path.
+    throw new Error('The AI model failed to respond after multiple attempts.');
   }
 );
