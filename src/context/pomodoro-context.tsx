@@ -34,7 +34,7 @@ export function PomodoroProvider({ children }: { children: ReactNode }) {
   const [pomodoros, setPomodoros] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const originalTitleRef = useRef(typeof document !== 'undefined' ? document.title : '');
-
+  
   const playAlarm = useCallback(() => {
     // Stop any previously playing alarm to prevent overlap
     if (audioRef.current) {
@@ -67,6 +67,7 @@ export function PomodoroProvider({ children }: { children: ReactNode }) {
       audioRef.current = null;
     }
   }, []);
+
 
   const switchMode = useCallback((newMode: TimerMode) => {
     setIsActive(false);
@@ -153,7 +154,9 @@ export function PomodoroProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const toggleTimer = () => {
-    stopAlarm();
+    if (isActive) { // if timer is active and we are pausing
+        stopAlarm();
+    }
     setIsActive(!isActive);
   };
 
