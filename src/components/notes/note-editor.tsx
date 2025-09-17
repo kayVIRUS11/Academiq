@@ -3,19 +3,9 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Note } from '@/lib/types';
 import { Input } from '@/components/ui/input';
-import 'react-quill/dist/quill.snow.css'; // import styles
-import 'react-quill/dist/quill.bubble.css';
-import dynamic from 'next/dynamic';
+import 'quill/dist/quill.snow.css';
+import { useQuill } from 'react-quilljs';
 import { Skeleton } from '../ui/skeleton';
-
-// Dynamically import ReactQuill to avoid SSR issues
-const ReactQuill = dynamic(
-    () => import('react-quill'), 
-    { 
-        ssr: false,
-        loading: () => <Skeleton className="h-[400px]" />
-    }
-);
 
 
 type NoteEditorProps = {
@@ -25,12 +15,40 @@ type NoteEditorProps = {
 
 export function NoteEditor({ note, onUpdate }: NoteEditorProps) {
   const [title, setTitle] = useState(note.title);
+  
+  const modules = useMemo(() => ({
+    toolbar: [
+      [{ 'header': [1, 2, 3, false] }],
+      ['bold', 'italic', 'underline', 'strike', 'blockquote'],
+      [{'list': 'ordered'}, {'list': 'bullet'}, {'indent': '-1'}, {'indent': '+1'}],
+      ['link'],
+      ['clean']
+    ],
+  }), []);
+
+  const { quill, quillRef } = useQuill({ modules });
   const [content, setContent] = useState(note.content);
 
+  // Load note content into Quill when it's ready
   useEffect(() => {
-    setTitle(note.title);
-    setContent(note.content);
-  }, [note]);
+    if (quill) {
+        if (note.content) {
+             quill.clipboard.dangerouslyPasteHTML(note.content);
+        } else {
+             quill.setText('');
+        }
+    }
+  }, [quill, note.id]); // Rerun when note changes
+
+  // Listen for text changes in Quill
+  useEffect(() => {
+    if (quill) {
+      quill.on('text-change', () => {
+        setContent(quill.root.innerHTML);
+      });
+    }
+  }, [quill]);
+
 
   // Use a timer to save changes after user stops typing
   useEffect(() => {
@@ -45,21 +63,17 @@ export function NoteEditor({ note, onUpdate }: NoteEditorProps) {
     };
   }, [title, content, note, onUpdate]);
 
-  const modules = useMemo(() => ({
-    toolbar: [
-      [{ 'header': [1, 2, 3, false] }],
-      ['bold', 'italic', 'underline', 'strike', 'blockquote'],
-      [{'list': 'ordered'}, {'list': 'bullet'}, {'indent': '-1'}, {'indent': '+1'}],
-      ['link'],
-      ['clean']
-    ],
-  }), []);
+  useEffect(() => {
+    setTitle(note.title);
+    // Content is handled by the Quill effect
+  }, [note.id, note.title]);
+
 
   return (
     <div className="h-full flex flex-col note-editor-container">
         <style jsx global>{`
-            .ql-toolbar.ql-snow, .ql-container.ql-snow {
-                border-color: hsl(var(--border));
+            .ql-toolbar, .ql-container {
+                border-color: hsl(var(--border)) !important;
             }
             .ql-snow .ql-stroke {
                 stroke: hsl(var(--foreground));
@@ -83,13 +97,7 @@ export function NoteEditor({ note, onUpdate }: NoteEditorProps) {
             placeholder="Note Title"
         />
       
-        <ReactQuill
-            theme="snow"
-            value={content}
-            onChange={setContent}
-            modules={modules}
-            placeholder="Start writing your note here..."
-        />
+        <div ref={quillRef} />
     </div>
   );
 }
