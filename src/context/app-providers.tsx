@@ -13,6 +13,7 @@ import { CoursesProvider } from './courses-context';
 import { Course } from '@/lib/types';
 import { SidebarProvider } from '@/hooks/use-sidebar';
 import { SidebarLayout } from '@/components/sidebar-layout';
+import { InstallPromptProvider } from './install-prompt-context';
 
 export function AppProviders({
   children,
@@ -43,22 +44,24 @@ export function AppProviders({
     }
   
   return (
-    <SidebarProvider>
-      <CoursesProvider initialCourses={courses}>
-          <ActivitiesProvider>
-              <NotesProvider>
-                  <FlashcardsProvider>
-                      <WeeklyPlanProvider>
-                          <PomodoroProvider>
-                              <SidebarLayout>
-                                {children}
-                              </SidebarLayout>
-                          </PomodoroProvider>
-                      </WeeklyPlanProvider>
-                  </FlashcardsProvider>
-              </NotesProvider>
-          </ActivitiesProvider>
-      </CoursesProvider>
-    </SidebarProvider>
+    <InstallPromptProvider>
+      <SidebarProvider>
+        <CoursesProvider initialCourses={courses}>
+            <ActivitiesProvider>
+                <NotesProvider>
+                    <FlashcardsProvider>
+                        <WeeklyPlanProvider>
+                            <PomodoroProvider>
+                                <SidebarLayout>
+                                  {children}
+                                </SidebarLayout>
+                            </PomodoroProvider>
+                        </WeeklyPlanProvider>
+                    </FlashcardsProvider>
+                </NotesProvider>
+            </ActivitiesProvider>
+        </CoursesProvider>
+      </SidebarProvider>
+    </InstallPromptProvider>
   )
 }

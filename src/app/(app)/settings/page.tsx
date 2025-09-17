@@ -1,16 +1,19 @@
+
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { User, Download, Upload, Palette } from "lucide-react";
+import { User, Download, Upload, Palette, AppWindow } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { UserDataSummary } from "@/components/settings/user-data-summary";
 import { LogoutButton } from "@/components/settings/logout-button";
 import { ThemeToggle } from "@/components/settings/theme-toggle";
 import { useAuth } from "@/context/auth-context";
 import { AccountSettingsForm } from "@/components/settings/account-settings-form";
+import { useInstallPrompt } from "@/context/install-prompt-context";
 
 export default function SettingsPage() {
   const { user } = useAuth();
+  const { installPromptEvent, triggerInstallPrompt } = useInstallPrompt();
   
   return (
     <div className="space-y-6">
@@ -41,6 +44,21 @@ export default function SettingsPage() {
             <ThemeToggle />
         </CardContent>
       </Card>
+      
+      {installPromptEvent && (
+        <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2"><AppWindow /> Install App</CardTitle>
+                <CardDescription>Install Academiq on your device for a native-like experience, including offline access.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <Button onClick={triggerInstallPrompt}>
+                    <Download className="mr-2" />
+                    Install Academiq
+                </Button>
+            </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>
