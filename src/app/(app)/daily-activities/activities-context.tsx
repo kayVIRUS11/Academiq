@@ -60,7 +60,7 @@ export function ActivitiesProvider({ children }: { children: ReactNode }) {
     if (!isOnline) {
       await queueRequest(
         `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/user_data?uid=eq.${user.id}`,
-        'PUT',
+        'PATCH',
         { daily_activities: newWeeklyActivities },
         { 
           'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,

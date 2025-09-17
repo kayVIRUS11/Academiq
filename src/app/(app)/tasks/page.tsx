@@ -83,10 +83,8 @@ export default function TasksPage() {
     if (error) {
       console.error(error);
       toast({ title: 'Error adding task', variant: 'destructive' });
-      // Revert optimistic update
       setTasks(prev => prev.filter(t => t.id !== tempId));
     } else {
-      // Re-fetch to get the real ID, or ideally get it from response
       fetchTasks();
     }
   };
@@ -100,7 +98,7 @@ export default function TasksPage() {
         const body = { ...taskData, due_date: dueDate, course_id: courseId };
         await queueRequest(
             `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/tasks?id=eq.${id}`,
-            'PUT',
+            'PATCH',
             body,
             { 
                 'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -120,7 +118,7 @@ export default function TasksPage() {
     } catch (e: any) {
       console.error(e);
       toast({ title: 'Error updating task', description: e.message, variant: 'destructive' });
-      setTasks(originalTasks); // Revert
+      setTasks(originalTasks);
     }
   };
 
@@ -147,7 +145,7 @@ export default function TasksPage() {
     } catch (e: any) {
       console.error(e);
       toast({ title: 'Error deleting task', description: e.message, variant: 'destructive' });
-      setTasks(originalTasks); // Revert
+      setTasks(originalTasks);
     }
   };
   
@@ -158,7 +156,7 @@ export default function TasksPage() {
      if(!isOnline) {
         await queueRequest(
             `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/tasks?id=eq.${taskId}`,
-            'PUT',
+            'PATCH',
             { completed: !currentStatus },
             { 
                 'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -176,7 +174,7 @@ export default function TasksPage() {
     } catch (e: any) {
       console.error(e);
       toast({ title: 'Error toggling task', description: e.message, variant: 'destructive' });
-      setTasks(originalTasks); // Revert
+      setTasks(originalTasks);
     }
   };
   

@@ -49,7 +49,6 @@ export function CoursesProvider({ children, initialCourses }: { children: ReactN
     const tempId = `temp-${Date.now()}`;
     const newCourse: Course = { ...newCourseData, id: tempId, uid: user.id };
 
-    // Optimistic UI update
     setCourses(prev => [...prev, newCourse]);
     toast({ title: 'Course added!' });
 
@@ -76,25 +75,22 @@ export function CoursesProvider({ children, initialCourses }: { children: ReactN
     if (error) {
       console.error(error);
       toast({ title: 'Error adding course', variant: 'destructive' });
-      // Revert optimistic update
       setCourses(prev => prev.filter(c => c.id !== tempId));
     } else {
-        // Refetch to get the real ID from the database
         fetchCourses();
     }
   };
 
   const updateCourse = async (id: string, updatedData: Partial<Omit<Course, 'id' | 'uid'>>) => {
     const originalCourses = [...courses];
-    // Optimistic update
-    setCourses(prev => prev.map(c => c.id === id ? { ...c, ...updatedData } : c));
+    setCourses(prev => prev.map(c => c.id === id ? { ...c, ...updatedData } as Course : c));
 
     if (!isOnline) {
         const { courseCode, ...rest } = updatedData;
         const body = { ...rest, course_code: courseCode };
         await queueRequest(
             `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/courses?id=eq.${id}`,
-            'PUT',
+            'PATCH',
             body,
             { 
                 'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -103,7 +99,6 @@ export function CoursesProvider({ children, initialCourses }: { children: ReactN
                 'Prefer': 'return=minimal',
             }
         );
-        toast({ title: 'Course updated locally.' });
         return;
     }
 
@@ -113,7 +108,7 @@ export function CoursesProvider({ children, initialCourses }: { children: ReactN
     if (error) {
       console.error(error);
       toast({ title: 'Error updating course', description: error.message, variant: 'destructive' });
-      setCourses(originalCourses); // Revert on error
+      setCourses(originalCourses);
     } else {
       toast({ title: 'Course updated!' });
     }
@@ -121,7 +116,6 @@ export function CoursesProvider({ children, initialCourses }: { children: ReactN
 
   const deleteCourse = async (id: string) => {
     const originalCourses = [...courses];
-    // Optimistic delete
     setCourses(prev => prev.filter(c => c.id !== id));
     
     if (!isOnline) {
@@ -134,7 +128,6 @@ export function CoursesProvider({ children, initialCourses }: { children: ReactN
                 'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!}`,
             }
         );
-        toast({ title: 'Course deleted locally.'});
         return;
     }
 
@@ -142,7 +135,7 @@ export function CoursesProvider({ children, initialCourses }: { children: ReactN
     if (error) {
         console.error(error);
         toast({ title: 'Error deleting course', description: error.message, variant: 'destructive' });
-        setCourses(originalCourses); // Revert on error
+        setCourses(originalCourses);
     } else {
         toast({ title: 'Course deleted!' });
     }
