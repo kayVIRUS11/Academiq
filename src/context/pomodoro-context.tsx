@@ -13,8 +13,8 @@ const times = {
 };
 
 const sounds = {
-    chime: '/chime.mp3',
-    'digital-beep': '/digital-beep.mp3'
+    birds: '/birds.mp3',
+    alarm: '/alarm.mp3',
 };
 
 type PomodoroContextType = {
@@ -48,16 +48,15 @@ export function PomodoroProvider({ children }: { children: ReactNode }) {
   // Setup audio element
   useEffect(() => {
     if (typeof window !== 'undefined' && !audioRef.current) {
-      audioRef.current = new Audio();
-      audioRef.current.load();
+        audioRef.current = new Audio();
     }
   }, []);
 
   // Update audio source when user preference changes
   useEffect(() => {
     if (user && audioRef.current) {
-        const soundId = user.user_metadata.pomodoro_alarm_sound || 'chime';
-        const soundPath = sounds[soundId as keyof typeof sounds] || sounds.chime;
+        const soundId = user.user_metadata.pomodoro_alarm_sound || 'birds';
+        const soundPath = sounds[soundId as keyof typeof sounds] || sounds.birds;
         if (audioRef.current.src !== window.location.origin + soundPath) {
             audioRef.current.src = soundPath;
             audioRef.current.load();

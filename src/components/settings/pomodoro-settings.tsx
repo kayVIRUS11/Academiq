@@ -1,3 +1,4 @@
+
 'use client';
 
 import { z } from 'zod';
@@ -13,8 +14,8 @@ import { Loader2, Timer } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 
 const sounds = [
-    { id: 'chime', name: 'Chime', path: '/chime.mp3' },
-    { id: 'digital-beep', name: 'Digital Beep', path: '/digital-beep.mp3' },
+    { id: 'birds', name: 'Birds Chirping', path: '/birds.mp3' },
+    { id: 'alarm', name: 'Digital Alarm', path: '/alarm.mp3' },
 ];
 
 const pomodoroSettingsSchema = z.object({
@@ -31,7 +32,7 @@ export function PomodoroSettings() {
   const form = useForm<PomodoroSettingsFormValues>({
     resolver: zodResolver(pomodoroSettingsSchema),
     defaultValues: {
-      alarmSound: user?.user_metadata.pomodoro_alarm_sound || 'chime',
+      alarmSound: user?.user_metadata.pomodoro_alarm_sound || 'birds',
     },
   });
 
