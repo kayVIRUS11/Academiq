@@ -15,6 +15,8 @@ import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useCourses } from '@/context/courses-context';
 import { marked } from 'marked';
+import { useRouter } from 'next/navigation';
+import { ToastAction } from '@/components/ui/toast';
 
 export function StudyGuideForm() {
   const [file, setFile] = useState<File | null>(null);
@@ -24,6 +26,7 @@ export function StudyGuideForm() {
   const { toast } = useToast();
   const { addNote } = useNotes();
   const { courses, loading: coursesLoading } = useCourses();
+  const router = useRouter();
   
 
   const handleFileSelect = (selectedFile: File | null) => {
@@ -87,7 +90,7 @@ export function StudyGuideForm() {
   const handleAddToNotes = async () => {
     if (!studyGuide || !selectedCourse) return;
 
-    await addNote({
+    const newNote = await addNote({
       title: `Study Guide: ${selectedCourse.name}`,
       content: studyGuide,
       courseId: selectedCourse.id,
@@ -95,7 +98,8 @@ export function StudyGuideForm() {
 
     toast({
       title: 'Added to Notes!',
-      description: 'The study guide has been saved as a new note.'
+      description: 'The study guide has been saved as a new note.',
+      action: <ToastAction altText="View Note" onClick={() => router.push(`/notes?noteId=${newNote.id}`)}>View Note</ToastAction>
     });
   };
 
