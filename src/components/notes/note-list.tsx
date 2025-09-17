@@ -19,6 +19,17 @@ export function NoteList({ notes, selectedNoteId, onSelectNote, courses }: NoteL
 
   const sortedNotes = [...notes].sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
+  // A simple function to strip HTML for a plain text preview
+  const getPlainText = (html: string) => {
+    if (typeof document !== 'undefined') {
+        const div = document.createElement('div');
+        div.innerHTML = html;
+        return div.textContent || div.innerText || '';
+    }
+    return html;
+  }
+
+
   return (
     <div className="space-y-2 p-4">
       {sortedNotes.map(note => {
@@ -35,7 +46,7 @@ export function NoteList({ notes, selectedNoteId, onSelectNote, courses }: NoteL
             )}
           >
             <h3 className="font-semibold truncate">{note.title}</h3>
-            <p className="text-sm text-muted-foreground truncate">{note.content || 'No content'}</p>
+            <p className="text-sm text-muted-foreground truncate">{getPlainText(note.content) || 'No content'}</p>
             <div className="flex items-center justify-between mt-2">
               <span className="text-xs text-muted-foreground">
                 {formatDistanceToNow(new Date(note.createdAt), { addSuffix: true })}
