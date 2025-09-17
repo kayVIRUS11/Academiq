@@ -15,7 +15,7 @@ import { cn } from '@/lib/utils';
 import { useNotes } from './notes-context';
 import { useFlashcards } from '../ai-tools/flashcards/flashcards-context';
 import { generateFlashcards } from '@/ai/flows/generate-flashcards';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
 import { useCourses } from '@/context/courses-context';
@@ -41,6 +41,7 @@ export default function NotesPage() {
   
   const isMobile = useIsMobile();
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const { addFlashcardSet } = useFlashcards();
   const { isOpen: isSidebarOpen } = useSidebar();
@@ -49,12 +50,14 @@ export default function NotesPage() {
 
   useEffect(() => {
     const noteIdFromUrl = searchParams.get('noteId');
-    if (noteIdFromUrl && !selectedNoteId) {
+    if (noteIdFromUrl) {
         if(notes.find(n => n.id === noteIdFromUrl)) {
             setSelectedNoteId(noteIdFromUrl);
+            // Clean the URL
+            router.replace(pathname, {scroll: false});
         }
     }
-  }, [searchParams, notes, selectedNoteId, setSelectedNoteId]);
+  }, [searchParams, notes, setSelectedNoteId, router, pathname]);
 
 
   const handleSelectNote = (id: string) => {
