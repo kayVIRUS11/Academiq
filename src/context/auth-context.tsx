@@ -43,6 +43,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return () => subscription.unsubscribe();
     }, []);
 
+    useEffect(() => {
+      if (!loading && !user && !publicRoutes.includes(pathname)) {
+        router.push('/login');
+      }
+    }, [loading, user, pathname, router]);
+
     const signUpWithEmail = async (email: string, password: string, displayName: string) => {
         return supabase.auth.signUp({
             email,
@@ -103,8 +109,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     
     if (!loading && !user && !publicRoutes.includes(pathname)) {
-        router.push('/login');
-        return null;
+        return null; // The useEffect above will handle the redirection.
     }
 
     return (
