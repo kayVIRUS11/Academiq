@@ -11,7 +11,6 @@ const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 export const metadata: Metadata = {
   title: 'Academiq',
   description: 'Your academic success partner.',
-  manifest: '/manifest.json',
 };
 
 export default function RootLayout({
