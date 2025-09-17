@@ -1,18 +1,34 @@
 /// <reference lib="WebWorker" />
 
 import { defaultCache } from "@serwist/next/worker";
-import type { PrecacheEntry } from "@serwist/precaching";
+import type { PrecacheEntry, RuntimeCaching } from "@serwist/precaching";
 import { installSerwist } from "@serwist/sw";
 
-// The installSerwist function is called to set up the service worker.
-// It is configured with a precache manifest, which is a list of all the
-// files that should be cached when the service worker is installed.
-// The runtimeCaching array is configured to use the default cache
-// for all requests.
+declare const self: ServiceWorkerGlobalScope;
+
+const supabaseUrl = "https://aomffgrbwnioqpvbfcfv.supabase.co";
+
+const runtimeCaching: RuntimeCaching[] = [
+    ...defaultCache,
+    {
+        matcher: ({ url }) => {
+            return url.origin === supabaseUrl;
+        },
+        handler: "StaleWhileRevalidate",
+        options: {
+            cacheName: "supabase-data",
+            expiration: {
+                maxEntries: 50,
+                maxAgeSeconds: 60 * 60 * 24 * 7, // 1 week
+            },
+        },
+    }
+];
+
 installSerwist({
   precacheEntries: self.__SW_MANIFEST,
   skipWaiting: true,
   clientsClaim: true,
   navigationPreload: true,
-  runtimeCaching: defaultCache,
+  runtimeCaching: runtimeCaching,
 });
