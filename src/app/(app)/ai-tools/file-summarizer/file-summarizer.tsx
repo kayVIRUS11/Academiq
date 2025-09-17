@@ -12,7 +12,6 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import * as pdfjsLib from 'pdfjs-dist';
 import JSZip from 'jszip';
 import { useNotes } from '@/app/(app)/notes/notes-context';
-import { marked } from 'marked';
 import { ToastAction } from '@/components/ui/toast';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -249,12 +248,6 @@ export function FileSummarizer() {
     });
   }
 
-  const getRenderedSummary = () => {
-    if (!summary) return null;
-    const rawMarkup = marked.parse(summary);
-    return { __html: rawMarkup as string };
-  };
-
   return (
     <div className="space-y-6">
       <Alert>
@@ -293,7 +286,7 @@ export function FileSummarizer() {
             </div>
           <Card>
             <CardContent className="p-6">
-              <div className="prose max-w-none prose-sm" dangerouslySetInnerHTML={getRenderedSummary()!} />
+              <div className="prose max-w-none prose-sm" dangerouslySetInnerHTML={{ __html: summary }} />
             </CardContent>
           </Card>
         </div>

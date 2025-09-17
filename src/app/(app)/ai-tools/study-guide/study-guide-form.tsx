@@ -8,7 +8,6 @@ import { useToast } from '@/hooks/use-toast';
 import { FileUploader } from '@/app/(app)/ai-tools/file-summarizer/file-uploader'; // Reusing the uploader
 import { generateStudyGuide } from '@/ai/flows/generate-study-guide';
 import { useNotes } from '@/app/(app)/notes/notes-context';
-import { marked } from 'marked';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Course } from '@/lib/types';
 import { Label } from '@/components/ui/label';
@@ -97,12 +96,6 @@ export function StudyGuideForm() {
       description: 'The study guide has been saved as a new note.'
     });
   };
-  
-  const getRenderedStudyGuide = () => {
-    if (!studyGuide) return null;
-    const rawMarkup = marked.parse(studyGuide);
-    return { __html: rawMarkup as string };
-  };
 
   return (
     <div className="space-y-6">
@@ -155,7 +148,7 @@ export function StudyGuideForm() {
           </div>
           <Card>
             <CardContent className="p-6">
-              <div className="prose max-w-none prose-sm" dangerouslySetInnerHTML={getRenderedStudyGuide()!} />
+              <div className="prose max-w-none prose-sm" dangerouslySetInnerHTML={{ __html: studyGuide }} />
             </CardContent>
           </Card>
         </div>

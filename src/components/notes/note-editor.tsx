@@ -3,11 +3,16 @@
 import { useState, useEffect } from 'react';
 import { Note } from '@/lib/types';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { marked } from 'marked';
-import { Button } from '../ui/button';
-import { Edit, Eye } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import 'react-quill/dist/quill.snow.css'; // import styles
+import 'react-quill/dist/quill.bubble.css';
+import dynamic from 'next/dynamic';
+import { Skeleton } from '../ui/skeleton';
+
+// Dynamically import ReactQuill to avoid SSR issues
+const ReactQuill = dynamic(() => import('react-quill'), { 
+    ssr: false,
+    loading: () => <Skeleton className="h-[400px]" />
+});
 
 type NoteEditorProps = {
   note: Note;
@@ -17,12 +22,12 @@ type NoteEditorProps = {
 export function NoteEditor({ note, onUpdate }: NoteEditorProps) {
   const [title, setTitle] = useState(note.title);
   const [content, setContent] = useState(note.content);
-  const [isEditing, setIsEditing] = useState(true);
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
+    setIsClient(true);
     setTitle(note.title);
     setContent(note.content);
-    setIsEditing(true); // Default to edit mode when a new note is selected
   }, [note]);
 
   // Use a timer to save changes after user stops typing
@@ -38,49 +43,53 @@ export function NoteEditor({ note, onUpdate }: NoteEditorProps) {
     };
   }, [title, content, note, onUpdate]);
 
-  const getRenderedContent = () => {
-    if (!content) return null;
-    const rawMarkup = marked.parse(content);
-    return { __html: rawMarkup as string };
+  const modules = {
+    toolbar: [
+      [{ 'header': [1, 2, 3, false] }],
+      ['bold', 'italic', 'underline', 'strike', 'blockquote'],
+      [{'list': 'ordered'}, {'list': 'bullet'}, {'indent': '-1'}, {'indent': '+1'}],
+      ['link'],
+      ['clean']
+    ],
   };
 
   return (
-    <div className="h-full flex flex-col">
-       <div className="flex items-center justify-between mb-4 flex-wrap">
-            <Input
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                className="text-2xl font-bold border-none focus-visible:ring-0 shadow-none p-0 h-auto flex-1 min-w-[200px]"
-                placeholder="Note Title"
-            />
-             <div className="flex items-center gap-2">
-                <Button variant={isEditing ? "default" : "outline"} size="sm" onClick={() => setIsEditing(true)}>
-                    <Edit className="mr-2"/>
-                    Edit
-                </Button>
-                <Button variant={!isEditing ? "default" : "outline"} size="sm" onClick={() => setIsEditing(false)}>
-                    <Eye className="mr-2"/>
-                    Preview
-                </Button>
-            </div>
-        </div>
+    <div className="h-full flex flex-col note-editor-container">
+        <style jsx global>{`
+            .ql-toolbar.ql-snow, .ql-container.ql-snow {
+                border-color: hsl(var(--border));
+            }
+            .ql-snow .ql-stroke {
+                stroke: hsl(var(--foreground));
+            }
+             .ql-snow .ql-picker-label {
+                color: hsl(var(--foreground));
+            }
+            .ql-snow .ql-editor.ql-blank::before {
+                color: hsl(var(--muted-foreground));
+            }
+            .ql-editor {
+                min-height: 400px;
+                font-size: 1rem;
+                color: hsl(var(--foreground));
+            }
+        `}</style>
+       <Input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            className="text-2xl font-bold border-none focus-visible:ring-0 shadow-none p-0 h-auto mb-4"
+            placeholder="Note Title"
+        />
       
-      {isEditing ? (
-        <Textarea
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            className="flex-1 text-base border rounded-md focus-visible:ring-1 p-4 resize-none"
-            placeholder="Start writing your note here... You can use Markdown for formatting."
-        />
-      ) : (
-        <div 
-            className={cn(
-                "prose dark:prose-invert max-w-none flex-1 overflow-y-auto rounded-md border p-4",
-                !content && "flex items-center justify-center text-muted-foreground"
-            )}
-            dangerouslySetInnerHTML={getRenderedContent() || {__html: '<p>Nothing to preview. Add some content in the editor!</p>'}}
-        />
-      )}
+        {isClient && (
+            <ReactQuill
+                theme="snow"
+                value={content}
+                onChange={setContent}
+                modules={modules}
+                placeholder="Start writing your note here..."
+            />
+        )}
     </div>
   );
 }

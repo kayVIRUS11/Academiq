@@ -97,7 +97,7 @@ export default function NotesPage() {
       
       const summaryNote = await addNote({
         title: `Summary: ${selectedNote.title}`,
-        content: `**Main Topic:** ${result.mainTopic}\n\n**Summary:**\n${result.summary}`,
+        content: `<p><strong>Main Topic:</strong> ${result.mainTopic}</p><br/><p><strong>Summary:</strong></p><p>${result.summary}</p>`,
         courseId: selectedNote.courseId,
       });
       
