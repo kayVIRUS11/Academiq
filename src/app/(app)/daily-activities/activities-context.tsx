@@ -1,3 +1,4 @@
+
 'use client';
 
 import { DailyActivity, WeeklyActivities, DayOfWeek } from '@/lib/types';
@@ -57,7 +58,6 @@ export function ActivitiesProvider({ children }: { children: ReactNode }) {
     if (!user) return;
 
     if (!isOnline) {
-      toast({ title: 'You are offline.', description: 'Changes saved locally and will sync when you return.' });
       await queueRequest(
         `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/user_data?uid=eq.${user.id}`,
         'PUT',

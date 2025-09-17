@@ -109,7 +109,6 @@ export default function TasksPage() {
                 'Prefer': 'return=minimal',
             }
         );
-        toast({ title: 'Task updated locally.' });
         return;
     }
 
@@ -139,7 +138,6 @@ export default function TasksPage() {
                 'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!}`,
             }
         );
-        toast({ title: 'Task deleted locally.' });
         return;
     }
 
