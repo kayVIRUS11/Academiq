@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Note } from '@/lib/types';
 import { Input } from '@/components/ui/input';
 import 'react-quill/dist/quill.snow.css'; // import styles
@@ -9,10 +9,14 @@ import dynamic from 'next/dynamic';
 import { Skeleton } from '../ui/skeleton';
 
 // Dynamically import ReactQuill to avoid SSR issues
-const ReactQuill = dynamic(() => import('react-quill'), { 
-    ssr: false,
-    loading: () => <Skeleton className="h-[400px]" />
-});
+const ReactQuill = dynamic(
+    () => import('react-quill'), 
+    { 
+        ssr: false,
+        loading: () => <Skeleton className="h-[400px]" />
+    }
+);
+
 
 type NoteEditorProps = {
   note: Note;
@@ -22,10 +26,8 @@ type NoteEditorProps = {
 export function NoteEditor({ note, onUpdate }: NoteEditorProps) {
   const [title, setTitle] = useState(note.title);
   const [content, setContent] = useState(note.content);
-  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
-    setIsClient(true);
     setTitle(note.title);
     setContent(note.content);
   }, [note]);
@@ -43,7 +45,7 @@ export function NoteEditor({ note, onUpdate }: NoteEditorProps) {
     };
   }, [title, content, note, onUpdate]);
 
-  const modules = {
+  const modules = useMemo(() => ({
     toolbar: [
       [{ 'header': [1, 2, 3, false] }],
       ['bold', 'italic', 'underline', 'strike', 'blockquote'],
@@ -51,7 +53,7 @@ export function NoteEditor({ note, onUpdate }: NoteEditorProps) {
       ['link'],
       ['clean']
     ],
-  };
+  }), []);
 
   return (
     <div className="h-full flex flex-col note-editor-container">
@@ -81,15 +83,13 @@ export function NoteEditor({ note, onUpdate }: NoteEditorProps) {
             placeholder="Note Title"
         />
       
-        {isClient && (
-            <ReactQuill
-                theme="snow"
-                value={content}
-                onChange={setContent}
-                modules={modules}
-                placeholder="Start writing your note here..."
-            />
-        )}
+        <ReactQuill
+            theme="snow"
+            value={content}
+            onChange={setContent}
+            modules={modules}
+            placeholder="Start writing your note here..."
+        />
     </div>
   );
 }
