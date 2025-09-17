@@ -1,3 +1,4 @@
+
 require('dotenv').config({ path: './.env' });
 import type { NextConfig } from 'next';
 
@@ -37,6 +38,7 @@ const nextConfig: NextConfig = {
   },
   serverActions: {
     bodySizeLimit: '4.5mb',
+    executionTimeout: 120, // Increase timeout to 2 minutes
   }
 };
 

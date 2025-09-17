@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -55,7 +56,7 @@ const generateStudyGuideFlow = ai.defineFlow(
   {
     name: 'generateStudyGuideFlow',
     inputSchema: GenerateStudyGuideInputSchema,
-    outputSchema: GenerateStudyGudieOutputSchema,
+    outputSchema: GenerateStudyGuideOutputSchema,
   },
   async (input) => {
     const maxRetries = 3;
