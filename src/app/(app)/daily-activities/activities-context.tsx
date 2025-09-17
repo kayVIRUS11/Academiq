@@ -6,8 +6,6 @@ import React, { createContext, useContext, useState, ReactNode, useEffect, useCa
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
-import { useOnlineStatus } from '@/hooks/use-online-status';
-import { queueRequest } from '@/lib/offline-sync';
 
 type ActivitiesContextType = {
   weeklyActivities: WeeklyActivities;
@@ -26,7 +24,6 @@ export function ActivitiesProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
-  const isOnline = useOnlineStatus();
 
   const fetchActivities = useCallback(async () => {
     if (!user) return;
@@ -56,21 +53,6 @@ export function ActivitiesProvider({ children }: { children: ReactNode }) {
 
   const updateSupabase = async (newWeeklyActivities: WeeklyActivities) => {
     if (!user) return;
-
-    if (!isOnline) {
-      await queueRequest(
-        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/user_data?uid=eq.${user.id}`,
-        'PATCH',
-        { daily_activities: newWeeklyActivities },
-        { 
-          'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!}`,
-          'Content-Type': 'application/json',
-          'Prefer': 'return=representation,resolution=merge-duplicates',
-        }
-      );
-      return;
-    }
 
     const { error } = await supabase
       .from('user_data')
