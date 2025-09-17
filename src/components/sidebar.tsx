@@ -3,7 +3,7 @@
 import { useSidebar } from '@/hooks/use-sidebar';
 import { cn } from '@/lib/utils';
 import { SidebarNav } from './sidebar-nav';
-import { Sheet, SheetContent } from './ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from './ui/sheet';
 import { Logo } from './logo';
 
 export function Sidebar() {
@@ -12,7 +12,12 @@ export function Sidebar() {
   if (isMobile) {
     return (
       <Sheet open={isOpen} onOpenChange={setOpen}>
-        <SheetContent side="left" className="p-0 pt-12 w-72">
+        <SheetContent side="left" className="p-0 w-72 flex flex-col">
+            <SheetHeader className="p-4 border-b">
+                <SheetTitle>
+                    <Logo />
+                </SheetTitle>
+            </SheetHeader>
             <SidebarNav onLinkClick={() => setOpen(false)} />
         </SheetContent>
       </Sheet>
@@ -25,8 +30,8 @@ export function Sidebar() {
         'fixed inset-y-0 left-0 z-40 h-full flex-col border-r bg-background transition-all duration-300 ease-in-out hidden md:flex',
         isCollapsed ? 'w-20' : 'w-72'
       )}
-      onMouseEnter={() => setIsCollapsed(false)}
-      onMouseLeave={() => setIsCollapsed(true)}
+      onMouseEnter={() => !isMobile && setIsCollapsed(false)}
+      onMouseLeave={() => !isMobile && setIsCollapsed(true)}
     >
       <div className="flex h-full max-h-screen flex-col">
         <div className={cn("h-16 flex items-center border-b px-6", isCollapsed ? "justify-center" : "justify-start")}>

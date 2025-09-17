@@ -124,9 +124,12 @@ export function SidebarNav({ isCollapsed = false, onLinkClick }: SidebarNavProps
         <nav className="grid gap-1 text-base font-medium flex-1 overflow-y-auto py-2">
             {navItems.map((item) => <NavLink {...item} key={item.href} />)}
             <hr className="my-2" />
-            <h2 className={cn("px-3 py-2 text-sm font-semibold text-muted-foreground transition-opacity", isCollapsed && "hidden")}>
-                AI Tools
-            </h2>
+            <div className={cn("px-3 py-2 text-sm font-semibold text-muted-foreground transition-opacity flex items-center gap-2", isCollapsed ? "justify-center" : "justify-start")}>
+                <Sparkles className="h-5 w-5 shrink-0" />
+                 <span className={cn('truncate transition-opacity', isCollapsed && 'opacity-0 w-0 h-0')}>
+                    AI Tools
+                </span>
+            </div>
             {aiTools.map((item) => <NavLink {...item} key={item.href} />)}
         </nav>
         <div className="mt-auto grid gap-1">
