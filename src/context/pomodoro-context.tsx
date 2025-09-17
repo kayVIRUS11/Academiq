@@ -41,18 +41,78 @@ export function PomodoroProvider({ children }: { children: ReactNode }) {
   const originalTitleRef = useRef(typeof document !== 'undefined' ? document.title : '');
   const { user } = useAuth();
   
+  // Effect to initialize timer state from localStorage
   useEffect(() => {
-    // Initialize or update audio on the client-side
+    try {
+        const savedStateJSON = localStorage.getItem('pomodoroState');
+        if (savedStateJSON) {
+            const savedState = JSON.parse(savedStateJSON);
+            const now = Date.now();
+            let newTimeLeft = savedState.timeLeft;
+
+            if (savedState.isActive && savedState.pauseTime) {
+                const elapsedSeconds = Math.floor((now - savedState.pauseTime) / 1000);
+                newTimeLeft -= elapsedSeconds;
+            }
+
+            if (newTimeLeft > 0) {
+                setMode(savedState.mode);
+                setTimeLeft(newTimeLeft);
+                setIsActive(savedState.isActive);
+                setPomodoros(savedState.pomodoros);
+            } else {
+                // If the timer would have finished, just load the finished state for that mode
+                setMode(savedState.mode);
+                setTimeLeft(0);
+                setIsActive(true); // Keep it active to trigger the end-of-session logic
+                setPomodoros(savedState.pomodoros);
+            }
+        }
+    } catch (error) {
+        console.error("Could not load Pomodoro state from localStorage", error);
+        localStorage.removeItem('pomodoroState'); // Clear corrupted state
+    }
+  }, []);
+
+  // Effect to save timer state to localStorage
+  useEffect(() => {
+    try {
+        const stateToSave = {
+            mode,
+            timeLeft,
+            isActive,
+            pomodoros,
+            pauseTime: isActive ? Date.now() : null,
+        };
+        localStorage.setItem('pomodoroState', JSON.stringify(stateToSave));
+    } catch (error) {
+        console.error("Could not save Pomodoro state to localStorage", error);
+    }
+  }, [mode, timeLeft, isActive, pomodoros]);
+
+
+  useEffect(() => {
     const selectedSoundId = user?.user_metadata?.pomodoro_sound || 'alarm';
     const sound = alarmSounds.find(s => s.id === selectedSoundId) || alarmSounds[0];
-    audioRef.current = new Audio(sound.path);
+    if(audioRef.current?.src !== sound.path) {
+        audioRef.current = new Audio(sound.path);
+    }
   }, [user?.user_metadata?.pomodoro_sound]);
 
+
+  const stopAlarm = useCallback(() => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+  }, []);
+
   const switchMode = useCallback((newMode: TimerMode) => {
+    stopAlarm();
     setIsActive(false);
     setMode(newMode);
     setTimeLeft(times[newMode]);
-  }, []);
+  }, [stopAlarm]);
 
   useEffect(() => {
     let interval: NodeJS.Timeout | null = null;
@@ -61,9 +121,9 @@ export function PomodoroProvider({ children }: { children: ReactNode }) {
       interval = setInterval(() => {
         setTimeLeft((time) => time - 1);
       }, 1000);
-    } else if (isActive && timeLeft === 0) {
-      if (audioRef.current) {
-        audioRef.current.play();
+    } else if (isActive && timeLeft <= 0) {
+      if (audioRef.current && audioRef.current.paused) {
+        audioRef.current.play().catch(e => console.error("Error playing audio:", e));
       }
 
       if (mode === 'pomodoro') {
@@ -86,11 +146,14 @@ export function PomodoroProvider({ children }: { children: ReactNode }) {
   
   useEffect(() => {
     if (typeof document !== 'undefined') {
-        if (isActive) {
+        if (isActive && timeLeft > 0) {
             const minutes = Math.floor(timeLeft / 60);
             const seconds = timeLeft % 60;
             document.title = `${minutes}:${seconds.toString().padStart(2, '0')} - ${mode === 'pomodoro' ? 'Focus' : 'Break'}`;
-        } else {
+        } else if (timeLeft <= 0) {
+            document.title = `Time's up! - ${originalTitleRef.current}`;
+        }
+        else {
             document.title = originalTitleRef.current;
         }
     }
@@ -98,16 +161,14 @@ export function PomodoroProvider({ children }: { children: ReactNode }) {
 
 
   const toggleTimer = () => {
+    stopAlarm();
     setIsActive(!isActive);
   };
 
   const resetTimer = () => {
+    stopAlarm();
     setIsActive(false);
     setTimeLeft(times[mode]);
-    if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current.currentTime = 0;
-    }
   };
 
   const value = {
