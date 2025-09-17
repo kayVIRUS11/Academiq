@@ -150,7 +150,7 @@ export function StudyGuideForm() {
           </div>
           <Card>
             <CardContent className="p-6">
-              <div className="prose max-w-none prose-sm" dangerouslySetInnerHTML={{ __html: studyGuide }} />
+              <div className="prose max-w-none prose-sm dark:prose-invert" dangerouslySetInnerHTML={{ __html: studyGuide }} />
             </CardContent>
           </Card>
         </div>

@@ -26,7 +26,7 @@ body {
     --tw-prose-td-borders: hsl(var(--border));
   }
 
-  .prose-invert {
+  .dark .prose {
     --tw-prose-body: hsl(var(--foreground));
     --tw-prose-headings: hsl(var(--foreground));
     --tw-prose-lead: hsl(var(--foreground));
