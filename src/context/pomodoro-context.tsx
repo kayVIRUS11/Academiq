@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode, useRef } from 'react';
 
 type TimerMode = 'pomodoro' | 'shortBreak' | 'longBreak';
 
@@ -28,6 +28,13 @@ export function PomodoroProvider({ children }: { children: ReactNode }) {
   const [timeLeft, setTimeLeft] = useState(times[mode]);
   const [isActive, setIsActive] = useState(false);
   const [pomodoros, setPomodoros] = useState(0);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const originalTitleRef = useRef(document.title);
+
+  useEffect(() => {
+    // Initialize audio only on the client-side
+    audioRef.current = new Audio('/alarm.mp3');
+  }, []);
 
   const switchMode = useCallback((newMode: TimerMode) => {
     setIsActive(false);
@@ -43,6 +50,10 @@ export function PomodoroProvider({ children }: { children: ReactNode }) {
         setTimeLeft((time) => time - 1);
       }, 1000);
     } else if (isActive && timeLeft === 0) {
+      if (audioRef.current) {
+        audioRef.current.play();
+      }
+
       if (mode === 'pomodoro') {
         const newPomodoros = pomodoros + 1;
         setPomodoros(newPomodoros);
@@ -60,6 +71,17 @@ export function PomodoroProvider({ children }: { children: ReactNode }) {
       if (interval) clearInterval(interval);
     };
   }, [isActive, timeLeft, mode, pomodoros, switchMode]);
+  
+  useEffect(() => {
+    if (isActive) {
+      const minutes = Math.floor(timeLeft / 60);
+      const seconds = timeLeft % 60;
+      document.title = `${minutes}:${seconds.toString().padStart(2, '0')} - ${mode === 'pomodoro' ? 'Focus' : 'Break'}`;
+    } else {
+      document.title = originalTitleRef.current;
+    }
+  }, [timeLeft, isActive, mode]);
+
 
   const toggleTimer = () => {
     setIsActive(!isActive);
@@ -68,6 +90,10 @@ export function PomodoroProvider({ children }: { children: ReactNode }) {
   const resetTimer = () => {
     setIsActive(false);
     setTimeLeft(times[mode]);
+    if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+    }
   };
 
   const value = {
