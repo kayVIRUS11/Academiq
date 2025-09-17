@@ -1,3 +1,4 @@
+
 import { config } from 'dotenv';
 config({ path: './.env' });
 
@@ -10,3 +11,4 @@ import '@/ai/flows/merge-daily-plans.ts';
 import '@/ai/flows/generate-study-guide.ts';
 import '@/ai/flows/generate-weekly-study-plan.ts';
 import '@/ai/flows/merge-weekly-study-plan.ts';
+import '@/ai/flows/generate-beep-sound.ts';

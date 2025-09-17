@@ -3,6 +3,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode, useRef } from 'react';
 import { useAuth } from './auth-context';
+import { generateBeepSound } from '@/ai/flows/generate-beep-sound';
 
 type TimerMode = 'pomodoro' | 'shortBreak' | 'longBreak';
 
@@ -11,13 +12,6 @@ const times = {
   shortBreak: 5 * 60,
   longBreak: 15 * 60,
 };
-
-export const alarmSounds = [
-    { id: 'alarm', name: 'Alarm Clock', path: '/alarm.mp3' },
-    { id: 'chime', name: 'Gentle Chime', path: '/chime.mp3' },
-    { id: 'digital-beep', name: 'Digital Beep', path: '/digital-beep.mp3' },
-    { id: 'birds', name: 'Morning Birds', path: '/birds.mp3' },
-];
 
 type PomodoroContextType = {
   mode: TimerMode;
@@ -95,21 +89,21 @@ export function PomodoroProvider({ children }: { children: ReactNode }) {
     if (typeof window !== 'undefined' && !audioRef.current) {
         audioRef.current = new Audio();
     }
-  }, []);
 
-
-  // Effect to update audio source when user preference changes
-  useEffect(() => {
-    if (audioRef.current) {
-        const selectedSoundId = user?.user_metadata?.pomodoro_sound || 'alarm';
-        const sound = alarmSounds.find(s => s.id === selectedSoundId) || alarmSounds[0];
-        if (audioRef.current.src !== window.location.origin + sound.path) {
-            audioRef.current.src = sound.path;
-            audioRef.current.load();
+    const getBeep = async () => {
+        try {
+            const beep = await generateBeepSound();
+            if(audioRef.current){
+                audioRef.current.src = beep.media;
+                audioRef.current.load();
+            }
+        } catch(e) {
+            console.error("Could not generate beep sound", e);
         }
     }
-  }, [user?.user_metadata?.pomodoro_sound]);
+    getBeep();
 
+  }, []);
 
   const stopAlarm = useCallback(() => {
     if (audioRef.current) {
@@ -133,7 +127,7 @@ export function PomodoroProvider({ children }: { children: ReactNode }) {
         setTimeLeft((time) => time - 1);
       }, 1000);
     } else if (isActive && timeLeft <= 0) {
-      if (audioRef.current && audioRef.current.paused) {
+      if (audioRef.current && audioRef.current.paused && audioRef.current.src) {
         audioRef.current.play().catch(e => console.error("Error playing audio:", e));
       }
 
