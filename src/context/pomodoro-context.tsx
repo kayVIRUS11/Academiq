@@ -54,11 +54,12 @@ export function PomodoroProvider({ children }: { children: ReactNode }) {
 
   // Update audio source when user preference changes
   useEffect(() => {
-    if (user && audioRef.current) {
+    if (user && audioRef.current && typeof window !== 'undefined') {
         const soundId = user.user_metadata.pomodoro_alarm_sound || 'birds';
         const soundPath = sounds[soundId as keyof typeof sounds] || sounds.birds;
-        if (audioRef.current.src !== window.location.origin + soundPath) {
-            audioRef.current.src = soundPath;
+        const fullSoundPath = window.location.origin + soundPath;
+        if (audioRef.current.src !== fullSoundPath) {
+            audioRef.current.src = fullSoundPath;
             audioRef.current.load();
         }
     }
