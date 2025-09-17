@@ -39,7 +39,7 @@ export function NoteList({ notes, selectedNoteId, onSelectNote, courses }: NoteL
             key={note.id}
             onClick={() => onSelectNote(note.id)}
             className={cn(
-              'w-full text-left p-3 rounded-lg transition-colors',
+              'w-full text-left p-3 rounded-lg transition-colors overflow-hidden',
               note.id === selectedNoteId
                 ? 'bg-secondary'
                 : 'hover:bg-muted/50'
