@@ -69,57 +69,67 @@ export function SidebarNav({ isCollapsed = false, onLinkClick }: SidebarNavProps
     const linkContent = (
         <>
             <Icon className="h-5 w-5 shrink-0" />
-            <span className={cn('truncate transition-opacity', isCollapsed && 'opacity-0')}>
+            <span className={cn('truncate transition-opacity', isCollapsed && 'opacity-0 w-0 h-0')}>
                 {label}
             </span>
         </>
     );
 
+    if (isCollapsed) {
+        return (
+            <TooltipProvider delayDuration={0}>
+                <Tooltip>
+                <TooltipTrigger asChild>
+                    <Link
+                        href={href}
+                        onClick={onLinkClick}
+                        className={cn(
+                            'flex items-center gap-4 rounded-lg px-3 py-2 transition-colors justify-center',
+                            isActive
+                            ? 'bg-primary text-primary-foreground'
+                            : 'text-muted-foreground hover:bg-accent hover:text-foreground',
+                        )}
+                        >
+                        {linkContent}
+                    </Link>
+                </TooltipTrigger>
+                <TooltipContent side="right" sideOffset={5}>
+                    {label}
+                </TooltipContent>
+                </Tooltip>
+            </TooltipProvider>
+        );
+    }
+    
+
     return (
-      <TooltipProvider delayDuration={0}>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Link
-              href={href}
-              onClick={onLinkClick}
-              className={cn(
+        <Link
+            href={href}
+            onClick={onLinkClick}
+            className={cn(
                 'flex items-center gap-4 rounded-lg px-3 py-2 transition-colors',
                 isActive
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-muted-foreground hover:bg-accent hover:text-foreground',
-                isCollapsed && 'justify-center'
-              )}
+                ? 'bg-primary text-primary-foreground'
+                : 'text-muted-foreground hover:bg-accent hover:text-foreground',
+            )}
             >
-              {linkContent}
-            </Link>
-          </TooltipTrigger>
-          {isCollapsed && (
-            <TooltipContent side="right" sideOffset={5}>
-              {label}
-            </TooltipContent>
-          )}
-        </Tooltip>
-      </TooltipProvider>
+            {linkContent}
+        </Link>
     );
   };
   
 
   return (
-    <div className="flex h-full flex-col p-4">
-        <div className={cn("mb-4 transition-all flex", isCollapsed ? 'justify-center' : 'justify-start')}>
-            <Logo isCollapsed={isCollapsed} />
-        </div>
-        <nav className="grid gap-2 text-base font-medium">
+    <div className="flex h-full flex-col p-2">
+        <nav className="grid gap-1 text-base font-medium flex-1 overflow-y-auto py-2">
             {navItems.map((item) => <NavLink {...item} key={item.href} />)}
-        </nav>
-        <hr className="my-4" />
-        <nav className="grid gap-2 text-base font-medium">
-            <h2 className={cn("px-3 py-2 text-sm font-semibold text-muted-foreground transition-opacity", isCollapsed && "opacity-0")}>
+            <hr className="my-2" />
+            <h2 className={cn("px-3 py-2 text-sm font-semibold text-muted-foreground transition-opacity", isCollapsed && "hidden")}>
                 AI Tools
             </h2>
             {aiTools.map((item) => <NavLink {...item} key={item.href} />)}
         </nav>
-        <div className="mt-auto grid gap-2">
+        <div className="mt-auto grid gap-1">
             <NavLink href="/settings" icon={User} label="Account" />
         </div>
     </div>

@@ -8,24 +8,22 @@ type SidebarContextType = {
   setOpen: (isOpen: boolean) => void;
   toggle: () => void;
   isMobile: boolean;
+  isCollapsed: boolean;
+  setIsCollapsed: (isCollapsed: boolean) => void;
 };
 
 const SidebarContext = createContext<SidebarContextType | undefined>(undefined);
 
 export function SidebarProvider({ children }: { children: ReactNode }) {
   const isMobile = useIsMobile();
-  const [isOpen, setIsOpen] = useState(!isMobile);
-
-  useEffect(() => {
-    // Adjust sidebar state when switching between mobile and desktop views
-    setIsOpen(!isMobile);
-  }, [isMobile]);
+  const [isOpen, setIsOpen] = useState(false); // For mobile sheet
+  const [isCollapsed, setIsCollapsed] = useState(true); // For desktop hover
 
   const toggle = () => setIsOpen(prev => !prev);
   const setOpen = (value: boolean) => setIsOpen(value);
 
   return (
-    <SidebarContext.Provider value={{ isOpen, setOpen, toggle, isMobile }}>
+    <SidebarContext.Provider value={{ isOpen, setOpen, toggle, isMobile, isCollapsed, setIsCollapsed }}>
       {children}
     </SidebarContext.Provider>
   );

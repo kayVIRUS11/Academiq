@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
 import { Header } from './header';
 
 export function SidebarLayout({ children }: { children: React.ReactNode }) {
-  const { isOpen, isMobile } = useSidebar();
+  const { isCollapsed, isMobile } = useSidebar();
 
   return (
     <div className="min-h-screen w-full bg-muted/40">
@@ -15,7 +15,7 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
         <div 
             className={cn(
                 "flex flex-col sm:gap-4 sm:py-4 transition-all duration-300 ease-in-out",
-                !isMobile && (isOpen ? "sm:pl-72" : "sm:pl-0")
+                !isMobile && (isCollapsed ? "sm:pl-20" : "sm:pl-72")
             )}
         >
             <Header />
