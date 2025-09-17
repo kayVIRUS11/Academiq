@@ -14,7 +14,7 @@ interface AuthContextType {
     signInWithEmail: (email: string, password: string) => Promise<any>;
     signInWithGoogle: () => Promise<any>;
     logout: () => Promise<any>;
-    updateUserProfile: (updates: { displayName: string }) => Promise<void>;
+    updateUserSettings: (updates: { [key: string]: any }) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -38,18 +38,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
             setUser(session?.user ?? null);
-            // We only need to set loading to false on the initial check, not every auth change.
-            if (loading) setLoading(false);
         });
 
         return () => subscription.unsubscribe();
     }, []);
-
-    useEffect(() => {
-        if (!loading && !user && !publicRoutes.includes(pathname)) {
-            router.push('/login');
-        }
-    }, [loading, user, pathname, router]);
 
     const signUpWithEmail = async (email: string, password: string, displayName: string) => {
         return supabase.auth.signUp({
@@ -80,12 +72,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return supabase.auth.signOut();
     };
 
-    const updateUserProfile = async (updates: { displayName: string }) => {
+    const updateUserSettings = async (updates: { [key: string]: any }) => {
         if (!user) {
             throw new Error("No user is signed in.");
         }
         const { data, error } = await supabase.auth.updateUser({
-            data: { full_name: updates.displayName }
+            data: { ...user.user_metadata, ...updates }
         });
 
         if (error) throw error;
@@ -99,7 +91,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signInWithEmail,
         signInWithGoogle,
         logout,
-        updateUserProfile
+        updateUserSettings
     };
     
     if (loading && !publicRoutes.includes(pathname)) {
@@ -111,7 +103,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     
     if (!loading && !user && !publicRoutes.includes(pathname)) {
-        return null; // Prevent rendering of app pages while redirecting
+        router.push('/login');
+        return null;
     }
 
     return (

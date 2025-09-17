@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode, useRef } from 'react';
+import { useAuth } from './auth-context';
 
 type TimerMode = 'pomodoro' | 'shortBreak' | 'longBreak';
 
@@ -9,6 +10,13 @@ const times = {
   shortBreak: 5 * 60,
   longBreak: 15 * 60,
 };
+
+export const alarmSounds = [
+    { id: 'alarm', name: 'Alarm Clock', path: '/alarm.mp3' },
+    { id: 'chime', name: 'Gentle Chime', path: '/chime.mp3' },
+    { id: 'digital-beep', name: 'Digital Beep', path: '/digital-beep.mp3' },
+    { id: 'birds', name: 'Morning Birds', path: '/birds.mp3' },
+];
 
 type PomodoroContextType = {
   mode: TimerMode;
@@ -29,12 +37,15 @@ export function PomodoroProvider({ children }: { children: ReactNode }) {
   const [isActive, setIsActive] = useState(false);
   const [pomodoros, setPomodoros] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const originalTitleRef = useRef(document.title);
-
+  const originalTitleRef = useRef(typeof document !== 'undefined' ? document.title : '');
+  const { user } = useAuth();
+  
   useEffect(() => {
-    // Initialize audio only on the client-side
-    audioRef.current = new Audio('/alarm.mp3');
-  }, []);
+    // Initialize audio on the client-side
+    const selectedSoundId = user?.user_metadata?.pomodoro_sound || 'alarm';
+    const sound = alarmSounds.find(s => s.id === selectedSoundId) || alarmSounds[0];
+    audioRef.current = new Audio(sound.path);
+  }, [user]);
 
   const switchMode = useCallback((newMode: TimerMode) => {
     setIsActive(false);
@@ -73,12 +84,14 @@ export function PomodoroProvider({ children }: { children: ReactNode }) {
   }, [isActive, timeLeft, mode, pomodoros, switchMode]);
   
   useEffect(() => {
-    if (isActive) {
-      const minutes = Math.floor(timeLeft / 60);
-      const seconds = timeLeft % 60;
-      document.title = `${minutes}:${seconds.toString().padStart(2, '0')} - ${mode === 'pomodoro' ? 'Focus' : 'Break'}`;
-    } else {
-      document.title = originalTitleRef.current;
+    if (typeof document !== 'undefined') {
+        if (isActive) {
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            document.title = `${minutes}:${seconds.toString().padStart(2, '0')} - ${mode === 'pomodoro' ? 'Focus' : 'Break'}`;
+        } else {
+            document.title = originalTitleRef.current;
+        }
     }
   }, [timeLeft, isActive, mode]);
 
