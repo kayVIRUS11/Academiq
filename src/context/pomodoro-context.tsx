@@ -2,8 +2,6 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode, useRef } from 'react';
-import { useAuth } from './auth-context';
-import { generateBeepSound } from '@/ai/flows/generate-beep-sound';
 
 type TimerMode = 'pomodoro' | 'shortBreak' | 'longBreak';
 
@@ -33,76 +31,16 @@ export function PomodoroProvider({ children }: { children: ReactNode }) {
   const [pomodoros, setPomodoros] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const originalTitleRef = useRef(typeof document !== 'undefined' ? document.title : '');
-  const { user } = useAuth();
-  
-  // Effect to initialize timer state from localStorage
-  useEffect(() => {
-    try {
-        const savedStateJSON = localStorage.getItem('pomodoroState');
-        if (savedStateJSON) {
-            const savedState = JSON.parse(savedStateJSON);
-            const now = Date.now();
-            let newTimeLeft = savedState.timeLeft;
-
-            if (savedState.isActive && savedState.pauseTime) {
-                const elapsedSeconds = Math.floor((now - savedState.pauseTime) / 1000);
-                newTimeLeft -= elapsedSeconds;
-            }
-
-            if (newTimeLeft > 0) {
-                setMode(savedState.mode);
-                setTimeLeft(newTimeLeft);
-                setIsActive(savedState.isActive);
-                setPomodoros(savedState.pomodoros);
-            } else {
-                // If the timer would have finished, just load the finished state for that mode
-                setMode(savedState.mode);
-                setTimeLeft(0);
-                setIsActive(true); // Keep it active to trigger the end-of-session logic
-                setPomodoros(savedState.pomodoros);
-            }
-        }
-    } catch (error) {
-        console.error("Could not load Pomodoro state from localStorage", error);
-        localStorage.removeItem('pomodoroState'); // Clear corrupted state
-    }
-  }, []);
-
-  // Effect to save timer state to localStorage
-  useEffect(() => {
-    try {
-        const stateToSave = {
-            mode,
-            timeLeft,
-            isActive,
-            pomodoros,
-            pauseTime: isActive ? Date.now() : null,
-        };
-        localStorage.setItem('pomodoroState', JSON.stringify(stateToSave));
-    } catch (error) {
-        console.error("Could not save Pomodoro state to localStorage", error);
-    }
-  }, [mode, timeLeft, isActive, pomodoros]);
 
   // Effect to setup audio element
   useEffect(() => {
-    if (typeof window !== 'undefined' && !audioRef.current) {
-        audioRef.current = new Audio();
-    }
-
-    const getBeep = async () => {
-        try {
-            const beep = await generateBeepSound();
-            if(audioRef.current){
-                audioRef.current.src = beep.media;
-                audioRef.current.load();
-            }
-        } catch(e) {
-            console.error("Could not generate beep sound", e);
+    // This check ensures we are in the browser
+    if (typeof window !== 'undefined') {
+        if (!audioRef.current) {
+            audioRef.current = new Audio('/chime.mp3'); // Default sound
+            audioRef.current.load();
         }
     }
-    getBeep();
-
   }, []);
 
   const stopAlarm = useCallback(() => {
@@ -127,7 +65,7 @@ export function PomodoroProvider({ children }: { children: ReactNode }) {
         setTimeLeft((time) => time - 1);
       }, 1000);
     } else if (isActive && timeLeft <= 0) {
-      if (audioRef.current && audioRef.current.paused && audioRef.current.src) {
+      if (audioRef.current && audioRef.current.paused) {
         audioRef.current.play().catch(e => console.error("Error playing audio:", e));
       }
 
@@ -151,14 +89,11 @@ export function PomodoroProvider({ children }: { children: ReactNode }) {
   
   useEffect(() => {
     if (typeof document !== 'undefined') {
-        if (isActive && timeLeft > 0) {
+        if (isActive) {
             const minutes = Math.floor(timeLeft / 60);
             const seconds = timeLeft % 60;
             document.title = `${minutes}:${seconds.toString().padStart(2, '0')} - ${mode === 'pomodoro' ? 'Focus' : 'Break'}`;
-        } else if (timeLeft <= 0) {
-            document.title = `Time's up! - ${originalTitleRef.current}`;
-        }
-        else {
+        } else {
             document.title = originalTitleRef.current;
         }
     }

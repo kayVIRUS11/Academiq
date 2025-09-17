@@ -43,7 +43,7 @@ export default function SettingsPage() {
         <CardContent>
             <ThemeToggle />
         </CardContent>
-      </Card>>
+      </Card>
       
       {installPromptEvent && (
         <Card>
