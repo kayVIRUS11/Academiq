@@ -90,14 +90,23 @@ export function PomodoroProvider({ children }: { children: ReactNode }) {
     }
   }, [mode, timeLeft, isActive, pomodoros]);
 
-
+  // Effect to setup audio element
   useEffect(() => {
-    const selectedSoundId = user?.user_metadata?.pomodoro_sound || 'alarm';
-    const sound = alarmSounds.find(s => s.id === selectedSoundId) || alarmSounds[0];
-    
-    // Create a new Audio object only if the path changes or it doesn't exist
-    if (!audioRef.current || !audioRef.current.src.endsWith(sound.path)) {
-      audioRef.current = new Audio(sound.path);
+    if (typeof window !== 'undefined' && !audioRef.current) {
+        audioRef.current = new Audio();
+    }
+  }, []);
+
+
+  // Effect to update audio source when user preference changes
+  useEffect(() => {
+    if (audioRef.current) {
+        const selectedSoundId = user?.user_metadata?.pomodoro_sound || 'alarm';
+        const sound = alarmSounds.find(s => s.id === selectedSoundId) || alarmSounds[0];
+        if (audioRef.current.src !== window.location.origin + sound.path) {
+            audioRef.current.src = sound.path;
+            audioRef.current.load();
+        }
     }
   }, [user?.user_metadata?.pomodoro_sound]);
 
