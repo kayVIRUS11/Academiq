@@ -7,8 +7,6 @@ import { ActivitiesProvider } from '@/app/(app)/daily-activities/activities-cont
 import { FlashcardsProvider } from '@/app/(app)/ai-tools/flashcards/flashcards-context';
 import { WeeklyPlanProvider } from '@/app/(app)/weekly-plan/weekly-plan-context';
 import { PomodoroProvider } from '@/context/pomodoro-context';
-import { useAuth } from '@/context/auth-context';
-import { Loader2 } from 'lucide-react';
 import { CoursesProvider } from './courses-context';
 import { Course } from '@/lib/types';
 import { SidebarProvider } from '@/hooks/use-sidebar';
@@ -22,7 +20,6 @@ export function AppProviders({
   children: React.ReactNode;
   courses: Course[];
 }) {
-    const { user, loading } = useAuth();
 
     useEffect(() => {
       if ("serviceWorker" in navigator) {
@@ -35,14 +32,6 @@ export function AppProviders({
       }
     }, []);
     
-    if (loading) {
-        return (
-            <div className="flex h-screen items-center justify-center">
-                <Loader2 className="h-16 w-16 animate-spin text-primary" />
-            </div>
-        );
-    }
-  
   return (
     <InstallPromptProvider>
       <SidebarProvider>

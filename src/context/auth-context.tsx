@@ -1,9 +1,10 @@
+
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import type { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 
 interface AuthContextType {
@@ -24,6 +25,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
     const pathname = usePathname();
+    const router = useRouter();
 
     useEffect(() => {
         const getSession = async () => {
@@ -36,10 +38,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
             setUser(session?.user ?? null);
+            // We only need to set loading to false on the initial check, not every auth change.
+            if (loading) setLoading(false);
         });
 
         return () => subscription.unsubscribe();
     }, []);
+
+    useEffect(() => {
+        if (!loading && !user && !publicRoutes.includes(pathname)) {
+            router.push('/login');
+        }
+    }, [loading, user, pathname, router]);
 
     const signUpWithEmail = async (email: string, password: string, displayName: string) => {
         return supabase.auth.signUp({
@@ -92,14 +102,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         updateUserProfile
     };
     
-    const isPublicRoute = publicRoutes.includes(pathname);
-    
-    if (loading && !isPublicRoute) {
+    if (loading && !publicRoutes.includes(pathname)) {
         return (
            <div className="flex h-screen items-center justify-center">
                <Loader2 className="h-16 w-16 animate-spin text-primary" />
            </div>
         );
+    }
+    
+    if (!loading && !user && !publicRoutes.includes(pathname)) {
+        return null; // Prevent rendering of app pages while redirecting
     }
 
     return (
