@@ -12,10 +12,8 @@ const times = {
   longBreak: 15 * 60,
 };
 
-const sounds = {
-    birds: '/birds.mp3',
-    alarm: '/alarm.mp3',
-};
+const ALARM_SOUND_PATH = '/birds.mp3';
+const ALARM_DURATION_MS = 5000; // Play sound for 5 seconds
 
 type PomodoroContextType = {
   mode: TimerMode;
@@ -31,47 +29,34 @@ type PomodoroContextType = {
 const PomodoroContext = createContext<PomodoroContextType | undefined>(undefined);
 
 export function PomodoroProvider({ children }: { children: ReactNode }) {
-  const { user } = useAuth();
   const [mode, setMode] = useState<TimerMode>('pomodoro');
   const [timeLeft, setTimeLeft] = useState(times[mode]);
   const [isActive, setIsActive] = useState(false);
   const [pomodoros, setPomodoros] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const originalTitleRef = useRef(typeof document !== 'undefined' ? document.title : '');
-  const [lastRunningState, setLastRunningState] = useState<{
-    timeLeft: number;
-    mode: TimerMode;
-    isActive: boolean;
-    timestamp: number;
-  } | null>(null);
-
-  // Setup audio element
-  useEffect(() => {
-    if (typeof window !== 'undefined' && !audioRef.current) {
-        audioRef.current = new Audio();
-    }
-  }, []);
-
-  // Update audio source when user preference changes
-  useEffect(() => {
-    if (user && audioRef.current && typeof window !== 'undefined') {
-        const soundId = user.user_metadata.pomodoro_alarm_sound || 'birds';
-        const soundPath = sounds[soundId as keyof typeof sounds] || sounds.birds;
-        const fullSoundPath = window.location.origin + soundPath;
-        if (audioRef.current.src !== fullSoundPath) {
-            audioRef.current.src = fullSoundPath;
-            audioRef.current.load();
-        }
-    }
-  }, [user]);
-
 
   const stopAlarm = useCallback(() => {
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
+      audioRef.current = null;
     }
   }, []);
+
+  const playAlarm = useCallback(() => {
+    stopAlarm(); // Stop any previous alarm
+    if (typeof window !== 'undefined') {
+      const audio = new Audio(ALARM_SOUND_PATH);
+      audio.play().catch(e => console.error("Error playing audio:", e));
+      audioRef.current = audio;
+
+      // Stop the sound after a specific duration
+      setTimeout(() => {
+        stopAlarm();
+      }, ALARM_DURATION_MS);
+    }
+  }, [stopAlarm]);
 
   const switchMode = useCallback((newMode: TimerMode) => {
     stopAlarm();
@@ -89,9 +74,7 @@ export function PomodoroProvider({ children }: { children: ReactNode }) {
         setTimeLeft((time) => time - 1);
       }, 1000);
     } else if (isActive && timeLeft <= 0) {
-      if (audioRef.current && audioRef.current.paused) {
-        audioRef.current.play().catch(e => console.error("Error playing audio:", e));
-      }
+      playAlarm();
 
       if (mode === 'pomodoro') {
         const newPomodoros = pomodoros + 1;
@@ -105,7 +88,7 @@ export function PomodoroProvider({ children }: { children: ReactNode }) {
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [isActive, timeLeft, mode, pomodoros, switchMode]);
+  }, [isActive, timeLeft, mode, pomodoros, switchMode, playAlarm]);
   
   // Update document title
   useEffect(() => {
