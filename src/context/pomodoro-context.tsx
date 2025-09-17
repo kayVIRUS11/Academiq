@@ -94,8 +94,10 @@ export function PomodoroProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const selectedSoundId = user?.user_metadata?.pomodoro_sound || 'alarm';
     const sound = alarmSounds.find(s => s.id === selectedSoundId) || alarmSounds[0];
-    if(audioRef.current?.src !== sound.path) {
-        audioRef.current = new Audio(sound.path);
+    
+    // Create a new Audio object only if the path changes or it doesn't exist
+    if (!audioRef.current || !audioRef.current.src.endsWith(sound.path)) {
+      audioRef.current = new Audio(sound.path);
     }
   }, [user?.user_metadata?.pomodoro_sound]);
 
