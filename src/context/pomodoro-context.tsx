@@ -44,7 +44,18 @@ export function PomodoroProvider({ children }: { children: ReactNode }) {
 
     if (typeof window !== 'undefined') {
       const audio = new Audio(ALARM_SOUND_PATH);
-      audio.play().catch(e => console.error("Error playing audio:", e));
+      const playPromise = audio.play();
+      
+      if (playPromise !== undefined) {
+        playPromise.catch(error => {
+            // Auto-play was prevented. This is a common browser policy.
+            // We can ignore this error as it's expected in some cases.
+            if (error.name !== 'NotAllowedError') {
+                 console.error("Error playing audio:", error)
+            }
+        });
+      }
+
       audioRef.current = audio;
 
       // Set a timeout to stop this specific audio instance
