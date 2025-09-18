@@ -2,7 +2,7 @@
 'use client';
 
 import { Course } from '@/lib/types';
-import React, { createContext, useContext, useState, ReactNode, useCallback } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useCallback, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import { supabase } from '@/lib/supabase';
@@ -18,9 +18,9 @@ type CoursesContextType = {
 
 const CoursesContext = createContext<CoursesContextType | undefined>(undefined);
 
-export function CoursesProvider({ children, initialCourses }: { children: ReactNode, initialCourses: Course[] }) {
-  const [courses, setCourses] = useState<Course[]>(initialCourses || []);
-  const [loading, setLoading] = useState(false);
+export function CoursesProvider({ children }: { children: ReactNode }) {
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -35,6 +35,10 @@ export function CoursesProvider({ children, initialCourses }: { children: ReactN
     }
     setLoading(false);
   }, [user, toast]);
+
+  useEffect(() => {
+    fetchCourses();
+  }, [fetchCourses]);
 
   
   const addCourse = async (newCourseData: Omit<Course, 'id' | 'uid'>) => {

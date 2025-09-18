@@ -1,19 +1,11 @@
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+
+'use client';
+
 import { AppProviders } from '@/context/app-providers';
-import { Course } from '@/lib/types';
-import { supabase } from '@/lib/supabase';
 
-async function getCourses() {
-  const { data: courses } = await supabase.from('courses').select('*');
-  return courses as Course[] || [];
-}
-
-export default async function AppLayout({ children }: { children: React.ReactNode }) {
-  const courses = await getCourses();
-
+export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
-    <AppProviders courses={courses}>
+    <AppProviders>
       {children}
     </AppProviders>
   );

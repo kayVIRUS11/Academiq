@@ -14,11 +14,9 @@ import { SidebarLayout } from '@/components/sidebar-layout';
 import { InstallPromptProvider } from './install-prompt-context';
 
 export function AppProviders({
-  children,
-  courses,
+  children
 }: {
   children: React.ReactNode;
-  courses: Course[];
 }) {
 
     useEffect(() => {
@@ -35,7 +33,7 @@ export function AppProviders({
   return (
     <InstallPromptProvider>
       <SidebarProvider>
-        <CoursesProvider initialCourses={courses}>
+        <CoursesProvider>
             <ActivitiesProvider>
                 <NotesProvider>
                     <FlashcardsProvider>
