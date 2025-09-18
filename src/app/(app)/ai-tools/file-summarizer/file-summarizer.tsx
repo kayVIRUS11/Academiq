@@ -26,7 +26,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.j
 type ContentPart = { text: string } | { media: { url: string } };
 type SummaryType = 'quick' | 'standard' | 'deep';
 
-const LARGE_FILE_THRESHOLD = 1024 * 1024; // 1MB
+const CHARACTER_THRESHOLD = 30000; // Approx 7.5k tokens
 
 const quickLoadingMessages = [
     "Analyzing document...",
@@ -216,7 +216,8 @@ export function FileSummarizer() {
             throw new Error('The file appears to be empty or text could not be extracted.');
         }
 
-        const useChunking = (summaryType === 'deep' || summaryType === 'standard') && file.size > LARGE_FILE_THRESHOLD;
+        const totalChars = parts.reduce((acc, part) => acc + ('text' in part ? part.text.length : 0), 0);
+        const useChunking = (summaryType === 'deep' || summaryType === 'standard') && totalChars > CHARACTER_THRESHOLD;
 
         if (useChunking) {
             setLoadingMessage('Starting deep summarization stream...');
