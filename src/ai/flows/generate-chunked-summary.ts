@@ -17,7 +17,6 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'zod';
 
-// Re-using schemas from the single-file summarizer for consistency.
 const ContentPartSchema = z.union([
   z.object({text: z.string()}),
   z.object({media: z.object({url: z.string()})}),
@@ -115,8 +114,25 @@ const generateChunkedSummaryFlow = ai.defineFlow(
 
     // 2. SUMMARIZE STAGE (in parallel)
     const chunkSummaryPromises = chunks.map(async (chunk) => {
-      const {output} = await summarizeChunkPrompt({chunkText: chunk});
-      return output?.chunkSummary || '';
+      const maxRetries = 3;
+      let attempt = 0;
+      while (attempt < maxRetries) {
+          try {
+              const { output } = await summarizeChunkPrompt({ chunkText: chunk });
+              return output?.chunkSummary || '';
+          } catch (error) {
+              attempt++;
+              if (attempt >= maxRetries) {
+                  console.error('Final attempt to summarize chunk failed:', error);
+                  // Return empty string or re-throw, depending on desired behavior.
+                  // For now, we'll let it fail silently for this chunk to not stop the whole process.
+                  return ''; 
+              }
+              console.log(`Attempt ${attempt} to summarize chunk failed. Retrying in 2 seconds...`);
+              await new Promise((resolve) => setTimeout(resolve, 2000));
+          }
+      }
+      return ''; // Should be unreachable
     });
 
     const chunkSummaries = await Promise.all(chunkSummaryPromises);
