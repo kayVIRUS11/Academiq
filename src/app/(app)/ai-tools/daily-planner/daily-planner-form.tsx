@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -170,7 +171,7 @@ export function DailyPlannerForm() {
                     {generatedPlan.map((item, index) => (
                         <div key={index} className="flex gap-4 items-start">
                             <div className="font-semibold text-sm text-primary w-28 text-right shrink-0">{item.time}</div>
-                            <div className="flex-1 text-sm">
+                            <div className="flex-1 text-sm whitespace-pre-wrap">
                                 <p>{item.activity}</p>
                                 {item.suggestions && <p className="text-xs italic text-muted-foreground mt-1">{item.suggestions}</p>}
                             </div>

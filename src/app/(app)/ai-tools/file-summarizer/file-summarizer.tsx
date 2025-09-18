@@ -264,7 +264,7 @@ export function FileSummarizer() {
             </div>
           <Card>
             <CardContent className="p-6">
-              <div className="prose max-w-none prose-sm dark:prose-invert" dangerouslySetInnerHTML={{ __html: summary }} />
+              <div className="prose max-w-none prose-sm dark:prose-invert whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: summary }} />
             </CardContent>
           </Card>
         </div>
