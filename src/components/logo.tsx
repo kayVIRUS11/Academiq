@@ -5,7 +5,7 @@ export function Logo({ className, isCollapsed }: { className?: string, isCollaps
   return (
     <div className={cn("flex items-center gap-2", className)}>
       <Image 
-        src="/icons/icon_file.png" 
+        src="/icons/logo_file.png" 
         alt="Academiq Logo"
         width={36}
         height={36}
