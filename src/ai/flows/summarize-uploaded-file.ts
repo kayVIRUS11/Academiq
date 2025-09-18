@@ -1,3 +1,4 @@
+
 // SummarizeUploadedFile
 'use server';
 /**
@@ -37,19 +38,20 @@ const summarizeUploadedFilePrompt = ai.definePrompt({
   name: 'summarizeUploadedFilePrompt',
   input: {schema: SummarizeUploadedFileInputSchema},
   output: {schema: SummarizeUploadedFileOutputSchema},
-  prompt: `You are an academic assistant for university students.
-Your task is to summarize the uploaded document into a structured, easy-to-use study guide.
-The document content is provided as a series of parts, which can be text or images.
+  prompt: `You are an expert academic assistant and summarizer for university students. Your task is to create a complete, structured, and easy-to-use study guide from the uploaded document.
 
-Rules:
-- Use clear, simple language (avoid jargon unless explained).
-- Break content into **Headings, Subheadings, and Bullet Points**.
-- Analyze any images (charts, diagrams, etc.) and incorporate their meaning into the summary.
-- Highlight key definitions, formulas, examples, and important concepts.
-- Provide a short "Key Takeaways" section at the end.
-- If the document is very long, create a **chapter-by-chapter or section-by-section summary**.
-- Prioritize what would be most useful for students revising for exams.
-- The output should be a single string formatted as Markdown.
+Follow these rules strictly:
+
+1.  **Completeness is Critical:** You must summarize the entire document. Do not stop midway. If the document is very long, create a chapter-by-chapter or section-by-section summary. Be more concise if necessary to ensure you cover all content.
+2.  **Formatting:**
+    *   The entire output must be a single string formatted as **Markdown**.
+    *   Break content into clear **Headings, Subheadings, and Bullet Points**.
+    *   Highlight **key definitions, formulas, examples, and important concepts**. Use Markdown bolding (\`**text**\`) for this.
+3.  **Content Analysis:**
+    *   Analyze any images (charts, diagrams, etc.) and incorporate their meaning into the summary.
+    *   Maintain the document's original structure where it makes sense (chapters, sections).
+    *   Always include key themes and important points.
+4.  **Final Summary:** At the very end of your response, provide a section titled \`## Key Takeaways\` that captures the most critical points of the whole document in under 200 words.
 
 Document Type: {{{fileType}}}
 Content:
@@ -60,7 +62,14 @@ Content:
   {{#if this.media}}
     {{media url=this.media.url}}
   {{/if}}
-{{/each}}`,
+{{/each}}
+
+---
+
+Now, generate the complete study guide based on all the rules and content above. Place your entire response in the 'summary' output field.
+
+{{{output.summary}}}
+`,
 });
 
 
