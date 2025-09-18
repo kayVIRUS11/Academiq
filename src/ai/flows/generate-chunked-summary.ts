@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview An AI tool to summarize large documents by chunking them.
@@ -22,7 +23,7 @@ const ContentPartSchema = z.union([
   z.object({media: z.object({url: z.string()})}),
 ]);
 
-export const GenerateChunkedSummaryInputSchema = z.object({
+const GenerateChunkedSummaryInputSchema = z.object({
   parts: z
     .array(ContentPartSchema)
     .describe('An array of text and media parts from the document.'),
@@ -32,7 +33,7 @@ export type GenerateChunkedSummaryInput = z.infer<
   typeof GenerateChunkedSummaryInputSchema
 >;
 
-export const GenerateChunkedSummaryOutputSchema = z.object({
+const GenerateChunkedSummaryOutputSchema = z.object({
   summary: z
     .string()
     .describe(
