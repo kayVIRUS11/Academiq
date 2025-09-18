@@ -22,7 +22,7 @@ const ContentPartSchema = z.union([
   z.object({media: z.object({url: z.string()})}),
 ]);
 
-const GenerateChunkedSummaryInputSchema = z.object({
+export const GenerateChunkedSummaryInputSchema = z.object({
   parts: z
     .array(ContentPartSchema)
     .describe('An array of text and media parts from the document.'),
@@ -32,7 +32,7 @@ export type GenerateChunkedSummaryInput = z.infer<
   typeof GenerateChunkedSummaryInputSchema
 >;
 
-const GenerateChunkedSummaryOutputSchema = z.object({
+export const GenerateChunkedSummaryOutputSchema = z.object({
   summary: z
     .string()
     .describe(
@@ -128,7 +128,7 @@ const generateChunkedSummaryFlow = ai.defineFlow(
                   // For now, we'll let it fail silently for this chunk to not stop the whole process.
                   return ''; 
               }
-              console.log(`Attempt ${attempt} to summarize chunk failed. Retrying in 2 seconds...`);
+              console.log('Attempt ' + attempt + ' to summarize chunk failed. Retrying in 2 seconds...');
               await new Promise((resolve) => setTimeout(resolve, 2000));
           }
       }

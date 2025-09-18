@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useRef, ChangeEvent, DragEvent } from 'react';
@@ -7,9 +8,10 @@ import { cn } from '@/lib/utils';
 
 type FileUploaderProps = {
   onFileSelect: (file: File | null) => void;
+  disabled?: boolean;
 };
 
-export function FileUploader({ onFileSelect }: FileUploaderProps) {
+export function FileUploader({ onFileSelect, disabled = false }: FileUploaderProps) {
   const [file, setFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -35,23 +37,27 @@ export function FileUploader({ onFileSelect }: FileUploaderProps) {
   const handleDragEnter = (e: DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
+    if(disabled) return;
     setIsDragging(true);
   };
   
   const handleDragLeave = (e: DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
+    if(disabled) return;
     setIsDragging(false);
   };
   
   const handleDragOver = (e: DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
+    if(disabled) return;
   };
   
   const handleDrop = (e: DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
+    if(disabled) return;
     setIsDragging(false);
     
     const droppedFile = e.dataTransfer.files?.[0] || null;
@@ -72,7 +78,7 @@ export function FileUploader({ onFileSelect }: FileUploaderProps) {
             <span className="text-xs text-muted-foreground">{(file.size / 1024).toFixed(2)} KB</span>
           </div>
         </div>
-        <Button variant="ghost" size="icon" onClick={handleRemoveFile}>
+        <Button variant="ghost" size="icon" onClick={handleRemoveFile} disabled={disabled}>
           <X className="h-5 w-5" />
           <span className="sr-only">Remove file</span>
         </Button>
@@ -88,7 +94,8 @@ export function FileUploader({ onFileSelect }: FileUploaderProps) {
       onDrop={handleDrop}
       className={cn(
         "flex-1 w-full border-2 border-dashed rounded-lg p-8 flex flex-col items-center justify-center text-center transition-colors",
-        isDragging ? "border-primary bg-primary/10" : "border-border hover:border-primary/50"
+        isDragging ? "border-primary bg-primary/10" : "border-border",
+        disabled ? "cursor-not-allowed opacity-50 bg-muted/50" : "hover:border-primary/50"
       )}
     >
       <input
@@ -97,10 +104,11 @@ export function FileUploader({ onFileSelect }: FileUploaderProps) {
         onChange={handleFileChange}
         className="hidden"
         accept=".txt,.pdf,.pptx"
+        disabled={disabled}
       />
       <UploadCloud className="h-12 w-12 text-muted-foreground mb-4" />
       <p className="text-muted-foreground mb-2">Drag & drop your file here, or</p>
-      <Button type="button" variant="outline" onClick={handleButtonClick}>
+      <Button type="button" variant="outline" onClick={handleButtonClick} disabled={disabled}>
         Browse Files
       </Button>
     </div>

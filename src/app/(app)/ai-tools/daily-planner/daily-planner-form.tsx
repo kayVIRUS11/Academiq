@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { generateDailyPlan, GenerateDailyPlanOutput } from '@/ai/flows/generate-daily-plan';
 import { Card, CardContent } from '@/components/ui/card';
 import { SavePlanDialog } from './save-plan-dialog';
-import { DayOfWeek, Course, Task, TimetableEntry } from '@/lib/types';
+import { DayOfWeek, Task, TimetableEntry } from '@/lib/types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { useWeeklyPlan } from '../../weekly-plan/weekly-plan-context';
@@ -17,19 +17,30 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/context/auth-context';
 import { supabase } from '@/lib/supabase';
 import { useCourses } from '@/context/courses-context';
+import { Progress } from '@/components/ui/progress';
 
 const days: DayOfWeek[] = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
+const loadingMessages = [
+    "Analyzing your schedule...",
+    "Considering your tasks and priorities...",
+    "Factoring in your desired day description...",
+    "Building your personalized plan...",
+    "Finalizing the details..."
+];
 
 export function DailyPlannerForm() {
   const [description, setDescription] = useState('');
   const [selectedDay, setSelectedDay] = useState<DayOfWeek | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [loadingProgress, setLoadingProgress] = useState(0);
+  const [loadingMessage, setLoadingMessage] = useState('');
   const [generatedPlan, setGeneratedPlan] = useState<GenerateDailyPlanOutput['dailyPlan'] | null>(null);
   const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
   const { toast } = useToast();
   const { plan: weeklyPlan } = useWeeklyPlan();
   const { user } = useAuth();
-  const { courses, getCourse, loading: coursesLoading } = useCourses();
+  const { getCourse, loading: coursesLoading } = useCourses();
 
   const [tasks, setTasks] = useState<Task[]>([]);
   const [timetable, setTimetable] = useState<TimetableEntry[]>([]);
@@ -51,6 +62,37 @@ export function DailyPlannerForm() {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (isLoading) {
+        setLoadingProgress(0);
+        setLoadingMessage(loadingMessages[0]);
+        const totalDuration = 10000; // 10 seconds total
+        const messageInterval = totalDuration / loadingMessages.length;
+        
+        loadingMessages.forEach((msg, index) => {
+            setTimeout(() => {
+                setLoadingMessage(msg);
+            }, index * messageInterval);
+        });
+
+        const progressInterval = setInterval(() => {
+            setLoadingProgress(prev => {
+                if (prev >= 95) {
+                    clearInterval(progressInterval);
+                    return 95;
+                }
+                return prev + 5;
+            });
+        }, 500);
+
+        return () => {
+            clearInterval(progressInterval);
+        };
+    }
+  }, [isLoading]);
 
 
   const getCourseName = (id: string) => getCourse(id)?.name || 'Unknown Course';
@@ -92,6 +134,7 @@ export function DailyPlannerForm() {
         desiredDayDescription: description,
       });
 
+      setLoadingProgress(100);
       setGeneratedPlan(result.dailyPlan);
       
       toast({
@@ -120,7 +163,7 @@ export function DailyPlannerForm() {
                 <div className="space-y-2">
                     <Label htmlFor="day-select">Select a Day</Label>
                     <Select onValueChange={(value: DayOfWeek) => setSelectedDay(value)}>
-                        <SelectTrigger id="day-select">
+                        <SelectTrigger id="day-select" disabled={isLoading}>
                             <SelectValue placeholder="Which day are you planning for?" />
                         </SelectTrigger>
                         <SelectContent>
@@ -141,21 +184,22 @@ export function DailyPlannerForm() {
             disabled={isLoading}
             />
             <Button onClick={handleGeneratePlan} disabled={isLoading || !description.trim() || !selectedDay}>
-            {isLoading ? (
-                <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Generating Plan...
-                </>
-            ) : (
-                <>
                 <Sparkles className="mr-2 h-4 w-4" />
                 Generate Plan
-                </>
-            )}
             </Button>
         </>
       )}
       </div>
+
+       {isLoading && (
+        <div className="mt-8 space-y-4">
+            <div className="flex items-center gap-4 text-primary">
+                <Loader2 className="animate-spin" />
+                <p className="font-semibold">{loadingMessage}</p>
+            </div>
+            <Progress value={loadingProgress} />
+        </div>
+       )}
 
       {generatedPlan && (
         <div className="mt-8">
