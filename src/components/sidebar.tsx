@@ -34,8 +34,8 @@ export function Sidebar() {
       onMouseLeave={() => !isMobile && setIsCollapsed(true)}
     >
       <div className="flex h-full max-h-screen flex-col">
-        <div className={cn("h-16 flex items-center border-b px-6", isCollapsed ? "justify-center" : "justify-start")}>
-             <Logo isCollapsed={isCollapsed} />
+        <div className="flex h-16 items-center border-b px-4 justify-center">
+            <Logo isCollapsed={isCollapsed} />
         </div>
         <div className="flex-1 overflow-y-auto overflow-x-hidden">
             <SidebarNav isCollapsed={isCollapsed} />
