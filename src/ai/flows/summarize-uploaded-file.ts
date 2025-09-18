@@ -20,6 +20,7 @@ const ContentPartSchema = z.union([
 const SummarizeUploadedFileInputSchema = z.object({
   parts: z.array(ContentPartSchema).describe('An array of text and media parts from the document.'),
   fileType: z.string().describe('Type of the uploaded file (PDF, pptx, txt).'),
+  summaryType: z.enum(['quick', 'standard', 'deep']).optional().default('standard').describe('The desired level of summary detail.'),
 });
 
 export type SummarizeUploadedFileInput = z.infer<typeof SummarizeUploadedFileInputSchema>;
@@ -38,20 +39,23 @@ const summarizeUploadedFilePrompt = ai.definePrompt({
   name: 'summarizeUploadedFilePrompt',
   input: {schema: SummarizeUploadedFileInputSchema},
   output: {schema: SummarizeUploadedFileOutputSchema},
-  prompt: `You are an expert academic assistant and summarizer for university students. Your task is to create a complete, structured, and easy-to-use study guide from the uploaded document.
+  prompt: `You are an expert academic assistant and summarizer for university students. Your task is to create a study guide from the uploaded document based on the user's requested summary type.
 
-Follow these rules strictly:
-
-1.  **Completeness is Critical:** You must summarize the entire document. Do not stop midway. If the document is very long, create a chapter-by-chapter or section-by-section summary. Be more concise if necessary to ensure you cover all content.
-2.  **Formatting:**
-    *   The entire output must be a single string formatted as **Markdown**.
-    *   Break content into clear **Headings, Subheadings, and Bullet Points**.
-    *   Highlight **key definitions, formulas, examples, and important concepts**. Use Markdown bolding (\`**text**\`) for this.
-3.  **Content Analysis:**
-    *   Analyze any images (charts, diagrams, etc.) and incorporate their meaning into the summary.
-    *   Maintain the document's original structure where it makes sense (chapters, sections).
-    *   Always include key themes and important points.
-4.  **Final Summary:** At the very end of your response, provide a section titled \`## Key Takeaways\` that captures the most critical points of the whole document in under 200 words.
+{{#if (eq summaryType 'quick')}}
+Your instructions are to create a **Quick Summary**.
+- Extract only the most critical key points.
+- The output MUST be a single bulleted list.
+- Be extremely concise. The entire response must not exceed 200 words.
+{{else}}
+Your instructions are to create a **Standard Summary**.
+- Create a complete, structured, and easy-to-use study guide.
+- Break content into clear **Headings, Subheadings, and Bullet Points**.
+- Highlight **key definitions, formulas, examples, and important concepts** using Markdown bolding.
+- Analyze any images (charts, diagrams, etc.) and incorporate their meaning into the summary.
+- Maintain the document's original structure where it makes sense.
+- At the very end of your response, provide a section titled \`## Key Takeaways\` that captures the most critical points of the whole document in under 200 words.
+- You must summarize the entire document. Do not stop midway. If the document is very long, be more concise to ensure your entire response fits.
+{{/if}}
 
 Document Type: {{{fileType}}}
 Content:
