@@ -1,15 +1,12 @@
-// Define a cache name
-const CACHE_NAME = 'academiq-cache-v1';
 
-// List of files to cache
+const CACHE_NAME = 'academiq-cache-v1';
 const urlsToCache = [
   '/',
   '/dashboard',
   '/manifest.json',
-  '/icons/icon-192x192.png',
-  '/icons/icon-512x512.png'
-  // Add other important assets and pages here
-  // Be careful not to cache API calls or dynamic data
+  '/icons/icon_file.png',
+  '/icons/logo_file.png',
+  '/fallback.html' // A fallback page for when a resource isn't cached
 ];
 
 // Install a service worker
@@ -17,9 +14,15 @@ self.addEventListener('install', event => {
   // Perform install steps
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then(cache => {
+      .then(function(cache) {
         console.log('Opened cache');
-        return cache.addAll(urlsToCache);
+        // Add a fallback HTML page to the cache
+        const fallbackPage = new Request('/fallback.html');
+        return cache.add(fallbackPage)
+          .then(() => {
+            // Now cache the rest of the URLs
+            return cache.addAll(urlsToCache.map(url => new Request(url, {cache: 'reload'})));
+          });
       })
   );
 });
@@ -30,53 +33,52 @@ self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') {
     return;
   }
-  
-  // For navigation requests, use a network-first strategy to ensure users get the latest content.
-  if (event.request.mode === 'navigate') {
-    event.respondWith(
-      fetch(event.request).catch(() => caches.match('/'))
-    );
-    return;
-  }
 
-  // For other requests (CSS, JS, images), use a cache-first strategy.
   event.respondWith(
     caches.match(event.request)
-      .then(response => {
+      .then(function(response) {
         // Cache hit - return response
         if (response) {
           return response;
         }
 
-        // Clone the request because it's a stream and can only be consumed once.
+        // IMPORTANT: Clone the request. A request is a stream and
+        // can only be consumed once. Since we are consuming this
+        // once by cache and once by the browser for fetch, we need
+        // to clone the response.
         const fetchRequest = event.request.clone();
 
         return fetch(fetchRequest).then(
-          response => {
+          function(response) {
             // Check if we received a valid response
-            if (!response || response.status !== 200 || response.type !== 'basic') {
+            if(!response || response.status !== 200 || response.type !== 'basic') {
               return response;
             }
 
-            // Clone the response because it's also a stream.
+            // IMPORTANT: Clone the response. A response is a stream
+            // and because we want the browser to consume the response
+            // as well as the cache consuming the response, we need
+            // to clone it so we have two streams.
             const responseToCache = response.clone();
 
             caches.open(CACHE_NAME)
-              .then(cache => {
+              .then(function(cache) {
                 cache.put(event.request, responseToCache);
               });
 
             return response;
           }
-        );
+        ).catch(() => {
+            // If the fetch fails (e.g., user is offline), return the fallback page.
+            return caches.match('/fallback.html');
+        });
       })
-  );
+    );
 });
 
 // Update a service worker
 self.addEventListener('activate', event => {
   const cacheWhitelist = [CACHE_NAME];
-
   event.waitUntil(
     caches.keys().then(cacheNames => {
       return Promise.all(
