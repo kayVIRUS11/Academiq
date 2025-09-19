@@ -71,7 +71,6 @@ Content:
 ---
 
 Now, generate the complete study guide based on all the rules and content above. Place your entire response in the 'summary' output field.
-
 {{{output.summary}}}
 `,
 });
