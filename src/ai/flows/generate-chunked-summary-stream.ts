@@ -83,7 +83,7 @@ export const generateChunkedSummaryStream = ai.defineFlow(
   {
     name: 'generateChunkedSummaryStream',
     inputSchema: GenerateChunkedSummaryInputSchema,
-    outputSchema: z.unknown(),
+    outputSchema: z.unknown(), // The final return is not the main output
     streamSchema: StreamEventSchema,
   },
   async function* (input, streamingCallback) {
@@ -99,6 +99,7 @@ export const generateChunkedSummaryStream = ai.defineFlow(
     if (!fullText.trim()) {
       throw new Error("Document appears to be empty or contains no text.");
     }
+
     const chunks: string[] = [];
     for (let i = 0; i < fullText.length; i += CHUNK_SIZE) {
       chunks.push(fullText.substring(i, i + CHUNK_SIZE));
@@ -139,6 +140,7 @@ export const generateChunkedSummaryStream = ai.defineFlow(
       data: { summary: output.summary },
     });
 
+    // Ensure the flow returns a value to prevent client-side errors.
     return { success: true };
   }
 );
