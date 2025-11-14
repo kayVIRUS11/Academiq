@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -110,27 +111,27 @@ export default function LandingPage() {
                 </div>
             </section>
             
-            {/* Old Features Section */}
+            {/* Benefits Section */}
             <section className="py-20 md:py-32 container mx-auto">
                 <div className="text-center max-w-3xl mx-auto">
-                    <h2 className="text-4xl font-bold font-headline">The last notetaker you'll ever need</h2>
+                    <h2 className="text-4xl font-bold font-headline">Everything You Need to Succeed</h2>
                 </div>
                 <div className="mt-16 max-w-4xl mx-auto grid md:grid-cols-2 gap-8">
                     <Card className="p-6 bg-secondary/30 border-border/50">
-                        <h3 className="text-lg font-bold text-primary">Turn anything into an editable note</h3>
-                        <p className="mt-2 text-muted-foreground">Import from anywhere, then edit your notes by highlighting, adding comments, and more.</p>
+                        <h3 className="text-lg font-bold text-primary">Centralize Your Knowledge</h3>
+                        <p className="mt-2 text-muted-foreground">Bring all your study materials—documents, lecture notes, and web content—into one organized place.</p>
                     </Card>
                     <Card className="p-6 bg-secondary/30 border-border/50">
-                        <h3 className="text-lg font-bold text-primary">Study smarter, not harder</h3>
-                        <p className="mt-2 text-muted-foreground">Academiq helps students learn more efficiently. Research, brainstorm, practice, and more with your notes.</p>
+                        <h3 className="text-lg font-bold text-primary">Automate Your Study Prep</h3>
+                        <p className="mt-2 text-muted-foreground">Let AI handle the heavy lifting. Automatically generate summaries, flashcards, and quizzes from your content.</p>
                     </Card>
                     <Card className="p-6 bg-secondary/30 border-border/50">
-                        <h3 className="text-lg font-bold text-primary">Live collaboration</h3>
-                        <p className="mt-2 text-muted-foreground">Seamlessly switch between your devices – our web app works on desktop and mobile.</p>
+                        <h3 className="text-lg font-bold text-primary">Structure Your Success</h3>
+                        <p className="mt-2 text-muted-foreground">Use AI to create tailored study plans and daily schedules that align with your courses and personal goals.</p>
                     </Card>
                     <Card className="p-6 bg-secondary/30 border-border/50">
-                        <h3 className="text-lg font-bold text-primary">All your devices. Always synced.</h3>
-                        <p className="mt-2 text-muted-foreground">Seamlessly switch between your devices – our web app works on desktop and mobile.</p>
+                        <h3 className="text-lg font-bold text-primary">Learn Anywhere, Anytime</h3>
+                        <p className="mt-2 text-muted-foreground">Seamlessly switch between your devices. Our web app works on desktop and mobile, keeping you in sync.</p>
                     </Card>
                 </div>
             </section>
