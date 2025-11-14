@@ -1,3 +1,4 @@
+
 'use client';
 
 import { z } from 'zod';
@@ -153,7 +154,7 @@ export function TaskForm({
           render={({ field }) => (
             <FormItem>
               <FormLabel>Course (Optional)</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <Select onValueChange={field.onChange} value={field.value || 'none'}>
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Select a related course" />

@@ -85,7 +85,7 @@ export function NoteEditor({ note, onUpdate }: NoteEditorProps) {
   }, [note.id, note.title]);
 
   const handleCourseChange = (courseId: string) => {
-    onUpdate({ courseId: courseId === '' ? undefined : courseId });
+    onUpdate({ courseId: courseId === 'none' ? undefined : courseId });
   };
 
 
@@ -119,12 +119,12 @@ export function NoteEditor({ note, onUpdate }: NoteEditorProps) {
         <div className='mb-4'>
             <Label htmlFor='course-select' className='text-xs text-muted-foreground'>Course</Label>
             {coursesLoading ? <Skeleton className='h-10 w-full mt-2' /> : (
-                <Select onValueChange={handleCourseChange} value={note.courseId || ''}>
+                <Select onValueChange={handleCourseChange} value={note.courseId || 'none'}>
                     <SelectTrigger id="course-select" className="mt-1">
                         <SelectValue placeholder="Link to a course" />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="">No Course</SelectItem>
+                        <SelectItem value="none">No Course</SelectItem>
                         {courses.map(course => (
                             <SelectItem key={course.id} value={course.id}>{course.name}</SelectItem>
                         ))}
