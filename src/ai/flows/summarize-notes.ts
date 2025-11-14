@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -40,7 +41,22 @@ const summarizeNotesFlow = ai.defineFlow(
     outputSchema: SummarizeNotesOutputSchema,
   },
   async input => {
-    const {output} = await summarizeNotesPrompt(input);
-    return output!;
+    const maxRetries = 3;
+    let attempt = 0;
+    while (attempt < maxRetries) {
+      try {
+        const {output} = await summarizeNotesPrompt(input);
+        return output!;
+      } catch (error: any) {
+        attempt++;
+        if (attempt >= maxRetries) {
+          console.error('Final attempt failed:', error);
+          throw new Error('The AI model is currently overloaded. Please try again in a few moments.');
+        }
+        console.log(`Attempt ${attempt} failed. Retrying in 2 seconds...`);
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      }
+    }
+    throw new Error('The AI model failed to respond after multiple attempts.');
   }
 );
