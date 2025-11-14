@@ -2,49 +2,30 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ArrowRight, BookOpen, BrainCircuit, Check, FileText, UploadCloud, Twitter, Linkedin, Facebook } from "lucide-react";
+import { ArrowRight, BookOpen, BrainCircuit, Check, FileText, UploadCloud, Twitter, Linkedin, Facebook, CalendarDays, Target, Blocks } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
-const howItWorks = [
-    {
-        icon: UploadCloud,
-        title: "Upload Your Content",
-        description: "Upload PDFs, lecture slides, or any text-based document."
-    },
-    {
-        icon: BrainCircuit,
-        title: "Let AI Process",
-        description: "Our AI analyzes the content to understand key concepts."
-    },
-    {
-        icon: BookOpen,
-        title: "Get Study Materials",
-        description: "Receive notes, flashcards, and quizzes automatically."
-    },
-    {
-        icon: Check,
-        title: "Study & Succeed",
-        description: "Use your new materials to study smarter and ace your exams."
-    }
-]
-
 const features = [
     {
-        title: "Turn anything into an editable note",
-        description: "Import from anywhere, then edit your notes by highlighting, adding comments, and more.",
+        icon: FileText,
+        title: "AI File Summarizer",
+        description: "Upload PDFs, lecture slides, or any text document and get a concise, AI-generated summary in seconds."
     },
     {
-        title: "Study smarter, not harder",
-        description: "Academiq helps students learn more efficiently. Research, brainstorm, practice, and more with your notes.",
+        icon: Blocks,
+        title: "AI Flashcard Generator",
+        description: "Automatically create flashcards from your notes, helping you memorize key concepts faster."
     },
     {
-        title: "Live collaboration",
-        description: "Seamlessly switch between your devices – our web app works on desktop and mobile."
+        icon: CalendarDays,
+        title: "AI Daily Planner",
+        description: "Let AI build a detailed, hour-by-hour schedule based on your tasks, classes, and personal goals."
     },
     {
-        title: "All your devices. Always synced.",
-        description: "Seamlessly switch between your devices – our web app works on desktop and mobile."
+        icon: Target,
+        title: "Goal & Task Tracking",
+        description: "Set semester and yearly goals, manage tasks with priorities, and visualize your progress."
     }
 ]
 
@@ -108,39 +89,49 @@ export default function LandingPage() {
                 </div>
             </section>
 
-            {/* How It Works Section */}
+            {/* Features Section */}
             <section className="py-20 md:py-32 bg-secondary/30">
                 <div className="text-center max-w-3xl mx-auto container">
-                    <h2 className="text-4xl font-bold font-headline">How It Works - It's Simple.</h2>
+                    <h2 className="text-4xl font-bold font-headline">A Smarter Way to Study</h2>
                     <p className="text-muted-foreground mt-4 text-lg">
-                        Transform any PDF, lecture slide, or document into beautiful notes and ready-to-use study tools in four simple steps.
+                        Academiq is packed with AI-powered tools designed to help you learn faster and stay organized.
                     </p>
                 </div>
-                <div className="grid md:grid-cols-4 gap-8 max-w-5xl mx-auto mt-16 container">
-                    {howItWorks.map((step, i) => (
-                        <div key={i} className="text-center flex flex-col items-center">
+                <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-6xl mx-auto mt-16 container">
+                    {features.map((feature, i) => (
+                        <div key={i} className="text-center flex flex-col items-center p-4">
                             <div className="bg-primary/10 p-4 rounded-full w-fit mb-4 border border-primary/20">
-                                <step.icon className="w-8 h-8 text-primary"/>
+                                <feature.icon className="w-8 h-8 text-primary"/>
                             </div>
-                            <h3 className="font-semibold text-lg">{step.title}</h3>
-                            <p className="text-muted-foreground mt-2">{step.description}</p>
+                            <h3 className="font-semibold text-lg">{feature.title}</h3>
+                            <p className="text-muted-foreground mt-2 text-sm">{feature.description}</p>
                         </div>
                     ))}
                 </div>
             </section>
             
-            {/* Features Section */}
+            {/* Old Features Section */}
             <section className="py-20 md:py-32 container mx-auto">
                 <div className="text-center max-w-3xl mx-auto">
                     <h2 className="text-4xl font-bold font-headline">The last notetaker you'll ever need</h2>
                 </div>
                 <div className="mt-16 max-w-4xl mx-auto grid md:grid-cols-2 gap-8">
-                    {features.map((feature) => (
-                        <Card key={feature.title} className="p-6 bg-secondary/30 border-border/50">
-                            <h3 className="text-lg font-bold text-primary">{feature.title}</h3>
-                            <p className="mt-2 text-muted-foreground">{feature.description}</p>
-                        </Card>
-                    ))}
+                    <Card className="p-6 bg-secondary/30 border-border/50">
+                        <h3 className="text-lg font-bold text-primary">Turn anything into an editable note</h3>
+                        <p className="mt-2 text-muted-foreground">Import from anywhere, then edit your notes by highlighting, adding comments, and more.</p>
+                    </Card>
+                    <Card className="p-6 bg-secondary/30 border-border/50">
+                        <h3 className="text-lg font-bold text-primary">Study smarter, not harder</h3>
+                        <p className="mt-2 text-muted-foreground">Academiq helps students learn more efficiently. Research, brainstorm, practice, and more with your notes.</p>
+                    </Card>
+                    <Card className="p-6 bg-secondary/30 border-border/50">
+                        <h3 className="text-lg font-bold text-primary">Live collaboration</h3>
+                        <p className="mt-2 text-muted-foreground">Seamlessly switch between your devices – our web app works on desktop and mobile.</p>
+                    </Card>
+                    <Card className="p-6 bg-secondary/30 border-border/50">
+                        <h3 className="text-lg font-bold text-primary">All your devices. Always synced.</h3>
+                        <p className="mt-2 text-muted-foreground">Seamlessly switch between your devices – our web app works on desktop and mobile.</p>
+                    </Card>
                 </div>
             </section>
 
