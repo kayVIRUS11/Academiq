@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Sparkles, Bot, FileText, Blocks, BookOpen, CalendarDays } from "lucide-react";
+import { Sparkles, Bot, FileText, Blocks, BookOpen, CalendarDays, Library } from "lucide-react";
 import Link from "next/link";
 
 const aiTools = [
@@ -27,6 +27,12 @@ const aiTools = [
         title: 'AI Study Guide', 
         description: 'Generate study guides from a scheme of work.' 
     },
+    {
+        href: '/ai-tools/flashcards',
+        icon: Library,
+        title: 'Flashcard Library',
+        description: 'Review and study your saved flashcard sets.'
+    }
 ];
 
 export default function AiToolsPage() {

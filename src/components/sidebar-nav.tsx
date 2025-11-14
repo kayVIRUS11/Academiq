@@ -39,12 +39,13 @@ const navItems = [
   { href: '/notes', icon: NotebookText, label: 'Notes' },
   { href: '/study-tracker', icon: Timer, label: 'Study Tracker' },
   { href: '/timetable', icon: Calendar, label: 'Timetable' },
+  { href: '/ai-tools/flashcards', icon: Blocks, label: 'Flashcard Library' },
 ];
 
 const aiTools = [
     { href: '/ai-tools/daily-planner', icon: CalendarCheck, label: 'Daily Planner' },
     { href: '/ai-tools/file-summarizer', icon: FileText, label: 'File Summarizer' },
-    { href: '/ai-tools/flashcards', icon: Blocks, label: 'Flashcard Generator' },
+    { href: '/ai-tools/flashcard-generator', icon: Blocks, label: 'Flashcard Generator' },
     { href: '/ai-tools/study-guide', icon: BookOpen, label: 'Study Guide' },
 ];
 
