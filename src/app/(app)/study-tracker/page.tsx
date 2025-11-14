@@ -79,7 +79,18 @@ export default function StudyTrackerPage() {
     }
     try {
         const sessionsCollection = collection(firestore, 'users', user.uid, 'studySessions');
-        await addDoc(sessionsCollection, { ...newSessionData, uid: user.id });
+        
+        const dataToSave: any = {
+            ...newSessionData,
+            uid: user.uid,
+            userProfileId: user.uid
+        };
+
+        if (!dataToSave.courseId) {
+            delete dataToSave.courseId;
+        }
+
+        await addDoc(sessionsCollection, dataToSave);
         toast({title: 'Session logged!'});
     } catch(e: any) {
         console.error(e);

@@ -71,11 +71,18 @@ export function NotesProvider({ children }: { children: ReactNode }) {
     const notesCollection = collection(firestore, 'users', user.uid, 'notes');
     
     try {
-        const docRef = await addDoc(notesCollection, {
+        const dataToSave: any = {
             ...newNoteData,
-            uid: user.id,
+            uid: user.uid,
+            userProfileId: user.uid,
             createdAt: serverTimestamp(),
-        });
+        };
+
+        if (!dataToSave.courseId) {
+            delete dataToSave.courseId;
+        }
+
+        const docRef = await addDoc(notesCollection, dataToSave);
         toast({ title: 'Note added!' });
 
         // We can't immediately get the server timestamp, so we'll create a client-side version
@@ -83,7 +90,7 @@ export function NotesProvider({ children }: { children: ReactNode }) {
         const newNote: Note = {
             id: docRef.id,
             ...newNoteData,
-            uid: user.id,
+            uid: user.uid,
             createdAt: new Date().toISOString(),
         };
         return newNote;
@@ -100,7 +107,14 @@ export function NotesProvider({ children }: { children: ReactNode }) {
     
     const noteDoc = doc(firestore, 'users', user.uid, 'notes', id);
     try {
-        await updateDoc(noteDoc, updatedData);
+        // Prevent sending undefined to Firestore
+        const safeData = Object.fromEntries(
+            Object.entries(updatedData).filter(([_, v]) => v !== undefined)
+        );
+
+        if (Object.keys(safeData).length > 0) {
+            await updateDoc(noteDoc, safeData);
+        }
     } catch(e) {
         // We don't toast here as it's noisy on auto-save
         console.error("Error updating note:", e);

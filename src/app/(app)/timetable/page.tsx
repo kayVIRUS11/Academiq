@@ -52,7 +52,18 @@ export default function TimetablePage() {
     }
     try {
       const timetableCollection = collection(firestore, 'users', user.uid, 'timeTables');
-      await addDoc(timetableCollection, { ...newEntryData, uid: user.id });
+      
+      const dataToSave: any = {
+        ...newEntryData,
+        uid: user.uid,
+        userProfileId: user.uid
+      };
+      
+      if (!dataToSave.courseId) {
+        delete dataToSave.courseId;
+      }
+
+      await addDoc(timetableCollection, dataToSave);
       toast({ title: 'Class added!' });
     } catch (e: any) {
       console.error(e);

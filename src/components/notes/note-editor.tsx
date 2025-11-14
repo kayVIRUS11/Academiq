@@ -1,12 +1,15 @@
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { Note } from '@/lib/types';
+import { Note, Course } from '@/lib/types';
 import { Input } from '@/components/ui/input';
 import 'quill/dist/quill.snow.css';
 import { useQuill } from 'react-quilljs';
 import { Skeleton } from '../ui/skeleton';
-
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { Label } from '../ui/label';
+import { useCourses } from '@/context/courses-context';
 
 type NoteEditorProps = {
   note: Note;
@@ -15,6 +18,7 @@ type NoteEditorProps = {
 
 export function NoteEditor({ note, onUpdate }: NoteEditorProps) {
   const [title, setTitle] = useState(note.title);
+  const { courses, loading: coursesLoading } = useCourses();
   
   const modules = useMemo(() => ({
     toolbar: [
@@ -53,8 +57,20 @@ export function NoteEditor({ note, onUpdate }: NoteEditorProps) {
   // Use a timer to save changes after user stops typing
   useEffect(() => {
     const handler = setTimeout(() => {
-      if (title !== note.title || content !== note.content) {
-        onUpdate({ title, content });
+      const updates: Partial<Note> = {};
+      let hasUpdate = false;
+      
+      if (title !== note.title) {
+        updates.title = title;
+        hasUpdate = true;
+      }
+      if (content !== note.content) {
+        updates.content = content;
+        hasUpdate = true;
+      }
+
+      if (hasUpdate) {
+        onUpdate(updates);
       }
     }, 1000); // 1 second delay
 
@@ -67,6 +83,10 @@ export function NoteEditor({ note, onUpdate }: NoteEditorProps) {
     setTitle(note.title);
     // Content is handled by the Quill effect
   }, [note.id, note.title]);
+
+  const handleCourseChange = (courseId: string) => {
+    onUpdate({ courseId: courseId === '' ? undefined : courseId });
+  };
 
 
   return (
@@ -96,6 +116,22 @@ export function NoteEditor({ note, onUpdate }: NoteEditorProps) {
             className="text-2xl font-bold border-none focus-visible:ring-0 shadow-none p-0 h-auto mb-4"
             placeholder="Note Title"
         />
+        <div className='mb-4'>
+            <Label htmlFor='course-select' className='text-xs text-muted-foreground'>Course</Label>
+            {coursesLoading ? <Skeleton className='h-10 w-full mt-2' /> : (
+                <Select onValueChange={handleCourseChange} value={note.courseId || ''}>
+                    <SelectTrigger id="course-select" className="mt-1">
+                        <SelectValue placeholder="Link to a course" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="">No Course</SelectItem>
+                        {courses.map(course => (
+                            <SelectItem key={course.id} value={course.id}>{course.name}</SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            )}
+        </div>
       
         <div ref={quillRef} />
     </div>

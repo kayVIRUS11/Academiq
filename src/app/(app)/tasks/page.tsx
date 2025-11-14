@@ -50,11 +50,19 @@ export default function TasksPage() {
 
     try {
         const tasksCollection = collection(firestore, 'users', user.uid, 'tasks');
-        await addDoc(tasksCollection, {
+        
+        const dataToSave: any = {
             ...newTaskData,
             completed: false,
-            uid: user.id,
-        });
+            uid: user.uid,
+            userProfileId: user.uid,
+        };
+
+        if (!dataToSave.courseId) {
+            delete dataToSave.courseId;
+        }
+
+        await addDoc(tasksCollection, dataToSave);
         toast({ title: 'Task added!' });
     } catch (error: any) {
       console.error(error);
