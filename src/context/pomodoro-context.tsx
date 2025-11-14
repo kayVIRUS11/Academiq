@@ -36,36 +36,24 @@ export function PomodoroProvider({ children }: { children: ReactNode }) {
   const originalTitleRef = useRef(typeof document !== 'undefined' ? document.title : '');
   
   const playAlarm = useCallback(() => {
-    // Stop any previously playing alarm to prevent overlap
-    if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current.currentTime = 0;
-    }
-
     if (typeof window !== 'undefined') {
       const audio = new Audio(ALARM_SOUND_PATH);
-      const playPromise = audio.play();
+      audioRef.current = audio;
       
+      const playPromise = audio.play();
       if (playPromise !== undefined) {
         playPromise.catch(error => {
-            // Auto-play was prevented. This is a common browser policy.
-            // We can ignore this error as it's expected in some cases.
-            if (error.name !== 'NotAllowedError') {
-                 console.error("Error playing audio:", error)
-            }
+          if (error.name !== 'NotAllowedError') {
+            console.error("Error playing audio:", error);
+          }
         });
       }
 
-      audioRef.current = audio;
-
-      // Set a timeout to stop this specific audio instance
       setTimeout(() => {
-        if (audio) {
-            audio.pause();
-            audio.currentTime = 0;
-        }
-        if (audioRef.current === audio) {
-            audioRef.current = null;
+        if (audioRef.current) {
+          audioRef.current.pause();
+          audioRef.current.currentTime = 0;
+          audioRef.current = null;
         }
       }, ALARM_DURATION_MS);
     }
@@ -81,10 +69,11 @@ export function PomodoroProvider({ children }: { children: ReactNode }) {
 
 
   const switchMode = useCallback((newMode: TimerMode) => {
+    stopAlarm();
     setIsActive(false);
     setMode(newMode);
     setTimeLeft(times[newMode]);
-  }, []);
+  }, [stopAlarm]);
 
   // Timer logic
   useEffect(() => {
