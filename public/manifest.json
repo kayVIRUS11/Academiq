@@ -1,21 +1,21 @@
 {
-  "name": "Academiq",
-  "short_name": "Academiq",
-  "description": "Your academic success partner.",
-  "start_url": "/",
-  "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#8BC34A",
-  "icons": [
-    {
-      "src": "/icons/icon_file.png",
-      "sizes": "192x192",
-      "type": "image/png"
-    },
-    {
-      "src": "/icons/icon_file.png",
-      "sizes": "512x512",
-      "type": "image/png"
-    }
-  ]
+    "name": "Academiq",
+    "short_name": "Academiq",
+    "description": "Your Academic Success Partner",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#18181b",
+    "theme_color": "#ef4444",
+    "icons": [
+        {
+            "src": "/icons/logo_file.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "/icons/logo_file.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ]
 }
