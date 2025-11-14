@@ -2,10 +2,18 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import type { User, Session } from '@supabase/supabase-js';
-import { supabase } from '@/lib/supabase';
+import { 
+    User, 
+    onAuthStateChanged,
+    createUserWithEmailAndPassword,
+    signInWithEmailAndPassword,
+    signOut,
+    updateProfile
+} from 'firebase/auth';
+import { useFirebase } from '@/firebase';
 import { usePathname, useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
+import { doc, setDoc } from 'firebase/firestore';
 
 interface AuthContextType {
     user: User | null;
@@ -25,22 +33,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [loading, setLoading] = useState(true);
     const pathname = usePathname();
     const router = useRouter();
+    const { auth, firestore } = useFirebase();
 
     useEffect(() => {
-        const getSession = async () => {
-            const { data: { session } } = await supabase.auth.getSession();
-            setUser(session?.user ?? null);
+        const unsubscribe = onAuthStateChanged(auth, (user) => {
+            setUser(user);
             setLoading(false);
-        };
-        
-        getSession();
-
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-            setUser(session?.user ?? null);
         });
 
-        return () => subscription.unsubscribe();
-    }, []);
+        return () => unsubscribe();
+    }, [auth]);
 
     useEffect(() => {
       if (!loading && !user && !publicRoutes.includes(pathname)) {
@@ -49,35 +51,50 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }, [loading, user, pathname, router]);
 
     const signUpWithEmail = async (email: string, password: string, displayName: string) => {
-        return supabase.auth.signUp({
-            email,
-            password,
-            options: {
-                data: {
-                    full_name: displayName,
-                },
-            },
-        });
+        try {
+            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            const user = userCredential.user;
+            await updateProfile(user, { displayName });
+
+            // Create a user profile document in Firestore
+            const userProfileRef = doc(firestore, 'users', user.uid);
+            await setDoc(userProfileRef, {
+                id: user.uid,
+                email: user.email,
+                name: displayName,
+            });
+
+            setUser({...user, displayName}); // Update local state
+            return { user: userCredential, error: null };
+        } catch (error) {
+            return { user: null, error };
+        }
     };
     
-    const signInWithEmail = (email: string, password: string) => {
-        return supabase.auth.signInWithPassword({ email, password });
+    const signInWithEmail = async (email: string, password: string) => {
+        try {
+            const userCredential = await signInWithEmailAndPassword(auth, email, password);
+            return { user: userCredential, error: null };
+        } catch (error) {
+            return { user: null, error };
+        }
     };
 
     const logout = () => {
-        return supabase.auth.signOut();
+        return signOut(auth);
     };
 
     const updateUserSettings = async (updates: { [key: string]: any }) => {
-        if (!user) {
-            throw new Error("No user is signed in.");
+        if (!user) throw new Error("No user is signed in.");
+        
+        if (updates.full_name && updates.full_name !== user.displayName) {
+            await updateProfile(user, { displayName: updates.full_name });
         }
-        const { data, error } = await supabase.auth.updateUser({
-            data: { ...user.user_metadata, ...updates }
-        });
+        
+        const userProfileRef = doc(firestore, 'users', user.uid);
+        await setDoc(userProfileRef, { name: updates.full_name }, { merge: true });
 
-        if (error) throw error;
-        if (data.user) setUser(data.user);
+        setUser({...user, displayName: updates.full_name});
     };
 
     const value = {

@@ -43,7 +43,11 @@ export default function LoginPage() {
     }
 
     if (user) {
-        return null; // Or a loading spinner
+        return (
+            <div className="flex h-screen items-center justify-center">
+                <Loader2 className="h-16 w-16 animate-spin text-primary" />
+            </div>
+        )
     }
 
     return (

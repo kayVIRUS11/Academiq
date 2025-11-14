@@ -17,7 +17,6 @@ export default function SignupPage() {
     const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [success, setSuccess] = useState(false);
 
     const { signUpWithEmail, user } = useAuth();
     const router = useRouter();
@@ -36,29 +35,19 @@ export default function SignupPage() {
         if (error) {
             setError(error.message);
         } else {
-            setSuccess(true);
+            // On successful sign up, Firebase automatically signs the user in.
+            // The onAuthStateChanged listener in AuthProvider will catch this
+            // and redirect to the dashboard.
         }
         setIsLoading(false);
     };
 
     if (user) {
-        return null; // Or a loading spinner
-    }
-
-    if (success) {
         return (
-            <>
-                <CardHeader className="text-center">
-                    <CardTitle>Check your inbox</CardTitle>
-                    <CardDescription>We've sent a confirmation link to <span className="font-bold">{email}</span>. Please click the link to activate your account.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <Button asChild className="w-full">
-                        <Link href="/login">Back to Login</Link>
-                    </Button>
-                </CardContent>
-            </>
-        )
+            <div className="flex h-screen items-center justify-center">
+                <Loader2 className="h-16 w-16 animate-spin text-primary" />
+            </div>
+        );
     }
 
     return (
