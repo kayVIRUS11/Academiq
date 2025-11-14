@@ -1,6 +1,6 @@
 'use client';
 
-import { Blocks, Trash2 } from 'lucide-react';
+import { Blocks, Plus, Trash2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useFlashcards } from './flashcards-context';
 import { Button } from '@/components/ui/button';
@@ -9,7 +9,7 @@ import { useRouter } from 'next/navigation';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 
-export default function FlashcardsPage() {
+export default function FlashcardsLibraryPage() {
     const { flashcardSets, deleteFlashcardSet, loading } = useFlashcards();
     const router = useRouter();
 
@@ -25,10 +25,16 @@ export default function FlashcardsPage() {
             <div className="bg-primary/10 p-3 rounded-full mb-4">
                 <Blocks className="w-10 h-10 text-primary"/>
             </div>
-            <h1 className="text-4xl font-bold font-headline">Your Flashcard Sets</h1>
+            <h1 className="text-4xl font-bold font-headline">Your Flashcard Library</h1>
             <p className="text-muted-foreground mt-2 max-w-2xl">
-                Review your generated flashcards. Select a set to start studying, or generate new ones from your notes.
+                Review your generated flashcard sets. Select a set to start studying, or generate new ones from your documents.
             </p>
+            <Link href="/ai-tools/flashcard-generator" className="mt-4">
+                <Button>
+                    <Plus className="mr-2" />
+                    Generate New Set
+                </Button>
+            </Link>
         </div>
 
         {loading ? (
@@ -41,9 +47,9 @@ export default function FlashcardsPage() {
             <Card className="text-center py-16">
                 <CardContent>
                     <h3 className="text-xl font-semibold">No Flashcards Yet</h3>
-                    <p className="text-muted-foreground mt-2">Go to your notes to generate your first set of flashcards!</p>
-                    <Link href="/notes">
-                        <Button className="mt-4">Go to Notes</Button>
+                    <p className="text-muted-foreground mt-2">Generate your first set of flashcards from a document!</p>
+                    <Link href="/ai-tools/flashcard-generator">
+                        <Button className="mt-4">Generate Flashcards</Button>
                     </Link>
                 </CardContent>
             </Card>

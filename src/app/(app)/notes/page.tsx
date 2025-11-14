@@ -65,11 +65,15 @@ export default function NotesPage() {
   };
 
   const handleAddNote = async () => {
-    const newNote = await addNote({
-        title: 'New Note',
-        content: '',
-    });
-    setSelectedNoteId(newNote.id);
+    try {
+        const newNote = await addNote({
+            title: 'New Note',
+            content: '',
+        });
+        setSelectedNoteId(newNote.id);
+    } catch(e) {
+        // error is already toasted in context
+    }
   };
 
   const handleUpdateNote = (updatedNote: Partial<Note>) => {
@@ -128,7 +132,8 @@ export default function NotesPage() {
     }
     setIsGeneratingFlashcards(true);
     try {
-        const result = await generateFlashcards({ notes: selectedNote.content });
+        const plainTextContent = selectedNote.content.replace(/<[^>]*>?/gm, ' ');
+        const result = await generateFlashcards({ notes: plainTextContent, title: selectedNote.title });
         if (result.flashcards.length === 0) {
             toast({
                 title: 'No Flashcards Generated',

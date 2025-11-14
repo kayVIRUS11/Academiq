@@ -16,10 +16,10 @@ const aiTools = [
         description: 'Get concise summaries of your documents.' 
     },
     { 
-        href: '/ai-tools/flashcards', 
+        href: '/ai-tools/flashcard-generator', 
         icon: Blocks, 
         title: 'AI Flashcard Generator', 
-        description: 'Create flashcards from your notes instantly.' 
+        description: 'Create flashcards from documents instantly.' 
     },
     { 
         href: '/ai-tools/study-guide', 

@@ -14,6 +14,7 @@ import {z} from 'genkit';
 
 const GenerateFlashcardsInputSchema = z.object({
   notes: z.string().describe('The notes to generate flashcards from.'),
+  title: z.string().describe('The title of the notes document.'),
 });
 export type GenerateFlashcardsInput = z.infer<typeof GenerateFlashcardsInputSchema>;
 
@@ -33,28 +34,17 @@ const prompt = ai.definePrompt({
   name: 'generateFlashcardsPrompt',
   input: {schema: GenerateFlashcardsInputSchema},
   output: {schema: GenerateFlashcardsOutputSchema},
-  prompt: `You are an expert educator. Your task is to generate flashcards from the given notes.
+  prompt: `You are an expert educator. Your task is to generate high-quality flashcards from the given notes.
 
-Notes: {{{notes}}}
+  Document Title: {{{title}}}
+  Notes:
+  {{{notes}}}
 
-Generate a list of flashcards covering the key concepts from the notes. Each flashcard should have a question and a corresponding answer.
+  Generate a list of flashcards that cover the most important key concepts, definitions, and facts from the notes. Each flashcard must have a clear question and a concise, accurate answer.
 
-Ensure that the flashcards are clear, concise, and accurate.
+  Focus on creating questions that test understanding, not just rote memorization.
 
-Output the flashcards in the following JSON format:
-
-{
-  "flashcards": [
-    {
-      "question": "Question 1",
-      "answer": "Answer 1"
-    },
-    {
-      "question": "Question 2",
-      "answer": "Answer 2"
-    }
-  ]
-}
+  Output the flashcards in the specified JSON format.
 `,
 });
 
