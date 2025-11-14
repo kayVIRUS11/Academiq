@@ -48,9 +48,9 @@ export default function LoginPage() {
 
     return (
         <>
-            <CardHeader>
-                <CardTitle>Sign in to Academiq</CardTitle>
-                <CardDescription>Enter your credentials to access your account.</CardDescription>
+            <CardHeader className="text-center">
+                <CardTitle className="text-2xl">Login</CardTitle>
+                <CardDescription>Sign in to continue to Academiq.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
                  {error && (
@@ -67,21 +67,29 @@ export default function LoginPage() {
                         <Input id="email" type="email" placeholder="name@example.com" value={email} onChange={e => setEmail(e.target.value)} required disabled={isLoading} />
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="password">Password</Label>
+                         <div className="flex items-center justify-between">
+                            <Label htmlFor="password">Password</Label>
+                            <Link href="#" className="text-sm font-medium text-primary hover:underline">
+                                Forgot your password?
+                            </Link>
+                         </div>
                         <Input id="password" type="password" value={password} onChange={e => setPassword(e.target.value)} required disabled={isLoading} />
                     </div>
                     <Button className="w-full" type="submit" disabled={isLoading}>
                         {isLoading && <Loader2 className="animate-spin mr-2" />}
-                        Sign In
+                        Login
                     </Button>
                 </form>
             </CardContent>
-            <CardFooter className="flex flex-col gap-4">
-                <p className="text-sm text-center">
+            <CardFooter className="flex-col items-center gap-4 text-center">
+                 <p className="text-sm text-muted-foreground">
                     Don't have an account?{' '}
-                    <Link href="/join" className="font-semibold underline hover:text-primary">
+                    <Link href="/signup" className="font-semibold text-primary hover:underline">
                         Sign up
                     </Link>
+                </p>
+                 <p className="text-xs text-muted-foreground px-4">
+                    By logging in, you agree to the <Link href="/terms" className="underline hover:text-primary">Terms of Service</Link> and <Link href="/privacy" className="underline hover:text-primary">Privacy Policy</Link>.
                 </p>
             </CardFooter>
         </>

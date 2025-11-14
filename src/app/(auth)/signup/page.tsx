@@ -2,7 +2,6 @@
 
 import { Button } from "@/components/ui/button";
 import { CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
@@ -13,7 +12,6 @@ import { Loader2 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export default function SignupPage() {
-    const [agreed, setAgreed] = useState(false);
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -32,10 +30,6 @@ export default function SignupPage() {
 
     const handleSignup = async (e: FormEvent) => {
         e.preventDefault();
-        if (!agreed) {
-            setError("You must agree to the terms and policies to create an account.");
-            return;
-        }
         setIsLoading(true);
         setError(null);
         const { error } = await signUpWithEmail(email, password, name);
@@ -60,7 +54,7 @@ export default function SignupPage() {
                 </CardHeader>
                 <CardContent>
                     <Button asChild className="w-full">
-                        <Link href="/login">Back to Sign In</Link>
+                        <Link href="/login">Back to Login</Link>
                     </Button>
                 </CardContent>
             </>
@@ -69,9 +63,9 @@ export default function SignupPage() {
 
     return (
         <>
-            <CardHeader>
-                <CardTitle>Create your account</CardTitle>
-                <CardDescription>Enter your information to get started.</CardDescription>
+            <CardHeader className="text-center">
+                <CardTitle className="text-2xl">Create an account</CardTitle>
+                <CardDescription>Free forever. No credit card required.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
                  {error && (
@@ -94,27 +88,21 @@ export default function SignupPage() {
                         <Label htmlFor="password">Password</Label>
                         <Input id="password" type="password" value={password} onChange={e => setPassword(e.target.value)} required disabled={isLoading} />
                     </div>
-                    <div className="flex items-center space-x-2 pt-2">
-                        <Checkbox id="terms" checked={agreed} onCheckedChange={(checked) => setAgreed(checked as boolean)} disabled={isLoading}/>
-                        <label
-                            htmlFor="terms"
-                            className="text-sm text-muted-foreground"
-                        >
-                            I agree to the <Link href="/terms" className="underline hover:text-primary">Terms of Service</Link> and acknowledge the <Link href="/privacy" className="underline hover:text-primary">Privacy Policy</Link>.
-                        </label>
-                    </div>
-                    <Button className="w-full" disabled={!agreed || isLoading} type="submit">
+                    <Button className="w-full" disabled={isLoading} type="submit">
                          {isLoading && <Loader2 className="animate-spin mr-2" />}
                         Create Account
                     </Button>
                  </form>
             </CardContent>
-            <CardFooter className="flex flex-col gap-4">
-                 <p className="text-sm text-center">
+            <CardFooter className="flex-col items-center gap-4 text-center">
+                 <p className="text-sm text-muted-foreground">
                     Already have an account?{' '}
-                    <Link href="/login" className="font-semibold underline hover:text-primary">
-                        Sign in
+                    <Link href="/login" className="font-semibold text-primary hover:underline">
+                        Login
                     </Link>
+                </p>
+                 <p className="text-xs text-muted-foreground px-4">
+                    By creating an account, you agree to the <Link href="/terms" className="underline hover:text-primary">Terms of Service</Link> and <Link href="/privacy" className="underline hover:text-primary">Privacy Policy</Link>.
                 </p>
             </CardFooter>
         </>
