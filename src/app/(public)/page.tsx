@@ -85,13 +85,6 @@ export default function LandingPage() {
                                 <Link href="/join">Get Started <ArrowRight className="ml-2" /></Link>
                             </Button>
                         </div>
-                        <p className="text-sm text-muted-foreground mt-4">Trusted by students at leading institutions</p>
-                        <div className="flex justify-center md:justify-start items-center gap-6 text-muted-foreground">
-                            <span>Stanford</span>
-                            <span className="font-bold text-lg">Duke</span>
-                            <span>Deloitte</span>
-                            <span>MIT</span>
-                        </div>
                     </div>
                     <div className="hidden md:block bg-primary/10 p-6 rounded-2xl border border-primary/20 shadow-2xl shadow-primary/10">
                         <Card className="bg-background/80">
