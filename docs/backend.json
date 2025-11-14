@@ -1,0 +1,512 @@
+{
+  "entities": {
+    "UserProfile": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "UserProfile",
+      "type": "object",
+      "description": "Represents a user profile in the Academiq application.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the user profile."
+        },
+        "email": {
+          "type": "string",
+          "description": "User's email address.",
+          "format": "email"
+        },
+        "name": {
+          "type": "string",
+          "description": "User's full name."
+        }
+      },
+      "required": [
+        "id",
+        "email",
+        "name"
+      ]
+    },
+    "Goal": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Goal",
+      "type": "object",
+      "description": "Represents a semester or yearly goal.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the goal."
+        },
+        "userProfileId": {
+          "type": "string",
+          "description": "Reference to UserProfile. (Relationship: UserProfile 1:N Goal)"
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the goal."
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of the goal."
+        },
+        "startDate": {
+          "type": "string",
+          "description": "Start date of the goal.",
+          "format": "date-time"
+        },
+        "endDate": {
+          "type": "string",
+          "description": "End date of the goal.",
+          "format": "date-time"
+        },
+        "completionPercentage": {
+          "type": "number",
+          "description": "Completion percentage of the goal (0-100)."
+        }
+      },
+      "required": [
+        "id",
+        "userProfileId",
+        "name",
+        "description",
+        "startDate",
+        "endDate",
+        "completionPercentage"
+      ]
+    },
+    "Task": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Task",
+      "type": "object",
+      "description": "Represents a task or to-do item.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the task."
+        },
+        "userProfileId": {
+          "type": "string",
+          "description": "Reference to UserProfile. (Relationship: UserProfile 1:N Task)"
+        },
+        "goalId": {
+          "type": "string",
+          "description": "Reference to Goal. (Relationship: Goal 1:N Task)"
+        },
+        "courseId": {
+          "type": "string",
+          "description": "Reference to Course. (Relationship: Course 1:N Task)"
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the task."
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of the task."
+        },
+        "deadline": {
+          "type": "string",
+          "description": "Deadline for the task.",
+          "format": "date-time"
+        },
+        "priority": {
+          "type": "string",
+          "description": "Priority of the task (e.g., High, Medium, Low)."
+        },
+        "completed": {
+          "type": "boolean",
+          "description": "Indicates whether the task is completed."
+        }
+      },
+      "required": [
+        "id",
+        "userProfileId",
+        "name",
+        "description",
+        "deadline",
+        "priority",
+        "completed"
+      ]
+    },
+    "Course": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Course",
+      "type": "object",
+      "description": "Represents a course.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the course."
+        },
+        "userProfileId": {
+          "type": "string",
+          "description": "Reference to UserProfile. (Relationship: UserProfile 1:N Course)"
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the course."
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of the course."
+        },
+        "startDate": {
+          "type": "string",
+          "description": "Start date of the course.",
+          "format": "date-time"
+        },
+        "endDate": {
+          "type": "string",
+          "description": "End date of the course.",
+          "format": "date-time"
+        },
+        "progress": {
+          "type": "number",
+          "description": "Progress of the course (0-100)."
+        }
+      },
+      "required": [
+        "id",
+        "userProfileId",
+        "name",
+        "description",
+        "startDate",
+        "endDate",
+        "progress"
+      ]
+    },
+    "Note": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Note",
+      "type": "object",
+      "description": "Represents a note or journal entry.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the note."
+        },
+        "userProfileId": {
+          "type": "string",
+          "description": "Reference to UserProfile. (Relationship: UserProfile 1:N Note)"
+        },
+        "courseId": {
+          "type": "string",
+          "description": "Reference to Course. (Relationship: Course 1:N Note)"
+        },
+        "title": {
+          "type": "string",
+          "description": "Title of the note."
+        },
+        "content": {
+          "type": "string",
+          "description": "Content of the note (rich text)."
+        },
+        "creationDate": {
+          "type": "string",
+          "description": "Date the note was created.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "userProfileId",
+        "title",
+        "content",
+        "creationDate"
+      ]
+    },
+    "StudySession": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "StudySession",
+      "type": "object",
+      "description": "Represents a study session.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the study session."
+        },
+        "userProfileId": {
+          "type": "string",
+          "description": "Reference to UserProfile. (Relationship: UserProfile 1:N StudySession)"
+        },
+        "courseId": {
+          "type": "string",
+          "description": "Reference to Course. (Relationship: Course 1:N StudySession)"
+        },
+        "startTime": {
+          "type": "string",
+          "description": "Start time of the study session.",
+          "format": "date-time"
+        },
+        "endTime": {
+          "type": "string",
+          "description": "End time of the study session.",
+          "format": "date-time"
+        },
+        "durationMinutes": {
+          "type": "number",
+          "description": "Duration of the study session in minutes."
+        },
+        "pomodoroSession": {
+          "type": "boolean",
+          "description": "Was the session a pomodoro session?"
+        }
+      },
+      "required": [
+        "id",
+        "userProfileId",
+        "startTime",
+        "endTime",
+        "durationMinutes"
+      ]
+    },
+    "TimeTable": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "TimeTable",
+      "type": "object",
+      "description": "Represents a timetable for the courses.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the timetable."
+        },
+        "userProfileId": {
+          "type": "string",
+          "description": "Reference to UserProfile. (Relationship: UserProfile 1:N TimeTable)"
+        },
+        "courseId": {
+          "type": "string",
+          "description": "Reference to Course. (Relationship: Course 1:N TimeTable)"
+        },
+        "dayOfWeek": {
+          "type": "string",
+          "description": "Day of the week for this timetable entry."
+        },
+        "startTime": {
+          "type": "string",
+          "description": "Start time of the class.",
+          "format": "date-time"
+        },
+        "endTime": {
+          "type": "string",
+          "description": "End time of the class.",
+          "format": "date-time"
+        },
+        "location": {
+          "type": "string",
+          "description": "Location of class"
+        }
+      },
+      "required": [
+        "id",
+        "userProfileId",
+        "courseId",
+        "dayOfWeek",
+        "startTime",
+        "endTime",
+        "location"
+      ]
+    },
+    "Flashcard": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Flashcard",
+      "type": "object",
+      "description": "Represents a flashcard generated from notes.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the flashcard."
+        },
+        "userProfileId": {
+          "type": "string",
+          "description": "Reference to UserProfile. (Relationship: UserProfile 1:N Flashcard)"
+        },
+        "noteId": {
+          "type": "string",
+          "description": "Reference to Note. (Relationship: Note 1:N Flashcard)"
+        },
+        "front": {
+          "type": "string",
+          "description": "The text on the front of the flashcard."
+        },
+        "back": {
+          "type": "string",
+          "description": "The text on the back of the flashcard."
+        }
+      },
+      "required": [
+        "id",
+        "userProfileId",
+        "noteId",
+        "front",
+        "back"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userProfileId}",
+        "definition": {
+          "entityName": "UserProfile",
+          "schema": {
+            "$ref": "#/backend/entities/UserProfile"
+          },
+          "description": "Stores user profiles.  The 'userProfileId' is the Firebase Auth UID. ",
+          "params": [
+            {
+              "name": "userProfileId",
+              "description": "The Firebase Auth UID of the user."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userProfileId}/goals/{goalId}",
+        "definition": {
+          "entityName": "Goal",
+          "schema": {
+            "$ref": "#/backend/entities/Goal"
+          },
+          "description": "Stores goals for a specific user.",
+          "params": [
+            {
+              "name": "userProfileId",
+              "description": "The Firebase Auth UID of the user."
+            },
+            {
+              "name": "goalId",
+              "description": "Unique identifier for the goal."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userProfileId}/tasks/{taskId}",
+        "definition": {
+          "entityName": "Task",
+          "schema": {
+            "$ref": "#/backend/entities/Task"
+          },
+          "description": "Stores tasks for a specific user.  A task may belong to a goal or a course, indicated by the 'goalId' and 'courseId' fields.",
+          "params": [
+            {
+              "name": "userProfileId",
+              "description": "The Firebase Auth UID of the user."
+            },
+            {
+              "name": "taskId",
+              "description": "Unique identifier for the task."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userProfileId}/courses/{courseId}",
+        "definition": {
+          "entityName": "Course",
+          "schema": {
+            "$ref": "#/backend/entities/Course"
+          },
+          "description": "Stores courses for a specific user.",
+          "params": [
+            {
+              "name": "userProfileId",
+              "description": "The Firebase Auth UID of the user."
+            },
+            {
+              "name": "courseId",
+              "description": "Unique identifier for the course."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userProfileId}/notes/{noteId}",
+        "definition": {
+          "entityName": "Note",
+          "schema": {
+            "$ref": "#/backend/entities/Note"
+          },
+          "description": "Stores notes for a specific user. A note may be associated with a course, indicated by the 'courseId' field.",
+          "params": [
+            {
+              "name": "userProfileId",
+              "description": "The Firebase Auth UID of the user."
+            },
+            {
+              "name": "noteId",
+              "description": "Unique identifier for the note."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userProfileId}/studySessions/{studySessionId}",
+        "definition": {
+          "entityName": "StudySession",
+          "schema": {
+            "$ref": "#/backend/entities/StudySession"
+          },
+          "description": "Stores study sessions for a specific user. A study session may be associated with a course, indicated by the 'courseId' field.",
+          "params": [
+            {
+              "name": "userProfileId",
+              "description": "The Firebase Auth UID of the user."
+            },
+            {
+              "name": "studySessionId",
+              "description": "Unique identifier for the study session."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userProfileId}/timeTables/{timeTableId}",
+        "definition": {
+          "entityName": "TimeTable",
+          "schema": {
+            "$ref": "#/backend/entities/TimeTable"
+          },
+          "description": "Stores timetable entries for a specific user, associated with a course.",
+          "params": [
+            {
+              "name": "userProfileId",
+              "description": "The Firebase Auth UID of the user."
+            },
+            {
+              "name": "timeTableId",
+              "description": "Unique identifier for the timetable entry."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userProfileId}/flashcards/{flashcardId}",
+        "definition": {
+          "entityName": "Flashcard",
+          "schema": {
+            "$ref": "#/backend/entities/Flashcard"
+          },
+          "description": "Stores flashcards for a specific user, generated from notes. The 'noteId' field indicates the source note.",
+          "params": [
+            {
+              "name": "userProfileId",
+              "description": "The Firebase Auth UID of the user."
+            },
+            {
+              "name": "flashcardId",
+              "description": "Unique identifier for the flashcard."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore data structure is designed to ensure security, scalability, and ease of debugging, adhering to the core design principles of Authorization Independence, Clarity of Intent, DBAC (Database-Based Access Control), and QAPs (Rules are not Filters). It leverages Structural Segregation (Homogeneous Security Posture), and Access Modeling (Standardization and Consistency) with path-based ownership, membership maps, and global role checks to manage authorization effectively.  \n\nAuthorization Independence is achieved by using hierarchical paths for User-Owned Data which allows data to be read without the need for get() to check for authorization. This is due to the fact that all data lives under the user's document id, which will be verified using request.auth.uid.\n\nQAPs are supported by ensuring that the security rules do not act as filters. All the data required for a user is stored in the user's subcollections. All documents in a collection share the same security requirements. Therefore, list operations do not require filtering on the client side based on authorization."
+  }
+}

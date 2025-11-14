@@ -1,0 +1,167 @@
+/**
+ * @file Academiq Firestore Security Rules
+ * @description This ruleset enforces a strict user-ownership model for all data.
+ *
+ * Data Structure:
+ * All data is nested under /users/{userId}, where {userId} corresponds to the Firebase Auth UID.
+ * This structure ensures that all documents are owned by a specific user.
+ *
+ * Key Security Decisions:
+ * - Users can only access their own data. Listing other user's data is explicitly denied.
+ * - All write operations (create, update, delete) require authentication and ownership validation.
+ * - Data validation is relaxed in this prototyping phase, focusing on ownership and relationship integrity.
+ *
+ *  - The Firestore data structure is designed to ensure security, scalability, and ease of debugging, adhering to the core design principles of Authorization Independence, Clarity of Intent, DBAC (Database-Based Access Control), and QAPs (Rules are not Filters). It leverages Structural Segregation (Homogeneous Security Posture), and Access Modeling (Standardization and Consistency) with path-based ownership, membership maps, and global role checks to manage authorization effectively.
+ *
+ * Authorization Independence is achieved by using hierarchical paths for User-Owned Data which allows data to be read without the need for get() to check for authorization. This is due to the fact that all data lives under the user's document id, which will be verified using request.auth.uid.
+ *
+ * QAPs are supported by ensuring that the security rules do not act as filters. All the data required for a user is stored in the user's subcollections. All documents in a collection share the same security requirements. Therefore, list operations do not require filtering on the client side based on authorization.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper function to check if the user is signed in
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Helper function to check if the authenticated user is the owner of the resource
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Helper function to check if the authenticated user is the owner of the existing resource
+    function isExistingOwner(userId) {
+      return isOwner(userId) && resource != null;
+    }
+
+    /**
+     * @description Allows users to read and write their own profile data.
+     * @path /users/{userProfileId}
+     * @allow (create) User with UID 'user_abc' can create their profile document at /users/user_abc.
+     * @deny (create) User with UID 'user_abc' cannot create a profile document at /users/user_xyz.
+     * @principle Enforces document ownership for writes; allows owner-only reads.
+     */
+    match /users/{userProfileId} {
+      allow get: if isOwner(userProfileId);
+      allow list: if false;
+
+      allow create: if isOwner(userProfileId) && request.resource.data.id == userProfileId;
+      allow update: if isExistingOwner(userProfileId) && request.resource.data.id == resource.data.id;
+      allow delete: if isExistingOwner(userProfileId);
+    }
+
+    /**
+     * @description Allows users to manage their own goals.
+     * @path /users/{userProfileId}/goals/{goalId}
+     * @allow (create) User with UID 'user_abc' can create a goal under /users/user_abc/goals/goal_1.
+     * @deny (update) User with UID 'user_xyz' cannot update a goal under /users/user_abc/goals/goal_1.
+     * @principle Enforces document ownership for writes; allows owner-only reads.
+     */
+    match /users/{userProfileId}/goals/{goalId} {
+      allow get: if isOwner(userProfileId);
+      allow list: if isOwner(userProfileId);
+
+      allow create: if isOwner(userProfileId) && request.resource.data.userProfileId == userProfileId;
+      allow update: if isExistingOwner(userProfileId) && request.resource.data.userProfileId == resource.data.userProfileId;
+      allow delete: if isExistingOwner(userProfileId);
+    }
+
+    /**
+     * @description Allows users to manage their own tasks.
+     * @path /users/{userProfileId}/tasks/{taskId}
+     * @allow (create) User with UID 'user_abc' can create a task under /users/user_abc/tasks/task_1.
+     * @deny (delete) User with UID 'user_xyz' cannot delete a task under /users/user_abc/tasks/task_1.
+     * @principle Enforces document ownership for writes; allows owner-only reads.
+     */
+    match /users/{userProfileId}/tasks/{taskId} {
+      allow get: if isOwner(userProfileId);
+      allow list: if isOwner(userProfileId);
+
+      allow create: if isOwner(userProfileId) && request.resource.data.userProfileId == userProfileId;
+      allow update: if isExistingOwner(userProfileId) && request.resource.data.userProfileId == resource.data.userProfileId;
+      allow delete: if isExistingOwner(userProfileId);
+    }
+
+    /**
+     * @description Allows users to manage their own courses.
+     * @path /users/{userProfileId}/courses/{courseId}
+     * @allow (create) User with UID 'user_abc' can create a course under /users/user_abc/courses/course_1.
+     * @deny (update) User with UID 'user_xyz' cannot update a course under /users/user_abc/courses/course_1.
+     * @principle Enforces document ownership for writes; allows owner-only reads.
+     */
+    match /users/{userProfileId}/courses/{courseId} {
+      allow get: if isOwner(userProfileId);
+      allow list: if isOwner(userProfileId);
+
+      allow create: if isOwner(userProfileId) && request.resource.data.userProfileId == userProfileId;
+      allow update: if isExistingOwner(userProfileId) && request.resource.data.userProfileId == resource.data.userProfileId;
+      allow delete: if isExistingOwner(userProfileId);
+    }
+
+    /**
+     * @description Allows users to manage their own notes.
+     * @path /users/{userProfileId}/notes/{noteId}
+     * @allow (create) User with UID 'user_abc' can create a note under /users/user_abc/notes/note_1.
+     * @deny (delete) User with UID 'user_xyz' cannot delete a note under /users/user_abc/notes/note_1.
+     * @principle Enforces document ownership for writes; allows owner-only reads.
+     */
+    match /users/{userProfileId}/notes/{noteId} {
+      allow get: if isOwner(userProfileId);
+      allow list: if isOwner(userProfileId);
+
+      allow create: if isOwner(userProfileId) && request.resource.data.userProfileId == userProfileId;
+      allow update: if isExistingOwner(userProfileId) && request.resource.data.userProfileId == resource.data.userProfileId;
+      allow delete: if isExistingOwner(userProfileId);
+    }
+
+    /**
+     * @description Allows users to manage their own study sessions.
+     * @path /users/{userProfileId}/studySessions/{studySessionId}
+     * @allow (create) User with UID 'user_abc' can create a study session under /users/user_abc/studySessions/session_1.
+     * @deny (update) User with UID 'user_xyz' cannot update a study session under /users/user_abc/studySessions/session_1.
+     * @principle Enforces document ownership for writes; allows owner-only reads.
+     */
+    match /users/{userProfileId}/studySessions/{studySessionId} {
+      allow get: if isOwner(userProfileId);
+      allow list: if isOwner(userProfileId);
+
+      allow create: if isOwner(userProfileId) && request.resource.data.userProfileId == userProfileId;
+      allow update: if isExistingOwner(userProfileId) && request.resource.data.userProfileId == resource.data.userProfileId;
+      allow delete: if isExistingOwner(userProfileId);
+    }
+
+    /**
+     * @description Allows users to manage their own timetable entries.
+     * @path /users/{userProfileId}/timeTables/{timeTableId}
+     * @allow (create) User with UID 'user_abc' can create a timetable entry under /users/user_abc/timeTables/timetable_1.
+     * @deny (delete) User with UID 'user_xyz' cannot delete a timetable entry under /users/user_abc/timeTables/timetable_1.
+     * @principle Enforces document ownership for writes; allows owner-only reads.
+     */
+    match /users/{userProfileId}/timeTables/{timeTableId} {
+      allow get: if isOwner(userProfileId);
+      allow list: if isOwner(userProfileId);
+
+      allow create: if isOwner(userProfileId) && request.resource.data.userProfileId == userProfileId;
+      allow update: if isExistingOwner(userProfileId) && request.resource.data.userProfileId == resource.data.userProfileId;
+      allow delete: if isExistingOwner(userProfileId);
+    }
+
+    /**
+     * @description Allows users to manage their own flashcards.
+     * @path /users/{userProfileId}/flashcards/{flashcardId}
+     * @allow (create) User with UID 'user_abc' can create a flashcard under /users/user_abc/flashcards/flashcard_1.
+     * @deny (update) User with UID 'user_xyz' cannot update a flashcard under /users/user_abc/flashcards/flashcard_1.
+     * @principle Enforces document ownership for writes; allows owner-only reads.
+     */
+    match /users/{userProfileId}/flashcards/{flashcardId} {
+      allow get: if isOwner(userProfileId);
+      allow list: if isOwner(userProfileId);
+
+      allow create: if isOwner(userProfileId) && request.resource.data.userProfileId == userProfileId;
+      allow update: if isExistingOwner(userProfileId) && request.resource.data.userProfileId == resource.data.userProfileId;
+      allow delete: if isExistingOwner(userProfileId);
+    }
+  }
+}
