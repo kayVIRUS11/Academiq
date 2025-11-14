@@ -1,10 +1,13 @@
+
 'use client';
 
 import { Note } from '@/lib/types';
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
-import { supabase } from '@/lib/supabase';
+import { useFirebase } from '@/firebase';
+import { collection, query, onSnapshot, addDoc, doc, updateDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
+
 
 type NotesContextType = {
   notes: Note[];
@@ -27,53 +30,77 @@ export function NotesProvider({ children }: { children: ReactNode }) {
 
   const { toast } = useToast();
   const { user } = useAuth();
+  const { firestore } = useFirebase();
   
-  const fetchNotes = useCallback(async () => {
-    if (!user) return;
-    setLoading(true);
-    const { data, error } = await supabase.from('notes').select('*').eq('uid', user.id);
-    if(error) {
-      setError(error as any);
-      toast({ title: 'Error loading notes', description: error.message, variant: 'destructive' });
-    } else {
-      setNotes(data.map(n => ({...n, courseId: n.course_id, createdAt: n.created_at })) as Note[]);
-    }
-    setLoading(false);
-  }, [user, toast]);
-
   useEffect(() => {
-    fetchNotes();
-  }, [fetchNotes]);
+    if (!user || !firestore) {
+        setNotes([]);
+        setLoading(false);
+        return;
+    };
+    
+    setLoading(true);
+    const notesQuery = query(collection(firestore, 'users', user.uid, 'notes'));
+    
+    const unsubscribe = onSnapshot(notesQuery, (snapshot) => {
+        const notesData = snapshot.docs.map(doc => {
+            const data = doc.data();
+            return {
+                id: doc.id,
+                ...data,
+                // Convert Firestore Timestamp to ISO string if it's not already
+                createdAt: data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : new Date().toISOString(),
+            } as Note;
+        });
+        setNotes(notesData);
+        setLoading(false);
+    }, (error) => {
+        console.error("Error fetching notes:", error);
+        setError(error);
+        toast({ title: 'Error loading notes', description: error.message, variant: 'destructive' });
+        setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [user, firestore, toast]);
 
 
   const addNote = async (newNoteData: Omit<Note, 'id' | 'createdAt' | 'uid'>): Promise<Note> => {
-    if (!user) throw new Error("User not authenticated");
+    if (!user || !firestore) throw new Error("User not authenticated or Firestore not available");
     
-    const { courseId, ...rest } = newNoteData;
-    const { data, error } = await supabase.from('notes').insert({
-        ...rest,
-        course_id: courseId,
-        uid: user.id,
-      }).select();
+    const notesCollection = collection(firestore, 'users', user.uid, 'notes');
+    
+    try {
+        const docRef = await addDoc(notesCollection, {
+            ...newNoteData,
+            uid: user.id,
+            createdAt: serverTimestamp(),
+        });
+        toast({ title: 'Note added!' });
 
-    if (error) {
-        console.error(error);
-        toast({ title: 'Error adding note', variant: 'destructive' });
+        // We can't immediately get the server timestamp, so we'll create a client-side version
+        // The real-time listener will correct this shortly
+        const newNote: Note = {
+            id: docRef.id,
+            ...newNoteData,
+            uid: user.id,
+            createdAt: new Date().toISOString(),
+        };
+        return newNote;
+
+    } catch (error: any) {
+        console.error("Error adding note:", error);
+        toast({ title: 'Error adding note', description: error.message, variant: 'destructive' });
         throw error;
     }
-    const newNoteRaw = data[0];
-    const newNote = {...newNoteRaw, courseId: newNoteRaw.course_id, createdAt: newNoteRaw.created_at } as Note;
-    setNotes(prev => [...prev, newNote]);
-    toast({ title: 'Note added!' });
-    return newNote;
   };
 
   const updateNote = async (id: string, updatedData: Partial<Omit<Note, 'id' | 'createdAt' | 'uid'>>) => {
+    if (!user || !firestore) return;
+    
+    const noteDoc = doc(firestore, 'users', user.uid, 'notes', id);
     try {
-        const { courseId, ...rest } = updatedData;
-        const { error } = await supabase.from('notes').update({ ...rest, course_id: courseId }).eq('id', id);
-        if (error) throw error;
-        setNotes(prev => prev.map(n => n.id === id ? {...n, ...updatedData} : n));
+        await updateDoc(noteDoc, updatedData);
     } catch(e) {
         // We don't toast here as it's noisy on auto-save
         console.error("Error updating note:", e);
@@ -81,10 +108,11 @@ export function NotesProvider({ children }: { children: ReactNode }) {
   }
 
   const deleteNote = async (id: string) => {
+    if (!user || !firestore) return;
+
     try {
-        const { error } = await supabase.from('notes').delete().eq('id', id);
-        if (error) throw error;
-        setNotes(prev => prev.filter(n => n.id !== id));
+        const noteDoc = doc(firestore, 'users', user.uid, 'notes', id);
+        await deleteDoc(noteDoc);
         toast({ title: 'Note deleted.' });
     } catch(e: any) {
         console.error(e);

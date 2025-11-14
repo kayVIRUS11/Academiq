@@ -18,8 +18,8 @@ import { doc, setDoc } from 'firebase/firestore';
 interface AuthContextType {
     user: User | null;
     loading: boolean;
-    signUpWithEmail: (email: string, password: string, displayName: string) => Promise<any>;
-    signInWithEmail: (email: string, password: string) => Promise<any>;
+    signUpWithEmail: (email: string, password: string, displayName: string) => Promise<{ user: User | null, error: any | null }>;
+    signInWithEmail: (email: string, password: string) => Promise<{ user: User | null, error: any | null }>;
     logout: () => Promise<any>;
     updateUserSettings: (updates: { [key: string]: any }) => Promise<void>;
 }
@@ -56,7 +56,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const user = userCredential.user;
             await updateProfile(user, { displayName });
 
-            // Create a user profile document in Firestore
             const userProfileRef = doc(firestore, 'users', user.uid);
             await setDoc(userProfileRef, {
                 id: user.uid,
@@ -64,8 +63,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 name: displayName,
             });
 
-            setUser({...user, displayName}); // Update local state
-            return { user: userCredential, error: null };
+            setUser(user);
+            return { user, error: null };
         } catch (error) {
             return { user: null, error };
         }
@@ -74,7 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const signInWithEmail = async (email: string, password: string) => {
         try {
             const userCredential = await signInWithEmailAndPassword(auth, email, password);
-            return { user: userCredential, error: null };
+            return { user: userCredential.user, error: null };
         } catch (error) {
             return { user: null, error };
         }
@@ -87,14 +86,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const updateUserSettings = async (updates: { [key: string]: any }) => {
         if (!user) throw new Error("No user is signed in.");
         
+        let profileUpdates = {};
         if (updates.full_name && updates.full_name !== user.displayName) {
-            await updateProfile(user, { displayName: updates.full_name });
+            Object.assign(profileUpdates, { displayName: updates.full_name });
+        }
+        
+        if (Object.keys(profileUpdates).length > 0) {
+            await updateProfile(user, profileUpdates);
         }
         
         const userProfileRef = doc(firestore, 'users', user.uid);
         await setDoc(userProfileRef, { name: updates.full_name }, { merge: true });
 
-        setUser({...user, displayName: updates.full_name});
+        // Manually update the user object to reflect changes immediately
+        const updatedUser = Object.assign(Object.create(Object.getPrototypeOf(user)), user, {
+            displayName: updates.full_name,
+        });
+
+        setUser(updatedUser);
     };
 
     const value = {
@@ -115,7 +124,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     
     if (!loading && !user && !publicRoutes.includes(pathname)) {
-        return null; // The useEffect above will handle the redirection.
+        return null;
     }
 
     return (

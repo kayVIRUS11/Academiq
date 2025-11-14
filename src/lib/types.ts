@@ -3,9 +3,9 @@ export type Task = {
   id: string;
   uid: string;
   title: string;
-  dueDate: string; // from due_date
+  dueDate: string;
   priority: 'Low' | 'Medium' | 'High';
-  courseId?: string; // from course_id
+  courseId?: string;
   completed: boolean;
 };
 
@@ -21,7 +21,7 @@ export type Course = {
   id:string;
   uid: string;
   name: string;
-  courseCode: string; // from course_code
+  courseCode: string;
   instructor?: string;
   color: string;
   units: number;
@@ -32,24 +32,24 @@ export type Note = {
   uid: string;
   title: string;
   content: string;
-  courseId?: string; // from course_id
-  createdAt: string; // from created_at
+  courseId?: string;
+  createdAt: string; 
 };
 
 export type TimetableEntry = {
   id: string;
   uid: string;
-  courseId: string; // from course_id
+  courseId: string;
   day: DayOfWeek;
-  startTime: string; // "HH:mm" from start_time
-  endTime: string; // "HH.mm" from end_time
+  startTime: string; // "HH:mm"
+  endTime: string; // "HH.mm"
   location?: string;
 };
 
 export type StudySession = {
   id: string;
   uid: string;
-  courseId: string; // from course_id
+  courseId: string;
   date: string; // ISO string
   duration: number; // in minutes
   notes?: string;

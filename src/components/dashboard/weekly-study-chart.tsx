@@ -1,49 +1,52 @@
+
 'use client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from "recharts";
 import { ChartTooltipContent, ChartContainer } from "@/components/ui/chart";
 import { Timer } from "lucide-react";
 import { StudySession } from "@/lib/types";
-import { format, startOfWeek, addDays, isWithinInterval } from "date-fns";
+import { format, startOfWeek, endOfWeek, isWithinInterval } from "date-fns";
 import { useAuth } from "@/context/auth-context";
-import { supabase } from "@/lib/supabase";
+import { useFirebase } from "@/firebase";
 import { useEffect, useState, useCallback } from "react";
 import { toast } from "@/hooks/use-toast";
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
 
 export function WeeklyStudyChart() {
     const { user } = useAuth();
+    const { firestore } = useFirebase();
     const [sessions, setSessions] = useState<StudySession[]>([]);
     
     const weekStartsOn = 1; // Monday
     const today = new Date();
     const startOfWeekDate = startOfWeek(today, { weekStartsOn });
-    const endOfWeekDate = addDays(startOfWeekDate, 6);
-
-    const fetchSessions = useCallback(async () => {
-        if (!user) return;
-        const { data, error } = await supabase
-            .from('study-sessions')
-            .select('*')
-            .eq('uid', user.id);
-            // We filter in JS because Supabase date filtering can be tricky with timezones
-        
-        if (error) {
-            toast({ title: 'Error fetching study sessions', description: error.message, variant: 'destructive'});
-        } else {
-            const weekSessions = (data as StudySession[]).filter(s => isWithinInterval(new Date(s.date), {start: startOfWeekDate, end: endOfWeekDate}));
-            setSessions(weekSessions);
-        }
-    }, [user, startOfWeekDate, endOfWeekDate, toast]);
+    const endOfWeekDate = endOfWeek(today, { weekStartsOn });
 
     useEffect(() => {
-        fetchSessions();
-    }, [fetchSessions]);
+        if (!user || !firestore) return;
+        
+        const sessionsQuery = query(
+            collection(firestore, 'users', user.uid, 'studySessions'),
+            where('date', '>=', startOfWeekDate.toISOString().split('T')[0]),
+            where('date', '<=', endOfWeekDate.toISOString().split('T')[0])
+        );
+        
+        const unsubscribe = onSnapshot(sessionsQuery, (snapshot) => {
+            const weekSessions = snapshot.docs.map(doc => doc.data() as StudySession);
+            setSessions(weekSessions);
+        }, (error) => {
+            toast({ title: 'Error fetching study sessions', description: error.message, variant: 'destructive'});
+        });
+        
+        return () => unsubscribe();
+    }, [user, firestore, startOfWeekDate, endOfWeekDate, toast]);
 
     
     const weeklyData = Array.from({length: 7}).map((_, i) => {
-        const day = addDays(startOfWeekDate, i);
+        const dayDate = new Date(startOfWeekDate);
+        dayDate.setDate(dayDate.getDate() + i);
         return {
-            day: format(day, 'E'),
+            day: format(dayDate, 'E'),
             hours: 0,
         }
     });

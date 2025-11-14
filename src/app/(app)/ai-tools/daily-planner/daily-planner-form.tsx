@@ -15,9 +15,10 @@ import { Label } from '@/components/ui/label';
 import { useWeeklyPlan } from '../../weekly-plan/weekly-plan-context';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/context/auth-context';
-import { supabase } from '@/lib/supabase';
 import { useCourses } from '@/context/courses-context';
 import { Progress } from '@/components/ui/progress';
+import { useFirebase } from '@/firebase';
+import { collection, query, onSnapshot } from 'firebase/firestore';
 
 const days: DayOfWeek[] = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
@@ -40,28 +41,40 @@ export function DailyPlannerForm() {
   const { toast } = useToast();
   const { plan: weeklyPlan } = useWeeklyPlan();
   const { user } = useAuth();
+  const { firestore } = useFirebase();
   const { getCourse, loading: coursesLoading } = useCourses();
 
   const [tasks, setTasks] = useState<Task[]>([]);
   const [timetable, setTimetable] = useState<TimetableEntry[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
 
-  const fetchData = useCallback(async () => {
-    if (!user) return;
-    setDataLoading(true);
-    const [tasksRes, timetableRes] = await Promise.all([
-      supabase.from('tasks').select('*').eq('uid', user.id),
-      supabase.from('timetable').select('*').eq('uid', user.id),
-    ]);
-
-    if (tasksRes.error) toast({title: "Error loading tasks", variant: 'destructive'}); else setTasks(tasksRes.data as Task[]);
-    if (timetableRes.error) toast({title: "Error loading timetable", variant: 'destructive'}); else setTimetable(timetableRes.data as TimetableEntry[]);
-    setDataLoading(false);
-  }, [user, toast]);
-
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    if (!user || !firestore) {
+        setDataLoading(false);
+        return;
+    };
+    setDataLoading(true);
+
+    const tasksQuery = query(collection(firestore, 'users', user.uid, 'tasks'));
+    const timetableQuery = query(collection(firestore, 'users', user.uid, 'timeTables'));
+
+    const unsubTasks = onSnapshot(tasksQuery, (snapshot) => {
+        setTasks(snapshot.docs.map(doc => ({id: doc.id, ...doc.data() } as Task)));
+    }, err => toast({title: "Error loading tasks", variant: 'destructive'}) );
+    
+    const unsubTimetable = onSnapshot(timetableQuery, (snapshot) => {
+        setTimetable(snapshot.docs.map(doc => ({id: doc.id, ...doc.data()} as TimetableEntry)));
+        setDataLoading(false);
+    }, err => {
+        toast({title: "Error loading timetable", variant: 'destructive'});
+        setDataLoading(false);
+    });
+
+    return () => {
+        unsubTasks();
+        unsubTimetable();
+    }
+  }, [user, firestore, toast]);
 
 
   useEffect(() => {

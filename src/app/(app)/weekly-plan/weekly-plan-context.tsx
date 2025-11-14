@@ -1,10 +1,12 @@
+
 'use client';
 
 import { StudyPlanItem } from '@/lib/types';
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/lib/supabase';
+import { useFirebase } from '@/firebase';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 type WeeklyPlanContextType = {
   plan: StudyPlanItem[];
@@ -20,36 +22,51 @@ const WeeklyPlanContext = createContext<WeeklyPlanContextType | undefined>(undef
 export function WeeklyPlanProvider({ children }: { children: ReactNode }) {
   const [plan, setPlanState] = useState<StudyPlanItem[]>([]);
   const { user } = useAuth();
+  const { firestore } = useFirebase();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
 
+  const getDocRef = useCallback(() => {
+    if (!user || !firestore) return null;
+    return doc(firestore, 'users', user.uid);
+  }, [user, firestore]);
+
   const fetchPlan = useCallback(async () => {
-    if (!user) return;
+    const docRef = getDocRef();
+    if (!docRef) {
+        setLoading(false);
+        return;
+    };
     setLoading(true);
-    const { data, error } = await supabase
-      .from('user_data')
-      .select('weekly_plan')
-      .eq('uid', user.id)
-      .single();
-    
-    if (error && error.code !== 'PGRST116') {
-      toast({ title: 'Error loading weekly plan', description: error.message, variant: 'destructive'});
-    } else {
-      setPlanState(data?.weekly_plan || []);
+    try {
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+            const userData = docSnap.data();
+            setPlanState(userData.weekly_plan || []);
+        } else {
+            setPlanState([]);
+        }
+    } catch(error: any) {
+        toast({ title: 'Error loading weekly plan', description: error.message, variant: 'destructive'});
     }
     setLoading(false);
-  }, [user, toast]);
+  }, [getDocRef, toast]);
 
   useEffect(() => {
-    fetchPlan();
-  }, [fetchPlan]);
+    if(user) {
+        fetchPlan();
+    } else {
+        setPlanState([]);
+        setLoading(false);
+    }
+  }, [user, fetchPlan]);
 
   const updateSupabase = async (newPlan: StudyPlanItem[]) => {
-    if (!user) return;
-    const { error } = await supabase
-        .from('user_data')
-        .upsert({ uid: user.id, weekly_plan: newPlan }, { onConflict: 'uid' });
-    if (error) {
+    const docRef = getDocRef();
+    if (!docRef) return;
+    try {
+        await setDoc(docRef, { weekly_plan: newPlan }, { merge: true });
+    } catch (error: any) {
         toast({ title: 'Error saving weekly plan', description: error.message, variant: 'destructive'});
     }
   }

@@ -18,7 +18,7 @@ export default function CoursesPage() {
           <BookCopy className="w-8 h-8" />
           Course Management
         </h1>
-        <AddCourse onAddCourse={addCourse} />
+        <AddCourse onAddCourse={(course) => addCourse(course)} />
       </div>
       
       {loading ? (
@@ -30,7 +30,7 @@ export default function CoursesPage() {
       ) : (
         <CourseList 
           courses={courses} 
-          onUpdateCourse={updateCourse} 
+          onUpdateCourse={(id, course) => updateCourse(id, course)} 
           onDeleteCourse={deleteCourse}
         />
       )}

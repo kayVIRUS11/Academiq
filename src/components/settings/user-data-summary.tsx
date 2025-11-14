@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -6,11 +7,13 @@ import { useFlashcards } from "@/app/(app)/ai-tools/flashcards/flashcards-contex
 import { useDailyActivities } from "@/app/(app)/daily-activities/activities-context";
 import { BookCopy, BrainCircuit, Calendar, ListTodo, NotebookText, Target, ClipboardCheck } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
-import { supabase } from "@/lib/supabase";
+import { useFirebase } from "@/firebase";
 import { useEffect, useState, useCallback } from "react";
+import { collection, getCountFromServer } from "firebase/firestore";
 
 export function UserDataSummary() {
     const { user } = useAuth();
+    const { firestore } = useFirebase();
     const { notes } = useNotes();
     const { flashcardSets } = useFlashcards();
     const { weeklyActivities } = useDailyActivities();
@@ -23,23 +26,27 @@ export function UserDataSummary() {
     });
 
     const fetchCounts = useCallback(async () => {
-        if (!user) return;
+        if (!user || !firestore) return;
 
-        const [courses, tasks, goals, sessions] = await Promise.all([
-            supabase.from('courses').select('id', { count: 'exact', head: true }).eq('uid', user.id),
-            supabase.from('tasks').select('id', { count: 'exact', head: true }).eq('uid', user.id),
-            supabase.from('goals').select('id', { count: 'exact', head: true }).eq('uid', user.id),
-            supabase.from('study-sessions').select('id', { count: 'exact', head: true }).eq('uid', user.id),
-        ]);
+        try {
+            const [courses, tasks, goals, sessions] = await Promise.all([
+                getCountFromServer(collection(firestore, 'users', user.uid, 'courses')),
+                getCountFromServer(collection(firestore, 'users', user.uid, 'tasks')),
+                getCountFromServer(collection(firestore, 'users', user.uid, 'goals')),
+                getCountFromServer(collection(firestore, 'users', user.uid, 'studySessions')),
+            ]);
 
-        setCounts({
-            courses: courses.count || 0,
-            tasks: tasks.count || 0,
-            goals: goals.count || 0,
-            sessions: sessions.count || 0,
-        });
+            setCounts({
+                courses: courses.data().count,
+                tasks: tasks.data().count,
+                goals: goals.data().count,
+                sessions: sessions.data().count,
+            });
+        } catch(error) {
+            console.error("Error fetching data counts:", error);
+        }
 
-    }, [user]);
+    }, [user, firestore]);
 
     useEffect(() => {
         fetchCounts();
@@ -52,7 +59,7 @@ export function UserDataSummary() {
         { label: "Notes", value: notes.length, icon: NotebookText },
         { label: "Study Sessions Logged", value: counts.sessions, icon: Calendar },
         { label: "Flashcard Sets", value: flashcardSets.length, icon: BrainCircuit },
-        { label: "Planned Days", value: Object.keys(weeklyActivities).length, icon: ClipboardCheck },
+        { label: "Planned Days", value: Object.values(weeklyActivities).filter(day => day && day.length > 0).length, icon: ClipboardCheck },
     ];
 
     return (

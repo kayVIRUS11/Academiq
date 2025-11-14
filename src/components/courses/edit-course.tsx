@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Course } from '@/lib/types';
@@ -14,12 +15,12 @@ type EditCourseProps = {
   course: Course;
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  onUpdateCourse: (course: Course) => void;
+  onUpdateCourse: (values: Partial<Omit<Course, 'id' | 'uid'>>) => void;
 };
 
 export function EditCourse({ course, isOpen, onOpenChange, onUpdateCourse }: EditCourseProps) {
   const handleSubmit = (values: any) => {
-    onUpdateCourse({ ...course, ...values });
+    onUpdateCourse(values);
     onOpenChange(false);
   };
 

@@ -5,7 +5,9 @@ import { Course } from '@/lib/types';
 import React, { createContext, useContext, useState, ReactNode, useCallback, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
-import { supabase } from '@/lib/supabase';
+import { useFirebase } from '@/firebase';
+import { collection, query, onSnapshot, addDoc, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+
 
 type CoursesContextType = {
   courses: Course[];
@@ -23,63 +25,68 @@ export function CoursesProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   const { user } = useAuth();
-
-  const fetchCourses = useCallback(async () => {
-    if (!user) return;
-    setLoading(true);
-    const { data, error } = await supabase.from('courses').select('*').eq('uid', user.id);
-    if (error) {
-      toast({ title: 'Error loading courses', description: error.message, variant: 'destructive'});
-    } else {
-      setCourses(data.map(c => ({...c, courseCode: c.course_code})) as Course[]);
-    }
-    setLoading(false);
-  }, [user, toast]);
+  const { firestore } = useFirebase();
 
   useEffect(() => {
-    fetchCourses();
-  }, [fetchCourses]);
+    if (!user || !firestore) {
+      setCourses([]);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    const q = query(collection(firestore, 'users', user.uid, 'courses'));
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+        const coursesData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Course));
+        setCourses(coursesData);
+        setLoading(false);
+    }, (error) => {
+        console.error("Error fetching courses:", error);
+        toast({ title: 'Error loading courses', description: error.message, variant: 'destructive'});
+        setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [user, firestore, toast]);
 
   
   const addCourse = async (newCourseData: Omit<Course, 'id' | 'uid'>) => {
-    if (!user) {
+    if (!user || !firestore) {
         toast({ title: 'You must be logged in', variant: 'destructive' });
         return;
     }
     
-    const { courseCode, ...rest } = newCourseData;
-    const { data, error } = await supabase.from('courses').insert({ ...rest, course_code: courseCode, uid: user.id }).select();
-    
-    if (error) {
+    try {
+      const coursesCollection = collection(firestore, 'users', user.uid, 'courses');
+      await addDoc(coursesCollection, { ...newCourseData, uid: user.id });
+      toast({ title: 'Course added!' });
+    } catch(error: any) {
       console.error(error);
-      toast({ title: 'Error adding course', variant: 'destructive' });
-    } else {
-        toast({ title: 'Course added!' });
-        fetchCourses();
+      toast({ title: 'Error adding course', description: error.message, variant: 'destructive' });
     }
   };
 
   const updateCourse = async (id: string, updatedData: Partial<Omit<Course, 'id' | 'uid'>>) => {
-    const { courseCode, ...rest } = updatedData;
-    const { error } = await supabase.from('courses').update({ ...rest, course_code: courseCode }).eq('id', id);
-    
-    if (error) {
+    if (!user || !firestore) return;
+    try {
+        const courseDoc = doc(firestore, 'users', user.uid, 'courses', id);
+        await updateDoc(courseDoc, updatedData);
+        toast({ title: 'Course updated!' });
+    } catch(error: any) {
       console.error(error);
       toast({ title: 'Error updating course', description: error.message, variant: 'destructive' });
-    } else {
-      toast({ title: 'Course updated!' });
-      setCourses(prev => prev.map(c => c.id === id ? { ...c, ...updatedData } as Course : c));
     }
   }
 
   const deleteCourse = async (id: string) => {
-    const { error } = await supabase.from('courses').delete().eq('id', id);
-    if (error) {
+    if (!user || !firestore) return;
+    try {
+        const courseDoc = doc(firestore, 'users', user.uid, 'courses', id);
+        await deleteDoc(courseDoc);
+        toast({ title: 'Course deleted!' });
+    } catch (error: any) {
         console.error(error);
         toast({ title: 'Error deleting course', description: error.message, variant: 'destructive' });
-    } else {
-        toast({ title: 'Course deleted!' });
-        setCourses(prev => prev.filter(c => c.id !== id));
     }
   }
 

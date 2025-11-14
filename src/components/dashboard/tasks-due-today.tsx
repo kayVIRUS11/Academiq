@@ -1,3 +1,4 @@
+
 'use client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -6,53 +7,56 @@ import { cn } from "@/lib/utils";
 import { ListTodo } from "lucide-react";
 import { Skeleton } from "../ui/skeleton";
 import { useAuth } from "@/context/auth-context";
-import { supabase } from "@/lib/supabase";
+import { useFirebase } from "@/firebase";
 import { useState, useEffect, useCallback } from "react";
 import { toast } from "@/hooks/use-toast";
+import { collection, query, where, onSnapshot, doc, updateDoc } from 'firebase/firestore';
 
 export function TasksDueToday() {
   const { user } = useAuth();
+  const { firestore } = useFirebase();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchTasks = useCallback(async () => {
-    if (!user) return;
+  useEffect(() => {
+    if (!user || !firestore) {
+        setLoading(false);
+        return;
+    };
     setLoading(true);
+
     const today = new Date();
     today.setHours(0,0,0,0);
-    const todayISO = today.toISOString().slice(0,10);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
     
-    const { data, error } = await supabase
-      .from('tasks')
-      .select('*')
-      .eq('uid', user.id)
-      .eq('due_date', todayISO);
-
-    if (error) {
+    const tasksQuery = query(
+        collection(firestore, 'users', user.uid, 'tasks'),
+        where('dueDate', '>=', today.toISOString().split('T')[0]),
+        where('dueDate', '<', tomorrow.toISOString().split('T')[0])
+    );
+    
+    const unsubscribe = onSnapshot(tasksQuery, (snapshot) => {
+        const tasksData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task));
+        setTasks(tasksData);
+        setLoading(false);
+    }, (error) => {
+        console.error("Error fetching today's tasks:", error);
         toast({ title: "Error fetching today's tasks", description: error.message, variant: 'destructive' });
-    } else {
-        setTasks(data.map(t => ({...t, dueDate: t.due_date, courseId: t.course_id})) as Task[]);
-    }
-    setLoading(false);
-  }, [user, toast]);
+        setLoading(false);
+    });
 
-  useEffect(() => {
-    fetchTasks();
-  }, [fetchTasks]);
+    return () => unsubscribe();
+  }, [user, firestore, toast]);
 
 
   const handleTaskToggle = async (taskId: string, currentStatus: boolean) => {
-    const { data, error } = await supabase
-        .from('tasks')
-        .update({ completed: !currentStatus })
-        .eq('id', taskId)
-        .select();
-    
-    if (error) {
+    if (!user || !firestore) return;
+    const taskDoc = doc(firestore, 'users', user.uid, 'tasks', taskId);
+    try {
+        await updateDoc(taskDoc, { completed: !currentStatus });
+    } catch(error: any) {
         toast({ title: 'Error updating task', description: error.message, variant: 'destructive' });
-    } else {
-        const updatedTask = data[0];
-        setTasks(prev => prev.map(t => t.id === taskId ? {...updatedTask, dueDate: updatedTask.due_date, courseId: updatedTask.course_id} as Task : t));
     }
   };
 

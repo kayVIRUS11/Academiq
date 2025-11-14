@@ -1,3 +1,4 @@
+
 'use client';
 import { useState } from 'react';
 import { Course } from '@/lib/types';
@@ -25,7 +26,7 @@ import {
 
 type CourseListProps = {
   courses: Course[];
-  onUpdateCourse: (course: Course) => void;
+  onUpdateCourse: (id: string, course: Partial<Omit<Course, 'id' | 'uid'>>) => void;
   onDeleteCourse: (id: string) => void;
 };
 
@@ -58,7 +59,10 @@ export function CourseList({ courses, onUpdateCourse, onDeleteCourse }: CourseLi
             {courses.length > 0 ? (
               courses.map((course) => (
                 <TableRow key={course.id}>
-                  <TableCell className="font-medium">{course.name}</TableCell>
+                  <TableCell className="font-medium flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full" style={{backgroundColor: course.color}}/>
+                    {course.name}
+                  </TableCell>
                   <TableCell>{course.courseCode}</TableCell>
                   <TableCell>{course.instructor || 'N/A'}</TableCell>
                   <TableCell className="text-right space-x-2">
@@ -89,7 +93,7 @@ export function CourseList({ courses, onUpdateCourse, onDeleteCourse }: CourseLi
           course={editingCourse}
           isOpen={!!editingCourse}
           onOpenChange={(isOpen) => !isOpen && setEditingCourse(null)}
-          onUpdateCourse={onUpdateCourse}
+          onUpdateCourse={(values) => onUpdateCourse(editingCourse.id, values)}
         />
       )}
       
