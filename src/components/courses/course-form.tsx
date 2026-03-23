@@ -15,11 +15,16 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 
+const colors = [
+    '#3b82f6', '#8b5cf6', '#10b981', '#f97316', '#ef4444',
+    '#14b8a6', '#6366f1', '#d946ef', '#f43f5e', '#84cc16'
+];
+
 const courseFormSchema = z.object({
   name: z.string().min(3, { message: 'Course name must be at least 3 characters.' }),
   courseCode: z.string().min(3, { message: 'Course code must be at least 3 characters.' }),
   instructor: z.string().optional(),
-  color: z.string().optional(),
+  color: z.string().default(colors[0]),
   units: z.coerce.number().min(0, { message: 'Units must be a positive number.' }),
 });
 
@@ -30,11 +35,6 @@ type CourseFormProps = {
   defaultValues?: Partial<Course>;
   submitButtonText?: string;
 };
-
-const colors = [
-    '#3b82f6', '#8b5cf6', '#10b981', '#f97316', '#ef4444',
-    '#14b8a6', '#6366f1', '#d946ef', '#f43f5e', '#84cc16'
-];
 
 export function CourseForm({
   onSubmit,

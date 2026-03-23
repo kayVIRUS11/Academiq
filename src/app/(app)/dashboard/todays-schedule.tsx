@@ -1,35 +1,44 @@
 'use client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
 import { Calendar } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/context/auth-context";
-import { Course, TimetableEntry } from "@/lib/types";
-import { supabase } from "@/lib/supabase";
-import { useState, useEffect, useCallback } from "react";
-import { toast } from "@/hooks/use-toast";
+import { TimetableEntry } from "@/lib/types";
+import { useState, useEffect } from "react";
+import { useToast } from "@/hooks/use-toast";
 import { useCourses } from "@/context/courses-context";
+import { useFirebase } from "@/firebase";
+import { collection, query, onSnapshot } from "firebase/firestore";
 
 export function TodaysSchedule() {
     const { user } = useAuth();
-    const { courses, getCourse } = useCourses();
+    const { getCourse } = useCourses();
+    const { firestore } = useFirebase();
+    const { toast } = useToast();
     const [timetable, setTimetable] = useState<TimetableEntry[]>([]);
     const [loading, setLoading] = useState(true);
 
-    const fetchData = useCallback(async () => {
-        if (!user) return;
-        setLoading(true);
-        const { data: timetableRes, error: timetableError } = await supabase.from('timetable').select('*').eq('uid', user.id);
-    
-        if (timetableError) toast({ title: 'Error fetching timetable', description: timetableError.message, variant: 'destructive' });
-        else setTimetable(timetableRes.map(e => ({...e, courseId: e.course_id, startTime: e.start_time, endTime: e.end_time})));
-        
-        setLoading(false);
-      }, [user, toast]);
-    
     useEffect(() => {
-        fetchData();
-    }, [fetchData]);
+        if (!user || !firestore) {
+            setLoading(false);
+            return;
+        }
+
+        setLoading(true);
+        const timetableQuery = query(collection(firestore, 'users', user.uid, 'timeTables'));
+
+        const unsubscribe = onSnapshot(timetableQuery, (snapshot) => {
+            const timetableData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as TimetableEntry));
+            setTimetable(timetableData);
+            setLoading(false);
+        }, (error) => {
+            console.error("Error fetching timetable:", error);
+            toast({ title: 'Error fetching timetable', description: error.message, variant: 'destructive' });
+            setLoading(false);
+        });
+
+        return () => unsubscribe();
+    }, [user, firestore, toast]);
 
 
     const today = new Date().toLocaleDateString('en-US', { weekday: 'long' });

@@ -58,7 +58,7 @@ export function CoursesProvider({ children }: { children: ReactNode }) {
     
     try {
       const coursesCollection = collection(firestore, 'users', user.uid, 'courses');
-      await addDoc(coursesCollection, { ...newCourseData, uid: user.id });
+      await addDoc(coursesCollection, { ...newCourseData, uid: user.uid, userProfileId: user.uid });
       toast({ title: 'Course added!' });
     } catch(error: any) {
       console.error(error);

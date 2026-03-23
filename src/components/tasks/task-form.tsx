@@ -40,7 +40,7 @@ type TaskFormValues = z.infer<typeof taskFormSchema>;
 
 type TaskFormProps = {
   onSubmit: (values: TaskFormValues) => void;
-  defaultValues?: Partial<Task> & { dueDate?: Date };
+  defaultValues?: Omit<Partial<Task>, 'dueDate'> & { dueDate?: Date };
   submitButtonText?: string;
   courses: Course[];
 };

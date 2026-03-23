@@ -12,7 +12,7 @@ import { DailyActivity, DayOfWeek } from "@/lib/types";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ActivityDialog } from "./activity-dialog";
 
-const days: DayOfWeek[] = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+const days: DayOfWeek[] = [DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday, DayOfWeek.Thursday, DayOfWeek.Friday, DayOfWeek.Saturday, DayOfWeek.Sunday];
 
 function DailyPlanView({ day }: { day: DayOfWeek }) {
     const { weeklyActivities, updateActivitiesForDay, addActivity, deleteActivity, toggleActivity } = useDailyActivities();

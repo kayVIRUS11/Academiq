@@ -11,7 +11,7 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import { TimetableEntry, Course } from '@/lib/types';
+import { TimetableEntry, Course, DayOfWeek } from '@/lib/types';
 
 
 const CourseSchema = z.object({
@@ -41,7 +41,7 @@ export type GenerateWeeklyStudyPlanInput = z.infer<typeof GenerateWeeklyStudyPla
 
 const GenerateWeeklyStudyPlanOutputSchema = z.object({
   weeklyPlan: z.array(z.object({
-      day: z.string(),
+      day: z.nativeEnum(DayOfWeek),
       time: z.string().describe("Suggested time slot, e.g., '15:00 - 17:00'"),
       course: z.string().describe("The name of the course to study."),
       activity: z.string().describe("A brief suggestion for the study activity, e.g., 'Review lecture notes' or 'Problem set'"),

@@ -27,13 +27,13 @@ export function AccountSettingsForm() {
   const form = useForm<AccountSettingsFormValues>({
     resolver: zodResolver(accountSettingsSchema),
     defaultValues: {
-      full_name: user?.user_metadata.full_name || '',
+      full_name: user?.displayName || '',
     },
   });
 
   useEffect(() => {
-    if (user?.user_metadata.full_name) {
-      form.reset({ full_name: user.user_metadata.full_name });
+    if (user?.displayName) {
+      form.reset({ full_name: user.displayName });
     }
   }, [user, form]);
 
