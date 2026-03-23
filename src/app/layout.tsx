@@ -3,11 +3,7 @@ import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { ThemeProvider } from '@/components/theme-provider';
 import { AuthProvider } from '@/context/auth-context';
-import { PT_Sans } from 'next/font/google';
-import { cn } from '@/lib/utils';
 import { FirebaseClientProvider } from '@/firebase';
-
-const ptSans = PT_Sans({ subsets: ['latin'], weight: ['400', '700'], variable: '--font-pt-sans' });
 
 export const metadata: Metadata = {
   title: 'Academiq',
@@ -25,7 +21,7 @@ export default function RootLayout({
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#8BC34A" />
       </head>
-      <body className={cn("font-sans antialiased", ptSans.variable)}>
+      <body className="font-sans antialiased">
         <ThemeProvider
             attribute="class"
             defaultTheme="system"

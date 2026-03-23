@@ -7,7 +7,7 @@ import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious
 import { cn } from '@/lib/utils';
 import { useFlashcards, FlashcardSet } from '../flashcards-context';
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import { notFound, useParams } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
 
 function Flashcard({ card }: { card: { question: string, answer: string } }) {
@@ -38,8 +38,9 @@ function Flashcard({ card }: { card: { question: string, answer: string } }) {
   );
 }
 
-export default function FlashcardSetPage({ params }: { params: { id: string } }) {
-  const { id } = params;
+export default function FlashcardSetPage() {
+  const params = useParams<{ id: string }>();
+  const id = params.id;
   const { getFlashcardSet, loading } = useFlashcards();
   const [flashcardSet, setFlashcardSet] = useState<FlashcardSet | null | undefined>(undefined);
   
