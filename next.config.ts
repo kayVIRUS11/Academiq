@@ -30,10 +30,6 @@ const nextConfig: NextConfig = {
     config.resolve.alias.canvas = false;
     return config;
   },
-  serverActions: {
-    bodySizeLimit: '4.5mb',
-    executionTimeout: 120, // Increase timeout to 2 minutes
-  }
 };
 
 export default nextConfig;
