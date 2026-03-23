@@ -101,11 +101,21 @@ const authSubscription = {
   started: false,
 };
 
+const SNAPSHOT_POLL_MS = Number(process.env.NEXT_PUBLIC_FIREBASE_COMPAT_POLL_MS ?? 5000);
+
+function getDisplayName(user: SupabaseUser): string | null {
+  const fullName = user.user_metadata?.full_name;
+  const name = user.user_metadata?.name;
+  if (typeof fullName === 'string' && fullName.trim()) return fullName;
+  if (typeof name === 'string' && name.trim()) return name;
+  return null;
+}
+
 function toFirebaseLikeUser(user: SupabaseUser): FirebaseLikeUser {
   return {
     uid: user.id,
     email: user.email ?? null,
-    displayName: (user.user_metadata?.full_name as string | undefined) ?? (user.user_metadata?.name as string | undefined) ?? null,
+    displayName: getDisplayName(user),
     emailVerified: !!user.email_confirmed_at,
     phoneNumber: user.phone ?? null,
     providerData: [{ providerId: user.app_metadata?.provider ?? 'email', uid: user.id }],
@@ -396,7 +406,7 @@ export function onSnapshotCompat(
   };
 
   poll();
-  interval = setInterval(poll, 2000);
+  interval = setInterval(poll, SNAPSHOT_POLL_MS);
 
   return () => {
     closed = true;
@@ -437,11 +447,8 @@ export async function setDocCompat(
   const table = tableNameForCollection(docRef._segments.slice(0, -1));
   const ownerId = ownerIdFromSegments(docRef._segments);
   const payload = { ...data, id: docRef.id, uid: data.uid ?? ownerId };
-  if (options?.merge) {
-    const { error } = await supabase.from(table).upsert(payload);
-    if (error) throw error;
-    return;
-  }
+  // options parameter is kept for Firebase API compatibility.
+  void options;
   const { error } = await supabase.from(table).upsert(payload);
   if (error) throw error;
 }
@@ -465,11 +472,27 @@ export async function getDocCompat(docRef: DocumentReference): Promise<Firestore
 }
 
 export async function getCountFromServerCompat(colRef: CollectionReference | Query) {
-  const { data, error } = await buildSelect(colRef);
+  const supabase = colRef._supabase;
+  if (!supabase) throw new Error('Supabase client is not configured.');
+  const table = tableNameForCollection(colRef._segments);
+  const ownerId = ownerIdFromSegments(colRef._segments);
+  let query: any = supabase.from(table).select('*', { count: 'exact', head: true });
+  if (ownerId) query = query.eq('uid', ownerId);
+  if (colRef._kind === 'query') {
+    for (const c of colRef.constraints) {
+      if (c.type === 'where') {
+        if (c.op === '==') query = query.eq(c.field, c.value);
+        if (c.op === '>=') query = query.gte(c.field, c.value);
+        if (c.op === '<=') query = query.lte(c.field, c.value);
+        if (c.op === '<') query = query.lt(c.field, c.value);
+        if (c.op === '>') query = query.gt(c.field, c.value);
+      }
+    }
+  }
+  const { count, error } = await query;
   if (error) throw error;
-  const count = Array.isArray(data) ? data.length : 0;
   return {
-    data: () => ({ count }),
+    data: () => ({ count: count ?? 0 }),
   };
 }
 
