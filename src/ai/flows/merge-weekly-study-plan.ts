@@ -30,7 +30,7 @@ const MergeWeeklyPlansInputSchema = z.object({
 export type MergeWeeklyPlansInput = z.infer<typeof MergeWeeklyPlansInputSchema>;
 
 const MergeWeeklyPlansOutputSchema = z.object({
-  mergedPlan: z.array(StudyPlanItemSchema.omit({id: z.any()})).describe('A single, cohesive, and chronologically sorted list of study activities for the week.'),
+  mergedPlan: z.array(StudyPlanItemSchema.omit({id: true})).describe('A single, cohesive, and chronologically sorted list of study activities for the week.'),
 });
 export type MergeWeeklyPlansOutput = z.infer<typeof MergeWeeklyPlansOutputSchema>;
 

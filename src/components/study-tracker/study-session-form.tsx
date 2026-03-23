@@ -40,7 +40,7 @@ type SessionFormValues = z.infer<typeof sessionFormSchema>;
 type StudySessionFormProps = {
   courses: Course[];
   onSubmit: (values: SessionFormValues) => void;
-  defaultValues?: Partial<StudySession> & { date?: Date };
+  defaultValues?: Omit<Partial<StudySession>, 'date'> & { date?: Date };
   submitButtonText?: string;
 };
 

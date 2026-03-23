@@ -32,7 +32,7 @@ type SavePlanDialogProps = {
   defaultDay?: DayOfWeek;
 };
 
-const days: DayOfWeek[] = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+const days: DayOfWeek[] = [DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday, DayOfWeek.Thursday, DayOfWeek.Friday, DayOfWeek.Saturday, DayOfWeek.Sunday];
 
 export function SavePlanDialog({ isOpen, onOpenChange, plan, defaultDay }: SavePlanDialogProps) {
   const [selectedDay, setSelectedDay] = useState<DayOfWeek | null>(defaultDay || null);

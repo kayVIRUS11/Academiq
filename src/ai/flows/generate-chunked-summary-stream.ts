@@ -86,11 +86,11 @@ export const generateChunkedSummaryStream = ai.defineFlow(
     outputSchema: z.unknown(), // The final return is not the main output
     streamSchema: StreamEventSchema,
   },
-  async function* (input, streamingCallback) {
+  async function (input, streamingCallback) {
     const CHUNK_SIZE = 30000; // Characters per chunk
 
     // 1. CHUNK STAGE
-    yield* streamingCallback({
+    streamingCallback({
       type: 'progress',
       data: { percent: 5, message: 'Parsing and chunking document...' },
     });
@@ -110,7 +110,7 @@ export const generateChunkedSummaryStream = ai.defineFlow(
     for (let i = 0; i < chunks.length; i++) {
       const chunk = chunks[i];
       const progress = 10 + Math.round((i / chunks.length) * 80);
-      yield* streamingCallback({
+      streamingCallback({
         type: 'progress',
         data: { percent: progress, message: `Summarizing chunk ${i + 1} of ${chunks.length}...` },
       });
@@ -122,7 +122,7 @@ export const generateChunkedSummaryStream = ai.defineFlow(
     }
 
     // 3. SYNTHESIZE STAGE
-    yield* streamingCallback({
+    streamingCallback({
       type: 'progress',
       data: { percent: 95, message: 'Synthesizing final summary...' },
     });
@@ -135,7 +135,7 @@ export const generateChunkedSummaryStream = ai.defineFlow(
         throw new Error("Failed to synthesize the final summary.");
     }
 
-    yield* streamingCallback({
+    streamingCallback({
       type: 'result',
       data: { summary: output.summary },
     });

@@ -51,7 +51,8 @@ export default function GoalsPage() {
         await addDoc(goalsCollection, {
             ...newGoal,
             progress: 0,
-            uid: user.id,
+            uid: user.uid,
+            userProfileId: user.uid,
         });
         toast({ title: 'Goal added!' });
     } catch(error: any) {

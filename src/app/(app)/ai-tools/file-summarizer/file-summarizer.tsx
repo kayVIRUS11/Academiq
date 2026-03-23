@@ -7,7 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Loader2, Sparkles, AlertCircle, FilePlus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { summarizeUploadedFile, SummarizeUploadedFileInput } from '@/ai/flows/summarize-uploaded-file';
-import { generateChunkedSummaryStream } from '@/ai/flows/generate-chunked-summary-stream';
+import { generateChunkedSummary } from '@/ai/flows/generate-chunked-summary';
 import { FileUploader } from './file-uploader';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import * as pdfjsLib from 'pdfjs-dist';
@@ -162,7 +162,7 @@ export function FileSummarizer() {
                         if (img && img.data) {
                             const base64 = btoa(new Uint8Array(img.data).reduce((data, byte) => data + String.fromCharCode(byte), ''));
                             
-                            const mimeType = img.kind === pdfjsLib.ImageKind.JPEG ? 'image/jpeg' : 'image/png';
+                            const mimeType = 'image/png';
                             contentParts.push({ media: { url: `data:${mimeType};base64,${base64}` } });
                         }
                     } catch (e) {
@@ -220,19 +220,9 @@ export function FileSummarizer() {
         const useChunking = (summaryType === 'deep' || summaryType === 'standard') && totalChars > CHARACTER_THRESHOLD;
 
         if (useChunking) {
-            setLoadingMessage('Starting deep summarization stream...');
-            const stream = await generateChunkedSummaryStream({ parts, fileType });
-            let finalSummary = '';
-
-            for await (const chunk of stream) {
-              if (chunk.type === 'progress') {
-                setLoadingProgress(chunk.data.percent);
-                setLoadingMessage(chunk.data.message);
-              } else if (chunk.type === 'result') {
-                finalSummary = chunk.data.summary;
-              }
-            }
-            setSummary(marked.parse(finalSummary) as string);
+            setLoadingMessage('Starting deep summarization...');
+            const result = await generateChunkedSummary({ parts, fileType });
+            setSummary(marked.parse(result.summary) as string);
 
         } else {
             // Indeterminate progress for single-shot summaries

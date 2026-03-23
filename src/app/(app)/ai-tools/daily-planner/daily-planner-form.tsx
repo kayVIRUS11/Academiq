@@ -20,7 +20,7 @@ import { Progress } from '@/components/ui/progress';
 import { useFirebase } from '@/firebase';
 import { collection, query, onSnapshot } from 'firebase/firestore';
 
-const days: DayOfWeek[] = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+const days: DayOfWeek[] = [DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday, DayOfWeek.Thursday, DayOfWeek.Friday, DayOfWeek.Saturday, DayOfWeek.Sunday];
 
 const loadingMessages = [
     "Analyzing your schedule...",

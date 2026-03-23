@@ -25,7 +25,7 @@ export default function SettingsPage() {
                 </h1>
                 {user && (
                     <p className="text-muted-foreground mt-1">
-                        {user.user_metadata.full_name} &middot; {user.email}
+                        {user.displayName} &middot; {user.email}
                     </p>
                 )}
             </div>
