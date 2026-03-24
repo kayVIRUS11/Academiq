@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Loader2, Sparkles, AlertCircle, FilePlus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { summarizeUploadedFile, SummarizeUploadedFileInput } from '@/ai/flows/summarize-uploaded-file';
+import { summarizeUploadedFile } from '@/ai/flows/summarize-uploaded-file';
 import { generateChunkedSummary } from '@/ai/flows/generate-chunked-summary';
 import { FileUploader } from './file-uploader';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -26,7 +26,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.j
 type ContentPart = { text: string } | { media: { url: string } };
 type SummaryType = 'quick' | 'standard' | 'deep';
 
-const CHARACTER_THRESHOLD = 30000; // Approx 7.5k tokens
+const CHARACTER_THRESHOLD = 60000; // Approx 15k tokens
 
 const quickLoadingMessages = [
     "Analyzing document...",

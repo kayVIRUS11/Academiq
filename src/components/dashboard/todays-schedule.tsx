@@ -6,44 +6,20 @@ import { Calendar } from "lucide-react";
 import { Skeleton } from "../ui/skeleton";
 import { useAuth } from "@/context/auth-context";
 import { TimetableEntry } from "@/lib/types";
-import { useFirebase } from "@/firebase";
-import { useState, useEffect, useCallback } from "react";
-import { toast } from "@/hooks/use-toast";
+import { useSupabase } from "@/supabase";
 import { useCourses } from "@/context/courses-context";
-import { collection, query, where, onSnapshot } from "firebase/firestore";
+import { useSupabaseRealtime } from "@/hooks/use-supabase-realtime";
 
 export function TodaysSchedule() {
     const { user } = useAuth();
-    const { firestore } = useFirebase();
+    const { supabase } = useSupabase();
     const { courses, loading: coursesLoading } = useCourses();
-    const [timetable, setTimetable] = useState<TimetableEntry[]>([]);
-    const [loading, setLoading] = useState(true);
+    const { data: allTimetable, loading } = useSupabaseRealtime<TimetableEntry>('timeTables', 'created_at', false);
 
     const today = new Date().toLocaleDateString('en-US', { weekday: 'long' });
 
-    useEffect(() => {
-        if (!user || !firestore) {
-            setLoading(false);
-            return;
-        };
-
-        setLoading(true);
-        const timetableQuery = query(collection(firestore, 'users', user.uid, 'timeTables'), where('day', '==', today));
-    
-        const unsubscribe = onSnapshot(timetableQuery, (snapshot) => {
-            const todaysEntries = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as TimetableEntry));
-            setTimetable(todaysEntries);
-            setLoading(false);
-        }, (error) => {
-            toast({ title: 'Error fetching today\'s schedule', description: error.message, variant: 'destructive' });
-            setLoading(false);
-        });
-
-        return () => unsubscribe();
-      }, [user, firestore, toast, today]);
-
     const getCourse = (courseId: string) => courses.find(c => c.id === courseId);
-    const todaysClasses = timetable;
+    const todaysClasses = allTimetable.filter(entry => entry.day === today);
 
   return (
     <Card>

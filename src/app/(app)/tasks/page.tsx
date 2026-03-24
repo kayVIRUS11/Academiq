@@ -8,61 +8,37 @@ import { AddTask } from '@/components/tasks/add-task';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/context/auth-context';
-import { useFirebase } from '@/firebase';
-import { useState, useEffect, useCallback } from 'react';
+import { useSupabase } from '@/supabase';
 import { useCourses } from '@/context/courses-context';
-import { collection, query, onSnapshot, addDoc, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { useSupabaseRealtime } from '@/hooks/use-supabase-realtime';
 
 export default function TasksPage() {
   const { toast } = useToast();
   const { user } = useAuth();
-  const { firestore } = useFirebase();
+  const { supabase } = useSupabase();
   const { courses } = useCourses();
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (!user || !firestore) {
-        setLoading(false);
-        return;
-    };
-    setLoading(true);
-    const tasksQuery = query(collection(firestore, 'users', user.uid, 'tasks'));
-    
-    const unsubscribe = onSnapshot(tasksQuery, (snapshot) => {
-        const tasksData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task));
-        setTasks(tasksData);
-        setLoading(false);
-    }, (error) => {
-        console.error("Error fetching tasks:", error);
-        toast({ title: 'Error fetching tasks', description: error.message, variant: 'destructive' });
-        setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, [user, firestore, toast]);
+  const { data: tasks, loading } = useSupabaseRealtime<Task>('tasks', 'created_at', false);
 
   const handleAddTask = async (newTaskData: Omit<Task, 'id' | 'completed' | 'uid'>) => {
-    if (!user || !firestore) {
+    if (!user || !supabase) {
         toast({ title: 'You must be logged in', variant: 'destructive' });
         return;
     }
 
     try {
-        const tasksCollection = collection(firestore, 'users', user.uid, 'tasks');
-        
         const dataToSave: any = {
             ...newTaskData,
             completed: false,
-            uid: user.uid,
-            userProfileId: user.uid,
+            uid: user.id
         };
 
         if (!dataToSave.courseId) {
             delete dataToSave.courseId;
         }
 
-        await addDoc(tasksCollection, dataToSave);
+        const { error } = await supabase.from('tasks').insert(dataToSave);
+        if (error) throw error;
+        
         toast({ title: 'Task added!' });
     } catch (error: any) {
       console.error(error);
@@ -71,11 +47,11 @@ export default function TasksPage() {
   };
 
   const handleUpdateTask = async (updatedTask: Task) => {
-    if (!user || !firestore) return;
+    if (!user || !supabase) return;
     try {
       const { id, ...taskData } = updatedTask;
-      const taskDoc = doc(firestore, 'users', user.uid, 'tasks', id);
-      await updateDoc(taskDoc, taskData);
+      const { error } = await supabase.from('tasks').update(taskData).eq('id', id);
+      if (error) throw error;
       toast({ title: 'Task updated.' });
     } catch (e: any) {
       console.error(e);
@@ -84,10 +60,10 @@ export default function TasksPage() {
   };
 
   const handleDeleteTask = async (taskId: string) => {
-    if (!user || !firestore) return;
+    if (!user || !supabase) return;
     try {
-      const taskDoc = doc(firestore, 'users', user.uid, 'tasks', taskId);
-      await deleteDoc(taskDoc);
+      const { error } = await supabase.from('tasks').delete().eq('id', taskId);
+      if (error) throw error;
       toast({ title: 'Task deleted.' });
     } catch (e: any) {
       console.error(e);
@@ -96,10 +72,10 @@ export default function TasksPage() {
   };
   
   const handleToggleTask = async (taskId: string, currentStatus: boolean) => {
-    if (!user || !firestore) return;
+    if (!user || !supabase) return;
     try {
-      const taskDoc = doc(firestore, 'users', user.uid, 'tasks', taskId);
-      await updateDoc(taskDoc, { completed: !currentStatus });
+      const { error } = await supabase.from('tasks').update({ completed: !currentStatus }).eq('id', taskId);
+      if (error) throw error;
     } catch (e: any) {
       console.error(e);
       toast({ title: 'Error toggling task', description: e.message, variant: 'destructive' });

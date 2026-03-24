@@ -10,8 +10,6 @@
  * 3. Synthesize: The individual summaries are combined into a final, coherent summary.
  *
  * - generateChunkedSummary - The main function to trigger the flow.
- * - GenerateChunkedSummaryInput - Input type for the function.
- * - GenerateChunkedSummaryOutput - Output type for the function.
  */
 
 import {ai} from '@/ai/genkit';
@@ -22,43 +20,53 @@ const ContentPartSchema = z.union([
   z.object({media: z.object({url: z.string()})}),
 ]);
 
-export const GenerateChunkedSummaryInputSchema = z.object({
+const GenerateChunkedSummaryInputSchema = z.object({
   parts: z
     .array(ContentPartSchema)
     .describe('An array of text and media parts from the document.'),
-  fileType: z.string().describe('Type of the uploaded file (PDF, pptx, txt).'),
+  fileType: z.string().describe('Type of the uploaded file (PDF, txt).'),
 });
-export type GenerateChunkedSummaryInput = z.infer<
-  typeof GenerateChunkedSummaryInputSchema
->;
 
-export const GenerateChunkedSummaryOutputSchema = z.object({
+const GenerateChunkedSummaryOutputSchema = z.object({
   summary: z
     .string()
     .describe(
       'A structured study guide summary of the file content in Markdown format.'
     ),
 });
-export type GenerateChunkedSummaryOutput = z.infer<
-  typeof GenerateChunkedSummaryOutputSchema
->;
 
-export async function generateChunkedSummary(
-  input: GenerateChunkedSummaryInput
-): Promise<GenerateChunkedSummaryOutput> {
+export async function generateChunkedSummary(input: {
+  parts: ({ text: string } | { media: { url: string } })[];
+  fileType: string;
+}): Promise<{ summary: string }> {
   return generateChunkedSummaryFlow(input);
 }
 
-// Prompt to summarize a single chunk of text.
+// Prompt to summarize a single chunk of text and associated media.
 const summarizeChunkPrompt = ai.definePrompt({
   name: 'summarizeChunkPrompt',
-  input: {schema: z.object({chunkText: z.string()})},
+  input: {
+    schema: z.object({
+      parts: z.array(ContentPartSchema),
+    })
+  },
   output: {schema: z.object({chunkSummary: z.string()})},
-  prompt: `You are a part of a multi-stage summarization pipeline. Your current task is to summarize the following chunk of text from a larger document. Extract the key points, concepts, and any important information. The output of this summary will be used in a later stage to build a final, comprehensive summary.
+  prompt: `You are a part of a multi-stage summarization pipeline. Your task is to summarize the following portion of a larger document.
 
-Provide a concise but thorough summary of this text chunk:
+### Portion Content:
+{{#each parts}}
+  {{#if this.text}}
+    {{{this.text}}}
+  {{/if}}
+  {{#if this.media}}
+    {{media url=this.media.url}}
+  {{/if}}
+{{/each}}
 
-{{{chunkText}}}
+### Instructions:
+- Extract the key points, concepts, and any important information from this portion.
+- **Multimodal**: If images are provided, analyze them and incorporate their meaning.
+- Provide a concise but thorough summary. This will be used to build a final study guide.
 `,
 });
 
@@ -67,19 +75,19 @@ const synthesizeSummariesPrompt = ai.definePrompt({
   name: 'synthesizeSummariesPrompt',
   input: {schema: z.object({chunkSummaries: z.array(z.string())})},
   output: {schema: GenerateChunkedSummaryOutputSchema},
-  prompt: `You are the final stage in a summarization pipeline. You will be given a series of summaries, each corresponding to a chunk of a larger document. Your task is to synthesize these individual summaries into a single, final, coherent, and well-structured study guide in Markdown format.
+  prompt: `You are the final stage in a summarization pipeline. You will be given a series of summaries, each corresponding to a portion of a larger document. Your task is to synthesize these individual summaries into a single, final, coherent, and well-structured study guide in Markdown format.
 
-Follow these rules strictly:
-- Create a single, unified document. Do not just list the summaries.
-- Organize the content logically with headings, subheadings, and bullet points.
+### Instructions:
+- Create a single, unified document.
+- Organize content logically with **Headings, Subheadings, and Bullet Points**.
 - Ensure a natural flow between topics.
-- Highlight key definitions, formulas, and important concepts using Markdown bolding.
-- At the very end, provide a section titled '## Key Takeaways' that captures the most critical points of the entire document in under 200 words.
+- Highlight **key definitions, formulas, and important concepts** using Markdown bolding.
+- At the very end, provide a section titled \`## Key Takeaways\` that captures the most critical points of the entire document in under 200 words.
 
-Here are the summaries from each part of the document:
+### Summaries to Synthesize:
 {{#each chunkSummaries}}
 ---
-Summary of Part {{add @index 1}}:
+Summary of Portion {{add @index 1}}:
 {{{this}}}
 ---
 {{/each}}
@@ -96,50 +104,61 @@ const generateChunkedSummaryFlow = ai.defineFlow(
     outputSchema: GenerateChunkedSummaryOutputSchema,
   },
   async (input) => {
-    const CHUNK_SIZE = 30000; // Characters per chunk (approx. 7.5k tokens)
+    const CHUNK_SIZE = 60000; // Characters per chunk (approx. 15k tokens)
 
     // 1. CHUNK STAGE
-    const fullText = input.parts
-      .map((part) => ('text' in part ? part.text : ''))
-      .join('\n\n');
+    // We group parts into chunks based on text length
+    const chunks: ({ text: string } | { media: { url: string } })[][] = [];
+    let currentChunk: ({ text: string } | { media: { url: string } })[] = [];
+    let currentChunkSize = 0;
+
+    for (const part of input.parts) {
+      const partSize = 'text' in part ? part.text.length : 0;
+      
+      if (currentChunkSize + partSize > CHUNK_SIZE && currentChunk.length > 0) {
+        chunks.push(currentChunk);
+        currentChunk = [];
+        currentChunkSize = 0;
+      }
+      
+      currentChunk.push(part);
+      currentChunkSize += partSize;
+    }
     
-    if (!fullText.trim()) {
-      throw new Error("Document appears to be empty or contains no text.");
+    if (currentChunk.length > 0) {
+      chunks.push(currentChunk);
     }
 
-    const chunks: string[] = [];
-    for (let i = 0; i < fullText.length; i += CHUNK_SIZE) {
-      chunks.push(fullText.substring(i, i + CHUNK_SIZE));
+    if (chunks.length === 0) {
+      throw new Error("Document appears to be empty or contains no content.");
     }
 
     // 2. SUMMARIZE STAGE (in parallel)
-    const chunkSummaryPromises = chunks.map(async (chunk) => {
+    const chunkSummaryPromises = chunks.map(async (chunkParts) => {
       const maxRetries = 3;
       let attempt = 0;
       while (attempt < maxRetries) {
           try {
-              const { output } = await summarizeChunkPrompt({ chunkText: chunk });
+              const { output } = await summarizeChunkPrompt({ parts: chunkParts });
               return output?.chunkSummary || '';
           } catch (error) {
               attempt++;
               if (attempt >= maxRetries) {
                   console.error('Final attempt to summarize chunk failed:', error);
-                  // Return empty string or re-throw, depending on desired behavior.
-                  // For now, we'll let it fail silently for this chunk to not stop the whole process.
                   return ''; 
               }
               console.log('Attempt ' + attempt + ' to summarize chunk failed. Retrying in 2 seconds...');
               await new Promise((resolve) => setTimeout(resolve, 2000));
           }
       }
-      return ''; // Should be unreachable
+      return '';
     });
 
     const chunkSummaries = await Promise.all(chunkSummaryPromises);
 
     // 3. SYNTHESIZE STAGE
     const {output} = await synthesizeSummariesPrompt({
-      chunkSummaries: chunkSummaries.filter(Boolean), // Filter out any empty summaries
+      chunkSummaries: chunkSummaries.filter(Boolean),
     });
 
     return output!;

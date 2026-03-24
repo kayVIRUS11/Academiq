@@ -4,43 +4,15 @@ import { Calendar } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/context/auth-context";
 import { TimetableEntry } from "@/lib/types";
-import { useState, useEffect } from "react";
-import { useToast } from "@/hooks/use-toast";
 import { useCourses } from "@/context/courses-context";
-import { useFirebase } from "@/firebase";
-import { collection, query, onSnapshot } from "firebase/firestore";
+import { useSupabase } from "@/supabase";
+import { useSupabaseRealtime } from "@/hooks/use-supabase-realtime";
 
 export function TodaysSchedule() {
     const { user } = useAuth();
     const { getCourse } = useCourses();
-    const { firestore } = useFirebase();
-    const { toast } = useToast();
-    const [timetable, setTimetable] = useState<TimetableEntry[]>([]);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        if (!user || !firestore) {
-            setLoading(false);
-            return;
-        }
-
-        setLoading(true);
-        const timetableQuery = query(collection(firestore, 'users', user.uid, 'timeTables'));
-
-        const unsubscribe = onSnapshot(timetableQuery, (snapshot) => {
-            const timetableData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as TimetableEntry));
-            setTimetable(timetableData);
-            setLoading(false);
-        }, (error) => {
-            console.error("Error fetching timetable:", error);
-            toast({ title: 'Error fetching timetable', description: error.message, variant: 'destructive' });
-            setLoading(false);
-        });
-
-        return () => unsubscribe();
-    }, [user, firestore, toast]);
-
-
+    const { supabase } = useSupabase();
+    const { data: timetable, loading } = useSupabaseRealtime<TimetableEntry>('timeTables', 'created_at', false);
     const today = new Date().toLocaleDateString('en-US', { weekday: 'long' });
     const todaysClasses = timetable.filter(entry => entry.day === today);
 

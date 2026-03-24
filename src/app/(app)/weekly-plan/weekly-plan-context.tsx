@@ -5,8 +5,8 @@ import { StudyPlanItem } from '@/lib/types';
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { useFirebase } from '@/firebase';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { useSupabase } from '@/supabase';
+
 
 type WeeklyPlanContextType = {
   plan: StudyPlanItem[];
@@ -22,27 +22,28 @@ const WeeklyPlanContext = createContext<WeeklyPlanContextType | undefined>(undef
 export function WeeklyPlanProvider({ children }: { children: ReactNode }) {
   const [plan, setPlanState] = useState<StudyPlanItem[]>([]);
   const { user } = useAuth();
-  const { firestore } = useFirebase();
+  const { supabase } = useSupabase();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
 
-  const getDocRef = useCallback(() => {
-    if (!user || !firestore) return null;
-    return doc(firestore, 'users', user.uid);
-  }, [user, firestore]);
-
   const fetchPlan = useCallback(async () => {
-    const docRef = getDocRef();
-    if (!docRef) {
+    if (!user || !supabase) {
         setLoading(false);
         return;
     };
+    
     setLoading(true);
     try {
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-            const userData = docSnap.data();
-            setPlanState(userData.weekly_plan || []);
+        const { data, error } = await supabase
+            .from('user_profiles')
+            .select('weekly_plan')
+            .eq('id', user.id)
+            .maybeSingle();
+
+        if (error) throw error;
+
+        if (data && data.weekly_plan) {
+            setPlanState(data.weekly_plan as StudyPlanItem[]);
         } else {
             setPlanState([]);
         }
@@ -50,7 +51,7 @@ export function WeeklyPlanProvider({ children }: { children: ReactNode }) {
         toast({ title: 'Error loading weekly plan', description: error.message, variant: 'destructive'});
     }
     setLoading(false);
-  }, [getDocRef, toast]);
+  }, [user, supabase, toast]);
 
   useEffect(() => {
     if(user) {
@@ -62,10 +63,14 @@ export function WeeklyPlanProvider({ children }: { children: ReactNode }) {
   }, [user, fetchPlan]);
 
   const updateSupabase = async (newPlan: StudyPlanItem[]) => {
-    const docRef = getDocRef();
-    if (!docRef) return;
+    if (!user || !supabase) return;
     try {
-        await setDoc(docRef, { weekly_plan: newPlan }, { merge: true });
+        const { error } = await supabase
+            .from('user_profiles')
+            .update({ weekly_plan: newPlan })
+            .eq('id', user.id);
+            
+        if (error) throw error;
     } catch (error: any) {
         toast({ title: 'Error saving weekly plan', description: error.message, variant: 'destructive'});
     }

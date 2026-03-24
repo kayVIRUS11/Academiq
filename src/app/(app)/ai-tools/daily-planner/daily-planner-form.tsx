@@ -17,8 +17,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/context/auth-context';
 import { useCourses } from '@/context/courses-context';
 import { Progress } from '@/components/ui/progress';
-import { useFirebase } from '@/firebase';
-import { collection, query, onSnapshot } from 'firebase/firestore';
+import { useSupabase } from '@/supabase';
+import { useSupabaseRealtime } from '@/hooks/use-supabase-realtime';
 
 const days: DayOfWeek[] = [DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday, DayOfWeek.Thursday, DayOfWeek.Friday, DayOfWeek.Saturday, DayOfWeek.Sunday];
 
@@ -41,42 +41,12 @@ export function DailyPlannerForm() {
   const { toast } = useToast();
   const { plan: weeklyPlan } = useWeeklyPlan();
   const { user } = useAuth();
-  const { firestore } = useFirebase();
+  const { supabase } = useSupabase();
   const { getCourse, loading: coursesLoading } = useCourses();
 
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [timetable, setTimetable] = useState<TimetableEntry[]>([]);
-  const [dataLoading, setDataLoading] = useState(true);
-
-  useEffect(() => {
-    if (!user || !firestore) {
-        setDataLoading(false);
-        return;
-    };
-    setDataLoading(true);
-
-    const tasksQuery = query(collection(firestore, 'users', user.uid, 'tasks'));
-    const timetableQuery = query(collection(firestore, 'users', user.uid, 'timeTables'));
-
-    const unsubTasks = onSnapshot(tasksQuery, (snapshot) => {
-        setTasks(snapshot.docs.map(doc => ({id: doc.id, ...doc.data() } as Task)));
-    }, err => toast({title: "Error loading tasks", variant: 'destructive'}) );
-    
-    const unsubTimetable = onSnapshot(timetableQuery, (snapshot) => {
-        setTimetable(snapshot.docs.map(doc => ({id: doc.id, ...doc.data()} as TimetableEntry)));
-        setDataLoading(false);
-    }, err => {
-        toast({title: "Error loading timetable", variant: 'destructive'});
-        setDataLoading(false);
-    });
-
-    return () => {
-        unsubTasks();
-        unsubTimetable();
-    }
-  }, [user, firestore, toast]);
-
-
+  const { data: tasks, loading: tasksLoading } = useSupabaseRealtime<Task>('tasks', 'created_at', false);
+  const { data: timetable, loading: timetableLoading } = useSupabaseRealtime<TimetableEntry>('timeTables', 'created_at', false);
+  const dataLoading = tasksLoading || timetableLoading;
   useEffect(() => {
     let timer: NodeJS.Timeout;
     if (isLoading) {

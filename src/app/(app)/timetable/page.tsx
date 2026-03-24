@@ -8,62 +8,36 @@ import { AddTimetableEntry } from '@/components/timetable/add-timetable-entry';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/context/auth-context';
-import { useFirebase } from '@/firebase';
-import { useState, useEffect, useCallback } from 'react';
+import { useSupabase } from '@/supabase';
 import { useCourses } from '@/context/courses-context';
-import { collection, query, onSnapshot, addDoc, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { useSupabaseRealtime } from '@/hooks/use-supabase-realtime';
 
 export default function TimetablePage() {
   const { toast } = useToast();
   const { user } = useAuth();
-  const { firestore } = useFirebase();
+  const { supabase } = useSupabase();
   const { courses } = useCourses();
   
-  const [entries, setEntries] = useState<TimetableEntry[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (!user || !firestore) {
-        setLoading(false);
-        return;
-    };
-    setLoading(true);
-
-    const timetableQuery = query(collection(firestore, 'users', user.uid, 'timeTables'));
-
-    const unsubscribe = onSnapshot(timetableQuery, (snapshot) => {
-        const timetableData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as TimetableEntry));
-        setEntries(timetableData);
-        setLoading(false);
-    }, (error) => {
-        console.error("Error fetching timetable:", error);
-        toast({ title: 'Error fetching timetable', description: error.message, variant: 'destructive' });
-        setLoading(false);
-    });
-    
-    return () => unsubscribe();
-  }, [user, firestore, toast]);
+  const { data: entries, loading } = useSupabaseRealtime<TimetableEntry>('timeTables', 'created_at', true);
 
 
   const handleAddEntry = async (newEntryData: Omit<TimetableEntry, 'id' | 'uid'>) => {
-    if (!user || !firestore) {
+    if (!user || !supabase) {
         toast({ title: 'You must be logged in', variant: 'destructive' });
         return;
     }
     try {
-      const timetableCollection = collection(firestore, 'users', user.uid, 'timeTables');
-      
       const dataToSave: any = {
         ...newEntryData,
-        uid: user.uid,
-        userProfileId: user.uid
+        uid: user.id
       };
       
       if (!dataToSave.courseId) {
         delete dataToSave.courseId;
       }
 
-      await addDoc(timetableCollection, dataToSave);
+      const { error } = await supabase.from('timeTables').insert(dataToSave);
+      if (error) throw error;
       toast({ title: 'Class added!' });
     } catch (e: any) {
       console.error(e);
@@ -72,11 +46,11 @@ export default function TimetablePage() {
   };
 
   const handleUpdateEntry = async (updatedEntry: TimetableEntry) => {
-    if (!user || !firestore) return;
+    if (!user || !supabase) return;
     try {
       const { id, ...entryData } = updatedEntry;
-      const entryDoc = doc(firestore, 'users', user.uid, 'timeTables', id);
-      await updateDoc(entryDoc, entryData);
+      const { error } = await supabase.from('timeTables').update(entryData).eq('id', id);
+      if (error) throw error;
       toast({ title: 'Class updated.' });
     } catch (e: any) {
       console.error(e);
@@ -85,10 +59,10 @@ export default function TimetablePage() {
   };
 
   const handleDeleteEntry = async (entryId: string) => {
-    if (!user || !firestore) return;
+    if (!user || !supabase) return;
     try {
-      const entryDoc = doc(firestore, 'users', user.uid, 'timeTables', entryId);
-      await deleteDoc(entryDoc);
+      const { error } = await supabase.from('timeTables').delete().eq('id', entryId);
+      if (error) throw error;
       toast({ title: 'Class deleted.' });
     } catch (e: any) {
       console.error(e);

@@ -6,37 +6,13 @@ import { Target } from "lucide-react";
 import { Goal } from "@/lib/types";
 import { Skeleton } from "../ui/skeleton";
 import { useAuth } from "@/context/auth-context";
-import { useFirebase } from "@/firebase";
-import { useEffect, useState, useCallback } from "react";
-import { toast } from "@/hooks/use-toast";
-import { collection, query, onSnapshot, limit } from "firebase/firestore";
+import { useSupabase } from "@/supabase";
+import { useSupabaseRealtime } from "@/hooks/use-supabase-realtime";
 
 export function GoalsOverview() {
   const { user } = useAuth();
-  const { firestore } = useFirebase();
-  const [goals, setGoals] = useState<Goal[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (!user || !firestore) {
-        setLoading(false);
-        return;
-    };
-    setLoading(true);
-
-    const goalsQuery = query(collection(firestore, 'users', user.uid, 'goals'), limit(3));
-    const unsubscribe = onSnapshot(goalsQuery, (snapshot) => {
-        const goalsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Goal));
-        setGoals(goalsData);
-        setLoading(false);
-    }, (error) => {
-        console.error(error);
-        toast({ title: 'Error fetching goals', description: error.message, variant: 'destructive' });
-        setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, [user, firestore, toast]);
+  const { supabase } = useSupabase();
+  const { data: goals, loading } = useSupabaseRealtime<Goal>('goals', 'created_at', false);
   
   return (
     <Card>

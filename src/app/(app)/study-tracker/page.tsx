@@ -22,8 +22,8 @@ import { useRouter } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/context/auth-context';
 import { mergeWeeklyPlans } from '@/ai/flows/merge-weekly-study-plan';
-import { useFirebase } from '@/firebase';
-import { collection, query, onSnapshot, addDoc, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { useSupabase } from '@/supabase';
+import { useSupabaseRealtime } from '@/hooks/use-supabase-realtime';
 import { useCourses } from '@/context/courses-context';
 
 export default function StudyTrackerPage() {
@@ -32,40 +32,11 @@ export default function StudyTrackerPage() {
   const router = useRouter();
   const { toast } = useToast();
   const { user } = useAuth();
-  const { firestore } = useFirebase();
+  const { supabase } = useSupabase();
 
-  const [timetable, setTimetable] = useState<TimetableEntry[]>([]);
-  const [sessions, setSessions] = useState<StudySession[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if(!user || !firestore) {
-      setLoading(false);
-      return;
-    };
-    setLoading(true);
-    
-    const timetableQuery = query(collection(firestore, 'users', user.uid, 'timeTables'));
-    const sessionsQuery = query(collection(firestore, 'users', user.uid, 'studySessions'));
-
-    const unsubTimetable = onSnapshot(timetableQuery, (snapshot) => {
-        setTimetable(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as TimetableEntry)));
-    }, (error) => toast({ title: 'Error fetching timetable', variant: 'destructive' }));
-
-    const unsubSessions = onSnapshot(sessionsQuery, (snapshot) => {
-        setSessions(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as StudySession)));
-        setLoading(false);
-    }, (error) => {
-        toast({ title: 'Error fetching sessions', variant: 'destructive' });
-        setLoading(false);
-    });
-
-    return () => {
-        unsubTimetable();
-        unsubSessions();
-    };
-
-  }, [user, firestore, toast]);
+  const { data: timetable, loading: timetableLoading } = useSupabaseRealtime<TimetableEntry>('timeTables', 'created_at', false);
+  const { data: sessions, loading: sessionsLoading } = useSupabaseRealtime<StudySession>('studySessions', 'created_at', false);
+  const loading = timetableLoading || sessionsLoading;
 
   const [isGenerating, setIsGenerating] = useState(false);
   const [isMerging, setIsMerging] = useState(false);
@@ -73,24 +44,22 @@ export default function StudyTrackerPage() {
   const [isPlanDialogOpen, setIsPlanDialogOpen] = useState(false);
 
   const handleAddSession = async (newSessionData: Omit<StudySession, 'id' | 'uid'>) => {
-    if (!user || !firestore) {
+    if (!user || !supabase) {
         toast({ title: 'You must be logged in', variant: 'destructive' });
         return;
     }
     try {
-        const sessionsCollection = collection(firestore, 'users', user.uid, 'studySessions');
-        
         const dataToSave: any = {
             ...newSessionData,
-            uid: user.uid,
-            userProfileId: user.uid
+            uid: user.id
         };
 
         if (!dataToSave.courseId) {
             delete dataToSave.courseId;
         }
 
-        await addDoc(sessionsCollection, dataToSave);
+        const { error } = await supabase.from('studySessions').insert(dataToSave);
+        if (error) throw error;
         toast({title: 'Session logged!'});
     } catch(e: any) {
         console.error(e);
@@ -99,11 +68,11 @@ export default function StudyTrackerPage() {
   };
 
   const handleUpdateSession = async (updatedSession: StudySession) => {
-    if (!user || !firestore) return;
+    if (!user || !supabase) return;
     try {
         const { id, ...data } = updatedSession;
-        const sessionDoc = doc(firestore, 'users', user.uid, 'studySessions', id);
-        await updateDoc(sessionDoc, data);
+        const { error } = await supabase.from('studySessions').update(data).eq('id', id);
+        if (error) throw error;
         toast({title: 'Session updated.'});
     } catch(e: any) {
         console.error(e);
@@ -112,10 +81,10 @@ export default function StudyTrackerPage() {
   };
 
   const handleDeleteSession = async (sessionId: string) => {
-    if (!user || !firestore) return;
+    if (!user || !supabase) return;
     try {
-        const sessionDoc = doc(firestore, 'users', user.uid, 'studySessions', sessionId);
-        await deleteDoc(sessionDoc);
+        const { error } = await supabase.from('studySessions').delete().eq('id', sessionId);
+        if (error) throw error;
         toast({title: 'Session deleted.'});
     } catch(e: any) {
         console.error(e);

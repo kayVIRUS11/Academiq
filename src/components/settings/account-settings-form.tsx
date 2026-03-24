@@ -24,16 +24,16 @@ export function AccountSettingsForm() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
 
-  const form = useForm<AccountSettingsFormValues>({
+  const form = useForm<z.infer<typeof accountSettingsSchema>>({
     resolver: zodResolver(accountSettingsSchema),
     defaultValues: {
-      full_name: user?.displayName || '',
+      full_name: user?.user_metadata?.full_name || '',
     },
   });
 
   useEffect(() => {
-    if (user?.displayName) {
-      form.reset({ full_name: user.displayName });
+    if (user?.user_metadata?.full_name) {
+      form.reset({ full_name: user.user_metadata.full_name });
     }
   }, [user, form]);
 

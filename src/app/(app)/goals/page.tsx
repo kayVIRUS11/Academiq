@@ -8,52 +8,27 @@ import { AddGoal } from '@/components/goals/add-goal';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/context/auth-context';
-import { useFirebase } from '@/firebase';
-import { useState, useEffect, useCallback } from 'react';
-import { collection, query, onSnapshot, addDoc, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { useSupabase } from '@/supabase';
+import { useSupabaseRealtime } from '@/hooks/use-supabase-realtime';
 
 export default function GoalsPage() {
   const { toast } = useToast();
   const { user } = useAuth();
-  const { firestore } = useFirebase();
-  const [goals, setGoals] = useState<Goal[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (!user || !firestore) {
-        setLoading(false);
-        return;
-    };
-
-    setLoading(true);
-    const goalsQuery = query(collection(firestore, 'users', user.uid, 'goals'));
-
-    const unsubscribe = onSnapshot(goalsQuery, (querySnapshot) => {
-        const goalsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Goal));
-        setGoals(goalsData);
-        setLoading(false);
-    }, (error) => {
-        console.error("Error fetching goals:", error);
-        toast({ title: 'Error fetching goals', description: error.message, variant: 'destructive' });
-        setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, [user, firestore, toast]);
+  const { supabase } = useSupabase();
+  const { data: goals, loading } = useSupabaseRealtime<Goal>('goals', 'created_at', false);
 
   const handleAddGoal = async (newGoal: Omit<Goal, 'id' | 'progress' | 'uid'>) => {
-    if (!user || !firestore) {
+    if (!user || !supabase) {
         toast({ title: 'You must be logged in', variant: 'destructive' });
         return;
     }
     try {
-        const goalsCollection = collection(firestore, 'users', user.uid, 'goals');
-        await addDoc(goalsCollection, {
+        const { error } = await supabase.from('goals').insert({
             ...newGoal,
             progress: 0,
-            uid: user.uid,
-            userProfileId: user.uid,
+            uid: user.id
         });
+        if (error) throw error;
         toast({ title: 'Goal added!' });
     } catch(error: any) {
       console.error(error);
@@ -62,11 +37,11 @@ export default function GoalsPage() {
   };
 
   const handleUpdateGoal = async (updatedGoal: Goal) => {
-    if (!user || !firestore) return;
+    if (!user || !supabase) return;
     try {
       const { id, ...goalData } = updatedGoal;
-      const goalDoc = doc(firestore, 'users', user.uid, 'goals', id);
-      await updateDoc(goalDoc, goalData);
+      const { error } = await supabase.from('goals').update(goalData).eq('id', id);
+      if (error) throw error;
       toast({ title: 'Goal updated!' });
     } catch (error: any) {
       console.error(error);
@@ -75,10 +50,10 @@ export default function GoalsPage() {
   };
 
   const handleDeleteGoal = async (goalId: string) => {
-    if (!user || !firestore) return;
+    if (!user || !supabase) return;
     try {
-        const goalDoc = doc(firestore, 'users', user.uid, 'goals', goalId);
-        await deleteDoc(goalDoc);
+        const { error } = await supabase.from('goals').delete().eq('id', goalId);
+        if (error) throw error;
         toast({ title: 'Goal deleted!' });
     } catch (error: any) {
       console.error(error);

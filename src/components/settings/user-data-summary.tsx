@@ -7,13 +7,12 @@ import { useFlashcards } from "@/app/(app)/ai-tools/flashcards/flashcards-contex
 import { useDailyActivities } from "@/app/(app)/daily-activities/activities-context";
 import { BookCopy, BrainCircuit, Calendar, ListTodo, NotebookText, Target, ClipboardCheck } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
-import { useFirebase } from "@/firebase";
+import { useSupabase } from "@/supabase";
 import { useEffect, useState, useCallback } from "react";
-import { collection, getCountFromServer } from "firebase/firestore";
 
 export function UserDataSummary() {
     const { user } = useAuth();
-    const { firestore } = useFirebase();
+    const { supabase } = useSupabase();
     const { notes } = useNotes();
     const { flashcardSets } = useFlashcards();
     const { weeklyActivities } = useDailyActivities();
@@ -26,27 +25,27 @@ export function UserDataSummary() {
     });
 
     const fetchCounts = useCallback(async () => {
-        if (!user || !firestore) return;
+        if (!user || !supabase) return;
 
         try {
-            const [courses, tasks, goals, sessions] = await Promise.all([
-                getCountFromServer(collection(firestore, 'users', user.uid, 'courses')),
-                getCountFromServer(collection(firestore, 'users', user.uid, 'tasks')),
-                getCountFromServer(collection(firestore, 'users', user.uid, 'goals')),
-                getCountFromServer(collection(firestore, 'users', user.uid, 'studySessions')),
+            const [coursesRes, tasksRes, goalsRes, sessionsRes] = await Promise.all([
+                supabase.from('courses').select('id', { count: 'exact', head: true }).eq('uid', user.id),
+                supabase.from('tasks').select('id', { count: 'exact', head: true }).eq('uid', user.id),
+                supabase.from('goals').select('id', { count: 'exact', head: true }).eq('uid', user.id),
+                supabase.from('studySessions').select('id', { count: 'exact', head: true }).eq('uid', user.id)
             ]);
 
             setCounts({
-                courses: courses.data().count,
-                tasks: tasks.data().count,
-                goals: goals.data().count,
-                sessions: sessions.data().count,
+                courses: coursesRes.count || 0,
+                tasks: tasksRes.count || 0,
+                goals: goalsRes.count || 0,
+                sessions: sessionsRes.count || 0,
             });
         } catch(error) {
             console.error("Error fetching data counts:", error);
         }
 
-    }, [user, firestore]);
+    }, [user, supabase]);
 
     useEffect(() => {
         fetchCounts();

@@ -7,60 +7,35 @@ import { cn } from "@/lib/utils";
 import { ListTodo } from "lucide-react";
 import { Skeleton } from "../ui/skeleton";
 import { useAuth } from "@/context/auth-context";
-import { useFirebase } from "@/firebase";
-import { useState, useEffect, useCallback } from "react";
+import { useSupabase } from "@/supabase";
 import { toast } from "@/hooks/use-toast";
-import { collection, query, where, onSnapshot, doc, updateDoc } from 'firebase/firestore';
+import { useSupabaseRealtime } from "@/hooks/use-supabase-realtime";
 
 export function TasksDueToday() {
   const { user } = useAuth();
-  const { firestore } = useFirebase();
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (!user || !firestore) {
-        setLoading(false);
-        return;
-    };
-    setLoading(true);
-
-    const today = new Date();
-    today.setHours(0,0,0,0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    
-    const tasksQuery = query(
-        collection(firestore, 'users', user.uid, 'tasks'),
-        where('dueDate', '>=', today.toISOString().split('T')[0]),
-        where('dueDate', '<', tomorrow.toISOString().split('T')[0])
-    );
-    
-    const unsubscribe = onSnapshot(tasksQuery, (snapshot) => {
-        const tasksData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task));
-        setTasks(tasksData);
-        setLoading(false);
-    }, (error) => {
-        console.error("Error fetching today's tasks:", error);
-        toast({ title: "Error fetching today's tasks", description: error.message, variant: 'destructive' });
-        setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, [user, firestore, toast]);
+  const { supabase } = useSupabase();
+  const { data: allTasks, loading } = useSupabaseRealtime<Task>('tasks', 'created_at', false);
 
 
   const handleTaskToggle = async (taskId: string, currentStatus: boolean) => {
-    if (!user || !firestore) return;
-    const taskDoc = doc(firestore, 'users', user.uid, 'tasks', taskId);
+    if (!user || !supabase) return;
     try {
-        await updateDoc(taskDoc, { completed: !currentStatus });
+        const { error } = await supabase.from('tasks').update({ completed: !currentStatus }).eq('id', taskId);
+        if (error) throw error;
     } catch(error: any) {
         toast({ title: 'Error updating task', description: error.message, variant: 'destructive' });
     }
   };
 
-  const tasksDueToday = tasks;
+  const tasksDueToday = allTasks.filter(task => {
+    if (!task.dueDate) return false;
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const taskDateStr = task.dueDate;
+    return taskDateStr >= today.toISOString().split('T')[0] && taskDateStr < tomorrow.toISOString().split('T')[0];
+  });
 
   return (
     <Card className="col-span-1">

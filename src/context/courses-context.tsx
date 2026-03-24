@@ -5,8 +5,8 @@ import { Course } from '@/lib/types';
 import React, { createContext, useContext, useState, ReactNode, useCallback, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
-import { useFirebase } from '@/firebase';
-import { collection, query, onSnapshot, addDoc, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { useSupabase } from '@/supabase';
+import { useSupabaseRealtime } from '@/hooks/use-supabase-realtime';
 
 
 type CoursesContextType = {
@@ -21,44 +21,21 @@ type CoursesContextType = {
 const CoursesContext = createContext<CoursesContextType | undefined>(undefined);
 
 export function CoursesProvider({ children }: { children: ReactNode }) {
-  const [courses, setCourses] = useState<Course[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: courses, loading } = useSupabaseRealtime<Course>('courses', 'created_at', false);
   const { toast } = useToast();
   const { user } = useAuth();
-  const { firestore } = useFirebase();
-
-  useEffect(() => {
-    if (!user || !firestore) {
-      setCourses([]);
-      setLoading(false);
-      return;
-    }
-
-    setLoading(true);
-    const q = query(collection(firestore, 'users', user.uid, 'courses'));
-    const unsubscribe = onSnapshot(q, (querySnapshot) => {
-        const coursesData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Course));
-        setCourses(coursesData);
-        setLoading(false);
-    }, (error) => {
-        console.error("Error fetching courses:", error);
-        toast({ title: 'Error loading courses', description: error.message, variant: 'destructive'});
-        setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, [user, firestore, toast]);
+  const { supabase } = useSupabase();
 
   
   const addCourse = async (newCourseData: Omit<Course, 'id' | 'uid'>) => {
-    if (!user || !firestore) {
+    if (!user || !supabase) {
         toast({ title: 'You must be logged in', variant: 'destructive' });
         return;
     }
     
     try {
-      const coursesCollection = collection(firestore, 'users', user.uid, 'courses');
-      await addDoc(coursesCollection, { ...newCourseData, uid: user.uid, userProfileId: user.uid });
+      const { error } = await supabase.from('courses').insert({ ...newCourseData, uid: user.id });
+      if (error) throw error;
       toast({ title: 'Course added!' });
     } catch(error: any) {
       console.error(error);
@@ -67,10 +44,10 @@ export function CoursesProvider({ children }: { children: ReactNode }) {
   };
 
   const updateCourse = async (id: string, updatedData: Partial<Omit<Course, 'id' | 'uid'>>) => {
-    if (!user || !firestore) return;
+    if (!user || !supabase) return;
     try {
-        const courseDoc = doc(firestore, 'users', user.uid, 'courses', id);
-        await updateDoc(courseDoc, updatedData);
+        const { error } = await supabase.from('courses').update(updatedData).eq('id', id);
+        if (error) throw error;
         toast({ title: 'Course updated!' });
     } catch(error: any) {
       console.error(error);
@@ -79,10 +56,10 @@ export function CoursesProvider({ children }: { children: ReactNode }) {
   }
 
   const deleteCourse = async (id: string) => {
-    if (!user || !firestore) return;
+    if (!user || !supabase) return;
     try {
-        const courseDoc = doc(firestore, 'users', user.uid, 'courses', id);
-        await deleteDoc(courseDoc);
+        const { error } = await supabase.from('courses').delete().eq('id', id);
+        if (error) throw error;
         toast({ title: 'Course deleted!' });
     } catch (error: any) {
         console.error(error);

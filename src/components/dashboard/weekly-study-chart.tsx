@@ -7,39 +7,25 @@ import { Timer } from "lucide-react";
 import { StudySession } from "@/lib/types";
 import { format, startOfWeek, endOfWeek, isWithinInterval } from "date-fns";
 import { useAuth } from "@/context/auth-context";
-import { useFirebase } from "@/firebase";
-import { useEffect, useState, useCallback } from "react";
-import { toast } from "@/hooks/use-toast";
-import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { useSupabase } from "@/supabase";
+import { useSupabaseRealtime } from "@/hooks/use-supabase-realtime";
 
 export function WeeklyStudyChart() {
     const { user } = useAuth();
-    const { firestore } = useFirebase();
-    const [sessions, setSessions] = useState<StudySession[]>([]);
+    const { supabase } = useSupabase();
     
     const weekStartsOn = 1; // Monday
     const today = new Date();
     const startOfWeekDate = startOfWeek(today, { weekStartsOn });
     const endOfWeekDate = endOfWeek(today, { weekStartsOn });
 
-    useEffect(() => {
-        if (!user || !firestore) return;
-        
-        const sessionsQuery = query(
-            collection(firestore, 'users', user.uid, 'studySessions'),
-            where('date', '>=', startOfWeekDate.toISOString().split('T')[0]),
-            where('date', '<=', endOfWeekDate.toISOString().split('T')[0])
-        );
-        
-        const unsubscribe = onSnapshot(sessionsQuery, (snapshot) => {
-            const weekSessions = snapshot.docs.map(doc => doc.data() as StudySession);
-            setSessions(weekSessions);
-        }, (error) => {
-            toast({ title: 'Error fetching study sessions', description: error.message, variant: 'destructive'});
-        });
-        
-        return () => unsubscribe();
-    }, [user, firestore, startOfWeekDate, endOfWeekDate, toast]);
+    const { data: allSessions } = useSupabaseRealtime<StudySession>('studySessions', 'created_at', false);
+    
+    const sessions = allSessions.filter(session => {
+        const sessionDate = session.date;
+        return sessionDate >= startOfWeekDate.toISOString().split('T')[0] && 
+               sessionDate <= endOfWeekDate.toISOString().split('T')[0];
+    });
 
     
     const weeklyData = Array.from({length: 7}).map((_, i) => {

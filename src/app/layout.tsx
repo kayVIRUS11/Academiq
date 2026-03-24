@@ -3,7 +3,7 @@ import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { ThemeProvider } from '@/components/theme-provider';
 import { AuthProvider } from '@/context/auth-context';
-import { FirebaseClientProvider } from '@/firebase';
+import { SupabaseProvider } from '@/supabase';
 
 export const metadata: Metadata = {
   title: 'Academiq',
@@ -28,12 +28,12 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
         >
-          <FirebaseClientProvider>
-            <AuthProvider>
-                {children}
-                <Toaster />
-            </AuthProvider>
-          </FirebaseClientProvider>
+            <SupabaseProvider>
+                <AuthProvider>
+                    {children}
+                    <Toaster />
+                </AuthProvider>
+            </SupabaseProvider>
         </ThemeProvider>
       </body>
     </html>

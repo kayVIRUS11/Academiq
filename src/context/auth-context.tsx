@@ -1,19 +1,10 @@
-
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { 
-    User, 
-    onAuthStateChanged,
-    createUserWithEmailAndPassword,
-    signInWithEmailAndPassword,
-    signOut,
-    updateProfile
-} from 'firebase/auth';
-import { useFirebase } from '@/firebase';
+import type { User } from '@supabase/supabase-js';
+import { useSupabase } from '@/supabase';
 import { usePathname, useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
-import { doc, setDoc } from 'firebase/firestore';
 
 interface AuthContextType {
     user: User | null;
@@ -29,20 +20,16 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const publicRoutes = ['/login', '/signup', '/join', '/terms', '/privacy', '/'];
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+    const { supabase, user: supabaseUser, isUserLoading } = useSupabase();
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
     const pathname = usePathname();
     const router = useRouter();
-    const { auth, firestore } = useFirebase();
 
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, (user) => {
-            setUser(user);
-            setLoading(false);
-        });
-
-        return () => unsubscribe();
-    }, [auth]);
+        setUser(supabaseUser);
+        setLoading(isUserLoading);
+    }, [supabaseUser, isUserLoading]);
 
     useEffect(() => {
       if (!loading && !user && !publicRoutes.includes(pathname)) {
@@ -51,59 +38,63 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }, [loading, user, pathname, router]);
 
     const signUpWithEmail = async (email: string, password: string, displayName: string) => {
-        try {
-            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-            const user = userCredential.user;
-            await updateProfile(user, { displayName });
+        if (!supabase) return { user: null, error: new Error("Supabase client not initialized. Please check your .env and restart the server.") };
+        
+        const { data, error } = await supabase.auth.signUp({
+            email,
+            password,
+            options: {
+                data: {
+                    full_name: displayName,
+                }
+            }
+        });
 
-            const userProfileRef = doc(firestore, 'users', user.uid);
-            await setDoc(userProfileRef, {
-                id: user.uid,
-                email: user.email,
-                name: displayName,
+        if (error) return { user: null, error };
+
+        const signedUser = data.user;
+        if (signedUser) {
+            // Upsert into user_profiles table
+            await supabase.from('user_profiles').upsert({
+                id: signedUser.id
             });
-
-            setUser(user);
-            return { user, error: null };
-        } catch (error) {
-            return { user: null, error };
+            setUser(signedUser);
         }
+        return { user: signedUser, error: null };
     };
     
     const signInWithEmail = async (email: string, password: string) => {
-        try {
-            const userCredential = await signInWithEmailAndPassword(auth, email, password);
-            return { user: userCredential.user, error: null };
-        } catch (error) {
-            return { user: null, error };
-        }
+        if (!supabase) return { user: null, error: new Error("Supabase client not initialized. Please check your .env and restart the server.") };
+        
+        const { data, error } = await supabase.auth.signInWithPassword({
+            email,
+            password
+        });
+        return { user: data.user, error };
     };
 
-    const logout = () => {
-        return signOut(auth);
+    const logout = async () => {
+        if (!supabase) return;
+        return supabase.auth.signOut();
     };
 
     const updateUserSettings = async (updates: { [key: string]: any }) => {
+        if (!supabase) throw new Error("Supabase client not initialized.");
         if (!user) throw new Error("No user is signed in.");
         
-        let profileUpdates = {};
-        if (updates.full_name && updates.full_name !== user.displayName) {
-            Object.assign(profileUpdates, { displayName: updates.full_name });
+        let profileUpdates: any = {};
+        if (updates.full_name && updates.full_name !== user.user_metadata?.full_name) {
+            profileUpdates.full_name = updates.full_name;
         }
         
         if (Object.keys(profileUpdates).length > 0) {
-            await updateProfile(user, profileUpdates);
+            await supabase.auth.updateUser({
+                data: profileUpdates
+            });
         }
         
-        const userProfileRef = doc(firestore, 'users', user.uid);
-        await setDoc(userProfileRef, { name: updates.full_name }, { merge: true });
-
-        // Manually update the user object to reflect changes immediately
-        const updatedUser = Object.assign(Object.create(Object.getPrototypeOf(user)), user, {
-            displayName: updates.full_name,
-        });
-
-        setUser(updatedUser);
+        const { data: updatedUser } = await supabase.auth.getUser();
+        if (updatedUser.user) setUser(updatedUser.user);
     };
 
     const value = {

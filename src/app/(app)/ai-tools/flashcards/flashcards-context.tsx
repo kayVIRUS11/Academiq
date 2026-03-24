@@ -5,8 +5,8 @@ import { GenerateFlashcardsOutput } from '@/ai/flows/generate-flashcards';
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
-import { useFirebase } from '@/firebase';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { useSupabase } from '@/supabase';
+
 
 type Flashcard = GenerateFlashcardsOutput['flashcards'][0];
 
@@ -30,27 +30,27 @@ export function FlashcardsProvider({ children }: { children: ReactNode }) {
   const [flashcardSets, setFlashcardSets] = useState<FlashcardSet[]>([]);
   const { toast } = useToast();
   const { user } = useAuth();
-  const { firestore } = useFirebase();
+  const { supabase } = useSupabase();
   const [loading, setLoading] = useState(true);
 
-  const getDocRef = useCallback(() => {
-    if (!user || !firestore) return null;
-    // This doc holds all non-collection user data to minimize reads
-    return doc(firestore, 'users', user.uid);
-  }, [user, firestore]);
-
   const fetchFlashcards = useCallback(async () => {
-    const docRef = getDocRef();
-    if (!docRef) {
+    if (!user || !supabase) {
         setLoading(false);
         return;
     };
+    
     setLoading(true);
     try {
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-            const userData = docSnap.data();
-            setFlashcardSets(userData.flashcard_sets || []);
+        const { data, error } = await supabase
+            .from('user_profiles')
+            .select('flashcard_sets')
+            .eq('id', user.id)
+            .maybeSingle();
+
+        if (error) throw error;
+
+        if (data && data.flashcard_sets) {
+            setFlashcardSets(data.flashcard_sets as FlashcardSet[]);
         } else {
             setFlashcardSets([]);
         }
@@ -58,7 +58,7 @@ export function FlashcardsProvider({ children }: { children: ReactNode }) {
         toast({title: 'Error loading flashcards', description: error.message, variant: 'destructive'});
     }
     setLoading(false);
-  }, [getDocRef, toast]);
+  }, [user, supabase, toast]);
 
   useEffect(() => {
     if (user) {
@@ -70,10 +70,14 @@ export function FlashcardsProvider({ children }: { children: ReactNode }) {
   }, [user, fetchFlashcards]);
 
   const updateRemoteFlashcards = async (sets: FlashcardSet[]) => {
-    const docRef = getDocRef();
-    if (!docRef) return;
+    if (!user || !supabase) return;
     try {
-        await setDoc(docRef, { flashcard_sets: sets }, { merge: true });
+        const { error } = await supabase
+            .from('user_profiles')
+            .update({ flashcard_sets: sets })
+            .eq('id', user.id);
+            
+        if (error) throw error;
     } catch(error: any) {
         toast({title: 'Error saving flashcards', description: error.message, variant: 'destructive'});
     }

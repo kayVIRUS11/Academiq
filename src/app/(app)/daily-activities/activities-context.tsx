@@ -5,8 +5,8 @@ import { DailyActivity, WeeklyActivities, DayOfWeek } from '@/lib/types';
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { useFirebase } from '@/firebase';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { useSupabase } from '@/supabase';
+
 
 
 type ActivitiesContextType = {
@@ -24,31 +24,30 @@ const ActivitiesContext = createContext<ActivitiesContextType | undefined>(undef
 export function ActivitiesProvider({ children }: { children: ReactNode }) {
   const [weeklyActivities, setWeeklyActivities] = useState<WeeklyActivities>({});
   const { user } = useAuth();
-  const { firestore } = useFirebase();
+  const { supabase } = useSupabase();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
 
-  const getDocRef = useCallback(() => {
-    if (!user || !firestore) return null;
-    return doc(firestore, 'users', user.uid);
-  }, [user, firestore]);
-
-
   const fetchActivities = useCallback(async () => {
-    const docRef = getDocRef();
-    if (!docRef) {
+    if (!user || !supabase) {
         setLoading(false);
         return;
     }
 
     setLoading(true);
     try {
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-          const userData = docSnap.data();
-          const activities = userData.daily_activities || {};
+        const { data, error } = await supabase
+            .from('user_profiles')
+            .select('daily_activities')
+            .eq('id', user.id)
+            .maybeSingle();
+
+        if (error) throw error;
+
+        if (data && data.daily_activities) {
+          const activities = data.daily_activities as Record<string, any>;
           const sanitizedData = Object.keys(activities).reduce((acc, day) => {
-              acc[day as DayOfWeek] = activities[day as DayOfWeek] || [];
+              acc[day as DayOfWeek] = activities[day] || [];
               return acc;
           }, {} as WeeklyActivities);
           setWeeklyActivities(sanitizedData);
@@ -59,7 +58,7 @@ export function ActivitiesProvider({ children }: { children: ReactNode }) {
         toast({ title: 'Error loading daily plans', description: error.message, variant: 'destructive'});
     }
     setLoading(false);
-  }, [getDocRef, toast]);
+  }, [user, supabase, toast]);
 
   useEffect(() => {
     if (user) {
@@ -70,12 +69,16 @@ export function ActivitiesProvider({ children }: { children: ReactNode }) {
     }
   }, [user, fetchActivities]);
 
-  const updateFirestore = async (newWeeklyActivities: WeeklyActivities) => {
-    const docRef = getDocRef();
-    if (!docRef) return;
+  const updateSupabase = async (newWeeklyActivities: WeeklyActivities) => {
+    if (!user || !supabase) return;
 
     try {
-        await setDoc(docRef, { daily_activities: newWeeklyActivities }, { merge: true });
+        const { error } = await supabase
+            .from('user_profiles')
+            .update({ daily_activities: newWeeklyActivities })
+            .eq('id', user.id);
+            
+        if (error) throw error;
     } catch (error: any) {
         toast({ title: 'Error saving daily plan', description: error.message, variant: 'destructive' });
     }
@@ -94,7 +97,7 @@ export function ActivitiesProvider({ children }: { children: ReactNode }) {
     };
     
     setWeeklyActivities(newWeeklyActivities);
-    updateFirestore(newWeeklyActivities);
+    updateSupabase(newWeeklyActivities);
   }
   
   const updateActivitiesForDay = (day: DayOfWeek, activities: DailyActivity[]) => {
@@ -103,7 +106,7 @@ export function ActivitiesProvider({ children }: { children: ReactNode }) {
       [day]: activities,
     };
     setWeeklyActivities(newWeeklyActivities);
-    updateFirestore(newWeeklyActivities);
+    updateSupabase(newWeeklyActivities);
   }
 
   const addActivity = (day: DayOfWeek, activity: Omit<DailyActivity, 'id' | 'completed' | 'suggestions'>) => {
